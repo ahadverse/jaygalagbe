@@ -14,6 +14,7 @@ import {
 import { AdsService } from './ads.service.js';
 import { CreateAdDto } from './dto/create-ad.dto.js';
 import { UpdateAdDto } from './dto/update-ad.dto.js';
+import { RejectAdDto } from './dto/reject-ad.dto.js';
 import { Sector } from '../generated/prisma/client.js';
 import { Auth } from '../auth/auth.decorator.js';
 import { Role } from '../auth/role.enum.js';
@@ -76,5 +77,17 @@ export class AdsController {
   @UseGuards(JwtAuthGuard)
   resubmit(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.adsService.resubmit(id, user.id);
+  }
+
+  @Patch(':id/approve')
+  @Auth(Role.ADMIN)
+  approve(@Param('id') id: string) {
+    return this.adsService.approve(id);
+  }
+
+  @Patch(':id/reject')
+  @Auth(Role.ADMIN)
+  reject(@Param('id') id: string, @Body() dto: RejectAdDto) {
+    return this.adsService.reject(id, dto);
   }
 }

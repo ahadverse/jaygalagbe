@@ -10,6 +10,7 @@ import { CreateAdDto } from './dto/create-ad.dto.js';
 import { UpdateAdDto } from './dto/update-ad.dto.js';
 import { validateSectorAttributes } from './sector-attributes.validator.js';
 import { assertTransition } from './ad-status.util.js';
+import { RejectAdDto } from './dto/reject-ad.dto.js';
 
 function toInputJson(
   attributes: Record<string, unknown> | undefined,
@@ -139,6 +140,36 @@ export class AdsService {
     return this.prisma.ad.update({
       where: { id },
       data: { status: AdStatus.PENDING, rejectionReason: null },
+    });
+  }
+
+  async approve(id: string) {
+    const ad = await this.prisma.ad.findUnique({ where: { id } });
+    if (!ad) {
+      throw new NotFoundException('Ad not found');
+    }
+    assertTransition(ad.status, AdStatus.LIVE);
+
+    return this.prisma.ad.update({
+      where: { id },
+      data: { status: AdStatus.LIVE, rejectionReason: null },
+    });
+  }
+
+  async reject(id: string, dto: RejectAdDto) {
+    const ad = await this.prisma.ad.findUnique({ where: { id } });
+    if (!ad) {
+      throw new NotFoundException('Ad not found');
+    }
+    assertTransition(ad.status, AdStatus.REJECTED);
+
+    const rejectionReason = dto.note
+      ? `${dto.reasonCode}: ${dto.note}`
+      : dto.reasonCode;
+
+    return this.prisma.ad.update({
+      where: { id },
+      data: { status: AdStatus.REJECTED, rejectionReason },
     });
   }
 
