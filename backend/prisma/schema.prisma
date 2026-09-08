@@ -24,5 +24,43 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  ads Ad[]
+
   @@map("users")
+}
+
+enum Sector {
+  LAND
+  HOUSE_RENT
+}
+
+enum AdStatus {
+  PENDING
+  LIVE
+  REJECTED
+  SOLD
+  REMOVED
+}
+
+model Ad {
+  id               String   @id @default(cuid())
+  ownerId          String
+  owner            User     @relation(fields: [ownerId], references: [id])
+  sector           Sector
+  title            String
+  description      String
+  price            Decimal  @db.Decimal(12, 2)
+  locationArea     String
+  locationDistrict String
+  address          String?
+  latitude         Float?
+  longitude        Float?
+  attributes       Json?
+  photos           String[]
+  status           AdStatus @default(PENDING)
+  rejectionReason  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("ads")
 }
