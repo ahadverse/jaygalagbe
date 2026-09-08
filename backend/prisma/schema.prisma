@@ -29,6 +29,9 @@ model User {
   customerConversations   Conversation[] @relation("CustomerConversations")
   advertiserConversations Conversation[] @relation("AdvertiserConversations")
   sentMessages            Message[]
+  reviewsGiven            Review[]       @relation("CustomerReviews")
+  reviewsReceived         Review[]       @relation("AdvertiserReviews")
+  reportsFiled            Report[]
 
   @@map("users")
 }
@@ -69,6 +72,7 @@ model Ad {
   payments      Payment[]
   boosts        Boost[]
   conversations Conversation[]
+  reports       Report[]
 
   @@map("ads")
 }
@@ -161,4 +165,38 @@ model Message {
   createdAt      DateTime     @default(now())
 
   @@map("messages")
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  advertiserId String
+  advertiser   User     @relation("AdvertiserReviews", fields: [advertiserId], references: [id])
+  customerId   String
+  customer     User     @relation("CustomerReviews", fields: [customerId], references: [id])
+  rating       Int
+  comment      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([advertiserId, customerId])
+  @@map("reviews")
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  adId       String
+  ad         Ad           @relation(fields: [adId], references: [id])
+  reporterId String
+  reporter   User         @relation(fields: [reporterId], references: [id])
+  reason     String
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+
+  @@map("reports")
 }
