@@ -24,8 +24,11 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  ads      Ad[]
-  payments Payment[]
+  ads                     Ad[]
+  payments                Payment[]
+  customerConversations   Conversation[] @relation("CustomerConversations")
+  advertiserConversations Conversation[] @relation("AdvertiserConversations")
+  sentMessages            Message[]
 
   @@map("users")
 }
@@ -63,8 +66,9 @@ model Ad {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  payments Payment[]
-  boosts   Boost[]
+  payments      Payment[]
+  boosts        Boost[]
+  conversations Conversation[]
 
   @@map("ads")
 }
@@ -126,4 +130,35 @@ model Boost {
   updatedAt DateTime    @updatedAt
 
   @@map("boosts")
+}
+
+model Conversation {
+  id           String   @id @default(cuid())
+  adId         String
+  ad           Ad       @relation(fields: [adId], references: [id])
+  customerId   String
+  customer     User     @relation("CustomerConversations", fields: [customerId], references: [id])
+  advertiserId String
+  advertiser   User     @relation("AdvertiserConversations", fields: [advertiserId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  messages Message[]
+
+  @@unique([adId, customerId, advertiserId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  body           String
+  deliveredAt    DateTime?
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@map("messages")
 }
