@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service.js';
@@ -36,5 +37,10 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteAccount(@CurrentUser() user: AuthenticatedUser) {
     return this.usersService.deleteAccount(user.id);
+  }
+
+  @Post('me/advertiser-upgrade')
+  upgradeToAdvertiser(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.upgradeToAdvertiser(user.id);
   }
 }
