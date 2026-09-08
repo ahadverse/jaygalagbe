@@ -32,6 +32,9 @@ model User {
   reviewsGiven            Review[]       @relation("CustomerReviews")
   reviewsReceived         Review[]       @relation("AdvertiserReviews")
   reportsFiled            Report[]
+  adImpressions           AdImpression[]
+  adVisits                AdVisit[]
+  adConversions           AdConversion[]
 
   @@map("users")
 }
@@ -73,6 +76,9 @@ model Ad {
   boosts        Boost[]
   conversations Conversation[]
   reports       Report[]
+  impressions   AdImpression[]
+  visits        AdVisit[]
+  conversions   AdConversion[]
 
   @@map("ads")
 }
@@ -199,4 +205,49 @@ model Report {
   createdAt  DateTime     @default(now())
 
   @@map("reports")
+}
+
+enum ImpressionContext {
+  SEARCH
+  SECTOR_LISTING
+  HOMEPAGE
+}
+
+model AdImpression {
+  id        String            @id @default(cuid())
+  adId      String
+  ad        Ad                @relation(fields: [adId], references: [id])
+  viewerId  String?
+  viewer    User?             @relation(fields: [viewerId], references: [id])
+  context   ImpressionContext
+  createdAt DateTime          @default(now())
+
+  @@map("ad_impressions")
+}
+
+model AdVisit {
+  id        String   @id @default(cuid())
+  adId      String
+  ad        Ad       @relation(fields: [adId], references: [id])
+  viewerId  String?
+  viewer    User?    @relation(fields: [viewerId], references: [id])
+  sessionId String
+  createdAt DateTime @default(now())
+
+  conversion AdConversion?
+
+  @@map("ad_visits")
+}
+
+model AdConversion {
+  id          String   @id @default(cuid())
+  adId        String
+  ad          Ad       @relation(fields: [adId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  visitId     String?  @unique
+  visit       AdVisit? @relation(fields: [visitId], references: [id])
+  convertedAt DateTime @default(now())
+
+  @@map("ad_conversions")
 }
