@@ -5,6 +5,8 @@ build/
 .env.*
 !.env.example
 coverage/
+backend/src/generated/
+*.tsbuildinfo
 *.log
 .DS_Store
 Thumbs.db
