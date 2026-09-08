@@ -65,4 +65,16 @@ export class AdsController {
   remove(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.adsService.softDelete(id, user);
   }
+
+  @Patch(':id/mark-sold')
+  @UseGuards(JwtAuthGuard)
+  markSold(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.adsService.markSold(id, user.id);
+  }
+
+  @Patch(':id/resubmit')
+  @UseGuards(JwtAuthGuard)
+  resubmit(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.adsService.resubmit(id, user.id);
+  }
 }

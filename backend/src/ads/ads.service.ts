@@ -9,6 +9,7 @@ import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import { CreateAdDto } from './dto/create-ad.dto.js';
 import { UpdateAdDto } from './dto/update-ad.dto.js';
 import { validateSectorAttributes } from './sector-attributes.validator.js';
+import { assertTransition } from './ad-status.util.js';
 
 function toInputJson(
   attributes: Record<string, unknown> | undefined,
@@ -101,10 +102,43 @@ export class AdsService {
     if (ad.ownerId !== requester.id && !requester.isAdmin) {
       throw new ForbiddenException('You do not own this ad');
     }
+    assertTransition(ad.status, AdStatus.REMOVED);
 
     await this.prisma.ad.update({
       where: { id },
       data: { status: AdStatus.REMOVED },
+    });
+  }
+
+  async markSold(id: string, ownerId: string) {
+    const ad = await this.prisma.ad.findUnique({ where: { id } });
+    if (!ad) {
+      throw new NotFoundException('Ad not found');
+    }
+    if (ad.ownerId !== ownerId) {
+      throw new ForbiddenException('You do not own this ad');
+    }
+    assertTransition(ad.status, AdStatus.SOLD);
+
+    return this.prisma.ad.update({
+      where: { id },
+      data: { status: AdStatus.SOLD },
+    });
+  }
+
+  async resubmit(id: string, ownerId: string) {
+    const ad = await this.prisma.ad.findUnique({ where: { id } });
+    if (!ad) {
+      throw new NotFoundException('Ad not found');
+    }
+    if (ad.ownerId !== ownerId) {
+      throw new ForbiddenException('You do not own this ad');
+    }
+    assertTransition(ad.status, AdStatus.PENDING);
+
+    return this.prisma.ad.update({
+      where: { id },
+      data: { status: AdStatus.PENDING, rejectionReason: null },
     });
   }
 
