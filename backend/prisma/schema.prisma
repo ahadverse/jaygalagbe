@@ -24,7 +24,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  ads Ad[]
+  ads      Ad[]
+  payments Payment[]
 
   @@map("users")
 }
@@ -62,5 +63,67 @@ model Ad {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  payments Payment[]
+  boosts   Boost[]
+
   @@map("ads")
+}
+
+enum BoostTier {
+  THREE_DAY
+  SEVEN_DAY
+  FIFTEEN_DAY
+}
+
+enum BoostStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentGateway {
+  BKASH
+  NAGAD
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Payment {
+  id         String         @id @default(cuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id])
+  adId       String
+  ad         Ad             @relation(fields: [adId], references: [id])
+  gateway    PaymentGateway
+  gatewayRef String?        @unique
+  amount     Decimal        @db.Decimal(12, 2)
+  status     PaymentStatus  @default(PENDING)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  boost Boost?
+
+  @@map("payments")
+}
+
+model Boost {
+  id        String      @id @default(cuid())
+  adId      String
+  ad        Ad          @relation(fields: [adId], references: [id])
+  tier      BoostTier
+  startAt   DateTime?
+  endAt     DateTime?
+  paymentId String      @unique
+  payment   Payment     @relation(fields: [paymentId], references: [id])
+  status    BoostStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("boosts")
 }
