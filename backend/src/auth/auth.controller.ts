@@ -13,6 +13,8 @@ import { LoginDto } from './dto/login.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { CurrentUser } from './current-user.decorator.js';
 import type { AuthenticatedUser } from './current-user.decorator.js';
+import { Auth } from './auth.decorator.js';
+import { Role } from './role.enum.js';
 
 @Controller('auth')
 export class AuthController {
@@ -33,5 +35,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: AuthenticatedUser) {
     return user;
+  }
+
+  @Get('admin-check')
+  @Auth(Role.ADMIN)
+  adminCheck(@CurrentUser() user: AuthenticatedUser) {
+    return { ok: true, userId: user.id };
   }
 }
