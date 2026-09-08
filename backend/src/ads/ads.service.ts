@@ -8,6 +8,7 @@ import { AdStatus, Sector, type Prisma } from '../generated/prisma/client.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import { CreateAdDto } from './dto/create-ad.dto.js';
 import { UpdateAdDto } from './dto/update-ad.dto.js';
+import { validateSectorAttributes } from './sector-attributes.validator.js';
 
 function toInputJson(
   attributes: Record<string, unknown> | undefined,
@@ -20,6 +21,8 @@ export class AdsService {
   constructor(private readonly prisma: PrismaService) {}
 
   create(ownerId: string, dto: CreateAdDto) {
+    const attributes = validateSectorAttributes(dto.sector, dto.attributes);
+
     return this.prisma.ad.create({
       data: {
         ownerId,
@@ -33,7 +36,7 @@ export class AdsService {
         latitude: dto.latitude,
         longitude: dto.longitude,
         photos: dto.photos ?? [],
-        attributes: toInputJson(dto.attributes),
+        attributes: toInputJson(attributes),
       },
     });
   }
@@ -69,6 +72,10 @@ export class AdsService {
       throw new ForbiddenException('You do not own this ad');
     }
 
+    const attributes = dto.attributes
+      ? validateSectorAttributes(ad.sector, dto.attributes)
+      : undefined;
+
     return this.prisma.ad.update({
       where: { id },
       data: {
@@ -81,7 +88,7 @@ export class AdsService {
         latitude: dto.latitude,
         longitude: dto.longitude,
         photos: dto.photos,
-        attributes: toInputJson(dto.attributes),
+        attributes: toInputJson(attributes),
       },
     });
   }
