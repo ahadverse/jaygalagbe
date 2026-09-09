@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service.js';
 import { LogImpressionDto } from './dto/log-impression.dto.js';
 import { LogVisitDto } from './dto/log-visit.dto.js';
@@ -8,6 +9,8 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 
+@ApiTags('Analytics')
+@ApiBearerAuth()
 @Controller('ads/:adId')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}

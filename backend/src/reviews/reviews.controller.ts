@@ -9,12 +9,15 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service.js';
 import { UpsertReviewDto } from './dto/upsert-review.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 
+@ApiTags('Reviews')
+@ApiBearerAuth()
 @Controller('advertisers/:advertiserId/reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}

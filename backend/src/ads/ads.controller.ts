@@ -11,6 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdsService } from './ads.service.js';
 import { CreateAdDto } from './dto/create-ad.dto.js';
 import { UpdateAdDto } from './dto/update-ad.dto.js';
@@ -23,6 +24,8 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 
+@ApiTags('Ads')
+@ApiBearerAuth()
 @Controller('ads')
 export class AdsController {
   constructor(private readonly adsService: AdsService) {}
