@@ -1,26 +1,126 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Jayga Lagbe design system tokens.
+ * Brand = deep green/teal (land, trust). Accent = warm terracotta (boosted
+ * listings, primary CTAs). Neutral = warm-tinted gray, not clinical gray.
+ * All scales are hand-tuned OKLCH ramps so hue stays consistent as
+ * lightness/chroma move — deliberately not the default Tailwind palette.
+ */
+@theme {
+  --color-brand-50: oklch(97.5% 0.02 160);
+  --color-brand-100: oklch(94% 0.045 160);
+  --color-brand-200: oklch(87% 0.075 160);
+  --color-brand-300: oklch(77% 0.105 160);
+  --color-brand-400: oklch(66% 0.13 160);
+  --color-brand-500: oklch(56% 0.135 160);
+  --color-brand-600: oklch(48% 0.125 160);
+  --color-brand-700: oklch(40% 0.11 160);
+  --color-brand-800: oklch(33% 0.09 160);
+  --color-brand-900: oklch(27% 0.07 160);
+  --color-brand-950: oklch(18% 0.045 160);
+
+  --color-accent-50: oklch(97.5% 0.02 55);
+  --color-accent-100: oklch(94% 0.05 55);
+  --color-accent-200: oklch(87% 0.09 55);
+  --color-accent-300: oklch(78% 0.13 50);
+  --color-accent-400: oklch(70% 0.16 45);
+  --color-accent-500: oklch(63% 0.18 40);
+  --color-accent-600: oklch(56% 0.17 35);
+  --color-accent-700: oklch(47% 0.15 32);
+  --color-accent-800: oklch(38% 0.12 30);
+  --color-accent-900: oklch(30% 0.09 28);
+  --color-accent-950: oklch(20% 0.06 25);
+
+  --color-neutral-50: oklch(98.5% 0.003 80);
+  --color-neutral-100: oklch(96% 0.005 80);
+  --color-neutral-200: oklch(92% 0.007 80);
+  --color-neutral-300: oklch(85% 0.009 80);
+  --color-neutral-400: oklch(70% 0.011 80);
+  --color-neutral-500: oklch(56% 0.012 80);
+  --color-neutral-600: oklch(46% 0.011 80);
+  --color-neutral-700: oklch(37% 0.01 80);
+  --color-neutral-800: oklch(27% 0.008 80);
+  --color-neutral-900: oklch(19% 0.006 80);
+  --color-neutral-950: oklch(12% 0.004 80);
+
+  --color-success-50: oklch(97.5% 0.02 160);
+  --color-success-100: oklch(94% 0.045 160);
+  --color-success-500: oklch(56% 0.135 160);
+  --color-success-600: oklch(48% 0.125 160);
+  --color-success-700: oklch(40% 0.11 160);
+
+  --color-warning-50: oklch(97.5% 0.03 90);
+  --color-warning-100: oklch(94% 0.06 88);
+  --color-warning-500: oklch(75% 0.16 85);
+  --color-warning-600: oklch(65% 0.16 78);
+  --color-warning-700: oklch(52% 0.14 70);
+
+  --color-danger-50: oklch(97% 0.02 25);
+  --color-danger-100: oklch(93% 0.05 25);
+  --color-danger-500: oklch(58% 0.2 27);
+  --color-danger-600: oklch(52% 0.19 25);
+  --color-danger-700: oklch(44% 0.17 23);
+
+  --color-info-50: oklch(97% 0.015 240);
+  --color-info-100: oklch(93% 0.035 240);
+  --color-info-500: oklch(60% 0.16 250);
+  --color-info-600: oklch(52% 0.17 253);
+  --color-info-700: oklch(44% 0.16 255);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --font-sans: var(--font-display), system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/*
+ * Semantic surface tokens — the only things that flip for dark mode.
+ * Raw values live under distinct names so `@theme inline` below can alias
+ * them to `--color-*` tokens without a self-referential var().
+ */
+:root {
+  --surface: var(--color-neutral-50);
+  --surface-foreground: var(--color-neutral-900);
+  --border-color: var(--color-neutral-200);
+  --muted-surface: var(--color-neutral-100);
+  --muted-foreground-color: var(--color-neutral-600);
+  --primary-color: var(--color-brand-600);
+  --primary-foreground-color: var(--color-brand-50);
+  --accent-color: var(--color-accent-500);
+  --accent-foreground-color: var(--color-accent-50);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --surface: var(--color-neutral-950);
+    --surface-foreground: var(--color-neutral-50);
+    --border-color: var(--color-neutral-800);
+    --muted-surface: var(--color-neutral-900);
+    --muted-foreground-color: var(--color-neutral-400);
+    --primary-color: var(--color-brand-400);
+    --primary-foreground-color: var(--color-brand-950);
+    --accent-color: var(--color-accent-400);
+    --accent-foreground-color: var(--color-accent-950);
   }
 }
 
+@theme inline {
+  --color-background: var(--surface);
+  --color-foreground: var(--surface-foreground);
+  --color-border: var(--border-color);
+  --color-muted: var(--muted-surface);
+  --color-muted-foreground: var(--muted-foreground-color);
+  --color-primary: var(--primary-color);
+  --color-primary-foreground: var(--primary-foreground-color);
+  --color-accent: var(--accent-color);
+  --color-accent-foreground: var(--accent-foreground-color);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
 }
