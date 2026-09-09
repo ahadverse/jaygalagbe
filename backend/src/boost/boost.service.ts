@@ -65,4 +65,34 @@ export class BoostService {
       });
     });
   }
+
+  async activateOnPaymentSuccess(paymentId: string) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { boost: true },
+    });
+    if (!payment || !payment.boost) {
+      throw new NotFoundException('Payment not found');
+    }
+    if (payment.status !== PaymentStatus.PENDING) {
+      return payment.boost;
+    }
+
+    const { days } = BOOST_TIER_CONFIG[payment.boost.tier];
+    const startAt = new Date();
+    const endAt = new Date(startAt.getTime() + days * 24 * 60 * 60 * 1000);
+
+    const [, boost] = await this.prisma.$transaction([
+      this.prisma.payment.update({
+        where: { id: paymentId },
+        data: { status: PaymentStatus.SUCCESS },
+      }),
+      this.prisma.boost.update({
+        where: { id: payment.boost.id },
+        data: { status: BoostStatus.ACTIVE, startAt, endAt },
+      }),
+    ]);
+
+    return boost;
+  }
 }
