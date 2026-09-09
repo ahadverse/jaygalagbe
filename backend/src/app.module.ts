@@ -6,9 +6,17 @@ import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { AdsModule } from './ads/ads.module.js';
 import { BoostModule } from './boost/boost.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, AdsModule, BoostModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    AdsModule,
+    BoostModule,
+    PaymentsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
