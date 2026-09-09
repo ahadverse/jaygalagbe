@@ -12,6 +12,7 @@ import { MessagingModule } from './messaging/messaging.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
+import { AdminModule } from './admin/admin.module.js';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AnalyticsModule } from './analytics/analytics.module.js';
     NotificationsModule,
     ReviewsModule,
     AnalyticsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

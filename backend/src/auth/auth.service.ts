@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -70,6 +71,10 @@ export class AuthService {
     );
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.isSuspended) {
+      throw new ForbiddenException('This account has been suspended');
     }
 
     return this.buildAuthResponse(user);
