@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module.js';
 import { AdsModule } from './ads/ads.module.js';
 import { BoostModule } from './boost/boost.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { MessagingModule } from './messaging/messaging.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { PaymentsModule } from './payments/payments.module.js';
     AdsModule,
     BoostModule,
     PaymentsModule,
+    MessagingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
