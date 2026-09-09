@@ -11,6 +11,7 @@ import { PaymentsModule } from './payments/payments.module.js';
 import { MessagingModule } from './messaging/messaging.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
+import { AnalyticsModule } from './analytics/analytics.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ReviewsModule } from './reviews/reviews.module.js';
     MessagingModule,
     NotificationsModule,
     ReviewsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
