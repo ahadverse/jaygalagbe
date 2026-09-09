@@ -10,6 +10,7 @@ import { BoostModule } from './boost/boost.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { MessagingModule } from './messaging/messaging.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
+import { ReviewsModule } from './reviews/reviews.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
     PaymentsModule,
     MessagingModule,
     NotificationsModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
