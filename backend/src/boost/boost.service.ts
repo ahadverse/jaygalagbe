@@ -95,4 +95,30 @@ export class BoostService {
 
     return boost;
   }
+
+  async cancelOnPaymentFailure(paymentId: string) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { boost: true },
+    });
+    if (!payment || !payment.boost) {
+      throw new NotFoundException('Payment not found');
+    }
+    if (payment.status !== PaymentStatus.PENDING) {
+      return payment.boost;
+    }
+
+    const [, boost] = await this.prisma.$transaction([
+      this.prisma.payment.update({
+        where: { id: paymentId },
+        data: { status: PaymentStatus.FAILED },
+      }),
+      this.prisma.boost.update({
+        where: { id: payment.boost.id },
+        data: { status: BoostStatus.CANCELLED },
+      }),
+    ]);
+
+    return boost;
+  }
 }

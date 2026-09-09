@@ -1,4 +1,11 @@
-import { Controller, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { PaymentsService } from './payments.service.js';
 import { Auth } from '../auth/auth.decorator.js';
 import { Role } from '../auth/role.enum.js';
@@ -13,5 +20,11 @@ export class PaymentsController {
   @Auth(Role.ADVERTISER)
   checkout(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.paymentsService.initCheckout(id, user.id);
+  }
+
+  @Post('ipn')
+  @HttpCode(HttpStatus.OK)
+  handleIpn(@Body() body: Record<string, string>) {
+    return this.paymentsService.handleIpn(body);
   }
 }

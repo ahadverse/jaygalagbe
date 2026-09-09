@@ -3,13 +3,19 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PaymentStatus } from '../generated/prisma/client.js';
+import { BoostService } from '../boost/boost.service.js';
 import {
   getSslcommerzCredentials,
   sslcommerzBaseUrl,
 } from './sslcommerz.config.js';
+import { verifySslcommerzSignature } from './sslcommerz-signature.util.js';
+
+const SUCCESS_STATUSES = new Set(['VALID', 'VALIDATED']);
+const FAILURE_STATUSES = new Set(['FAILED', 'CANCELLED', 'EXPIRED']);
 
 interface SslcommerzInitResponse {
   status: string;
@@ -20,7 +26,10 @@ interface SslcommerzInitResponse {
 
 @Injectable()
 export class PaymentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly boostService: BoostService,
+  ) {}
 
   async initCheckout(paymentId: string, requesterId: string) {
     const payment = await this.prisma.payment.findUnique({
@@ -84,5 +93,28 @@ export class PaymentsService {
     });
 
     return { gatewayPageUrl: data.GatewayPageURL };
+  }
+
+  async handleIpn(payload: Record<string, string>) {
+    const { storePassword } = getSslcommerzCredentials();
+    if (!verifySslcommerzSignature(payload, storePassword)) {
+      throw new UnauthorizedException('Invalid payment signature');
+    }
+
+    const paymentId = payload.tran_id;
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+    });
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    if (SUCCESS_STATUSES.has(payload.status)) {
+      await this.boostService.activateOnPaymentSuccess(paymentId);
+    } else if (FAILURE_STATUSES.has(payload.status)) {
+      await this.boostService.cancelOnPaymentFailure(paymentId);
+    }
+
+    return { received: true };
   }
 }
