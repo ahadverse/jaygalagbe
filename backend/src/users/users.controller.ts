@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
+import { RegisterFcmTokenDto } from './dto/register-fcm-token.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
@@ -42,5 +43,20 @@ export class UsersController {
   @Post('me/advertiser-upgrade')
   upgradeToAdvertiser(@CurrentUser() user: AuthenticatedUser) {
     return this.usersService.upgradeToAdvertiser(user.id);
+  }
+
+  @Post('me/fcm-token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  registerFcmToken(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RegisterFcmTokenDto,
+  ) {
+    return this.usersService.registerFcmToken(user.id, dto);
+  }
+
+  @Delete('me/fcm-token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  clearFcmToken(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.clearFcmToken(user.id);
   }
 }

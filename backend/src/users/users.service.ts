@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
+import { RegisterFcmTokenDto } from './dto/register-fcm-token.dto.js';
 
 function byEmailOrPhone(email?: string, phone?: string): Prisma.UserWhereInput {
   const or: Prisma.UserWhereInput[] = [];
@@ -70,6 +71,20 @@ export class UsersService {
     });
 
     return sanitize(updated);
+  }
+
+  async registerFcmToken(id: string, dto: RegisterFcmTokenDto) {
+    await this.prisma.user.update({
+      where: { id },
+      data: { fcmToken: dto.token },
+    });
+  }
+
+  async clearFcmToken(id: string) {
+    await this.prisma.user.update({
+      where: { id },
+      data: { fcmToken: null },
+    });
   }
 }
 

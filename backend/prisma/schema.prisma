@@ -21,6 +21,7 @@ model User {
   isAdvertiser Boolean  @default(false)
   isAdmin      Boolean  @default(false)
   isVerified   Boolean  @default(false)
+  fcmToken     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
