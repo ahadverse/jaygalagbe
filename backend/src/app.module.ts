@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -8,9 +9,11 @@ import { AdsModule } from './ads/ads.module.js';
 import { BoostModule } from './boost/boost.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { MessagingModule } from './messaging/messaging.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -18,6 +21,7 @@ import { MessagingModule } from './messaging/messaging.module.js';
     BoostModule,
     PaymentsModule,
     MessagingModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

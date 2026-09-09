@@ -3,9 +3,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AdStatus, Sector, type Prisma } from '../generated/prisma/client.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
+import {
+  NotificationEvent,
+  type AdApprovedPayload,
+  type AdRejectedPayload,
+} from '../notifications/notification-events.js';
 import { CreateAdDto } from './dto/create-ad.dto.js';
 import { UpdateAdDto } from './dto/update-ad.dto.js';
 import { validateSectorAttributes } from './sector-attributes.validator.js';
@@ -20,7 +26,10 @@ function toInputJson(
 
 @Injectable()
 export class AdsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   create(ownerId: string, dto: CreateAdDto) {
     const attributes = validateSectorAttributes(dto.sector, dto.attributes);
@@ -150,10 +159,18 @@ export class AdsService {
     }
     assertTransition(ad.status, AdStatus.LIVE);
 
-    return this.prisma.ad.update({
+    const updated = await this.prisma.ad.update({
       where: { id },
       data: { status: AdStatus.LIVE, rejectionReason: null },
     });
+
+    this.eventEmitter.emit(NotificationEvent.AdApproved, {
+      userId: updated.ownerId,
+      adId: updated.id,
+      adTitle: updated.title,
+    } satisfies AdApprovedPayload);
+
+    return updated;
   }
 
   async reject(id: string, dto: RejectAdDto) {
@@ -167,10 +184,19 @@ export class AdsService {
       ? `${dto.reasonCode}: ${dto.note}`
       : dto.reasonCode;
 
-    return this.prisma.ad.update({
+    const updated = await this.prisma.ad.update({
       where: { id },
       data: { status: AdStatus.REJECTED, rejectionReason },
     });
+
+    this.eventEmitter.emit(NotificationEvent.AdRejected, {
+      userId: updated.ownerId,
+      adId: updated.id,
+      adTitle: updated.title,
+      reason: rejectionReason,
+    } satisfies AdRejectedPayload);
+
+    return updated;
   }
 
   private canView(

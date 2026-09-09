@@ -4,8 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Conversation } from '../generated/prisma/client.js';
+import {
+  NotificationEvent,
+  type MessageReceivedPayload,
+} from '../notifications/notification-events.js';
 import { CreateConversationDto } from './dto/create-conversation.dto.js';
 import { CreateMessageDto } from './dto/create-message.dto.js';
 
@@ -17,7 +22,10 @@ const conversationSummaryInclude = {
 
 @Injectable()
 export class MessagingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async startConversation(customerId: string, dto: CreateConversationDto) {
     const ad = await this.prisma.ad.findUnique({ where: { id: dto.adId } });
@@ -93,6 +101,18 @@ export class MessagingService {
         data: {},
       }),
     ]);
+
+    const recipientId =
+      conversation.customerId === senderId
+        ? conversation.advertiserId
+        : conversation.customerId;
+    this.eventEmitter.emit(NotificationEvent.MessageReceived, {
+      userId: recipientId,
+      conversationId: conversation.id,
+      senderId,
+      body: message.body,
+    } satisfies MessageReceivedPayload);
+
     return message;
   }
 

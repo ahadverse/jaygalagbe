@@ -1,8 +1,4 @@
-import {
-  UnauthorizedException,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common';
+import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
@@ -16,7 +12,7 @@ import {
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { JwtPayload } from '../auth/jwt.strategy.js';
+import { authenticateSocket } from '../auth/ws-auth.util.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import { MessagingService } from './messaging.service.js';
 import { ConversationRoomDto } from './dto/conversation-room.dto.js';
@@ -24,15 +20,6 @@ import { SendMessageWsDto } from './dto/send-message-ws.dto.js';
 
 function roomName(conversationId: string): string {
   return `conversation:${conversationId}`;
-}
-
-function extractToken(client: Socket): string | undefined {
-  const authToken = client.handshake.auth?.token as string | undefined;
-  if (authToken) {
-    return authToken;
-  }
-  const header = client.handshake.headers.authorization;
-  return header?.startsWith('Bearer ') ? header.slice(7) : undefined;
 }
 
 @WebSocketGateway({ cors: true })
@@ -51,7 +38,11 @@ export class MessagingGateway
 
   async handleConnection(client: Socket) {
     try {
-      client.data.user = await this.authenticate(client);
+      client.data.user = await authenticateSocket(
+        client,
+        this.jwtService,
+        this.prisma,
+      );
     } catch {
       client.disconnect(true);
     }
@@ -116,23 +107,5 @@ export class MessagingGateway
       throw new WsException('Unauthorized');
     }
     return user;
-  }
-
-  private async authenticate(client: Socket): Promise<AuthenticatedUser> {
-    const token = extractToken(client);
-    if (!token) {
-      throw new UnauthorizedException('Missing auth token');
-    }
-
-    const payload = this.jwtService.verify<JwtPayload>(token);
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-    });
-    if (!user) {
-      throw new UnauthorizedException('Invalid auth token');
-    }
-
-    const { passwordHash: _passwordHash, ...safeUser } = user;
-    return safeUser;
   }
 }
