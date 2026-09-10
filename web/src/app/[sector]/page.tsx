@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { AdCard } from "@/components/ads/ad-card";
+import { TrackedAdCard } from "@/components/ads/tracked-ad-card";
 import { SectorFilters, type SectorFilterValues } from "@/components/ads/sector-filters";
 import { fetchLiveAds } from "@/lib/ads/fetch-live-ads";
 import { filterAndSortAds, type SortOption } from "@/lib/ads/filter-ads";
@@ -111,7 +111,7 @@ export default async function SectorPage({
             </p>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredAds.map((ad) => (
-                <AdCard key={ad.id} ad={ad} />
+                <TrackedAdCard key={ad.id} ad={ad} context="SECTOR_LISTING" />
               ))}
             </div>
           </>

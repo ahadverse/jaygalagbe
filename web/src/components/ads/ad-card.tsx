@@ -1,34 +1,11 @@
 import Link from "next/link";
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { formatPrice } from "@/lib/format";
-import type { Ad, HouseRentAttributes, LandAttributes } from "@/lib/ads/types";
-
-function summarize(ad: Ad): string {
-  if (ad.sector === "LAND") {
-    const attrs = ad.attributes as LandAttributes | null;
-    if (!attrs) return "";
-    return [
-      `${attrs.sizeKatha} katha`,
-      attrs.propertyType,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-  }
-
-  const attrs = ad.attributes as HouseRentAttributes | null;
-  if (!attrs) return "";
-  return [
-    `${attrs.bedrooms} bed`,
-    attrs.bathrooms != null ? `${attrs.bathrooms} bath` : undefined,
-    attrs.furnished ? "Furnished" : undefined,
-    attrs.propertyType,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-}
+import { summarizeAdAttributes } from "@/lib/ads/describe-attributes";
+import type { Ad } from "@/lib/ads/types";
 
 export function AdCard({ ad }: { ad: Ad }) {
-  const summary = summarize(ad);
+  const summary = summarizeAdAttributes(ad);
 
   return (
     <Link href={`/ads/${ad.id}`}>

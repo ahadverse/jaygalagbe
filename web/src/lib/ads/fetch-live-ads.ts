@@ -1,6 +1,5 @@
+import { API_URL } from "@/lib/api/config";
 import type { Ad, Sector } from "./types";
-
-const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
 export async function fetchLiveAds(
   sector: Sector,
