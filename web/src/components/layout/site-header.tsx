@@ -3,6 +3,7 @@ import { Button, buttonVariants } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/lib/auth/actions";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import type { AuthUser } from "@/lib/auth/types";
 
 const navLinks = [
@@ -46,7 +47,7 @@ export function SiteHeader({ user }: { user: AuthUser | null }) {
               >
                 {user.name.split(" ")[0]}
               </Link>
-              <form action={logoutAction}>
+              <form action={logoutAction} className="hidden sm:block">
                 <Button type="submit" variant="ghost" size="sm">
                   Log out
                 </Button>
@@ -69,6 +70,7 @@ export function SiteHeader({ user }: { user: AuthUser | null }) {
           >
             Post an ad
           </Link>
+          <MobileNav user={user} />
         </div>
       </div>
     </header>

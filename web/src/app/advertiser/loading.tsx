@@ -13,8 +13,11 @@ export default function AdvertiserAdsLoading() {
 
       <div className="flex flex-col gap-4">
         {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="flex gap-4 rounded-xl border border-border p-4">
-            <Skeleton className="h-20 w-28 shrink-0 rounded-lg" />
+          <div
+            key={index}
+            className="flex flex-col gap-4 rounded-xl border border-border p-4 sm:flex-row"
+          >
+            <Skeleton className="h-40 w-full shrink-0 rounded-lg sm:h-20 sm:w-28" />
             <div className="flex flex-1 flex-col gap-2">
               <Skeleton className="h-5 w-20 rounded-full" />
               <Skeleton className="h-5 w-2/3" />

@@ -53,11 +53,11 @@ export default async function AdvertiserDashboardPage() {
             return (
               <div
                 key={ad.id}
-                className="flex gap-4 rounded-xl border border-border p-4 shadow-sm"
+                className="flex flex-col gap-4 rounded-xl border border-border p-4 shadow-sm sm:flex-row"
               >
                 <PhotoPlaceholder
                   sector={ad.sector}
-                  className="h-20 w-28 shrink-0 rounded-lg"
+                  className="h-40 w-full shrink-0 rounded-lg sm:h-20 sm:w-28"
                 />
                 <div className="flex flex-1 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">

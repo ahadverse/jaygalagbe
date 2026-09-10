@@ -45,19 +45,21 @@ export default function StyleGuidePage() {
             <p className="text-sm font-medium text-muted-foreground">
               {scale.name}
             </p>
-            <div className="grid grid-cols-11 gap-1">
-              {scaleSteps.map((step) => (
-                <div
-                  key={step}
-                  className="flex h-12 items-end justify-center rounded-sm p-1 text-[10px] font-medium"
-                  style={{
-                    background: `var(--color-${scale.prefix}-${step})`,
-                    color: step >= 500 ? "white" : "black",
-                  }}
-                >
-                  {step}
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <div className="grid min-w-[640px] grid-cols-11 gap-1">
+                {scaleSteps.map((step) => (
+                  <div
+                    key={step}
+                    className="flex h-12 items-end justify-center rounded-sm p-1 text-[10px] font-medium"
+                    style={{
+                      background: `var(--color-${scale.prefix}-${step})`,
+                      color: step >= 500 ? "white" : "black",
+                    }}
+                  >
+                    {step}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ))}
@@ -65,19 +67,21 @@ export default function StyleGuidePage() {
         <p className="text-sm font-medium text-muted-foreground">Semantic</p>
         <div className="flex flex-col gap-2">
           {semanticColors.map((scale) => (
-            <div key={scale.prefix} className="grid grid-cols-11 gap-1">
-              {semanticSteps.map((step) => (
-                <div
-                  key={step}
-                  className="col-span-2 flex h-12 items-end justify-center rounded-sm p-1 text-[10px] font-medium"
-                  style={{
-                    background: `var(--color-${scale.prefix}-${step})`,
-                    color: step >= 500 ? "white" : "black",
-                  }}
-                >
-                  {scale.prefix}-{step}
-                </div>
-              ))}
+            <div key={scale.prefix} className="overflow-x-auto">
+              <div className="grid min-w-[640px] grid-cols-11 gap-1">
+                {semanticSteps.map((step) => (
+                  <div
+                    key={step}
+                    className="col-span-2 flex h-12 items-end justify-center rounded-sm p-1 text-[10px] font-medium"
+                    style={{
+                      background: `var(--color-${scale.prefix}-${step})`,
+                      color: step >= 500 ? "white" : "black",
+                    }}
+                  >
+                    {scale.prefix}-{step}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
