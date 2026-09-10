@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/lib/auth/actions";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import type { AuthUser } from "@/lib/auth/types";
 
 const navLinks = [
@@ -35,6 +36,7 @@ export function SiteHeader({ user }: { user: AuthUser | null }) {
         <div className="flex items-center gap-2">
           {user ? (
             <>
+              <NotificationBell />
               <Link
                 href={user.isAdvertiser ? "/advertiser" : "/dashboard"}
                 className={cn(

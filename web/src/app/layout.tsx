@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { getCurrentUser } from "@/lib/auth/session";
+import { ToastProvider } from "@/lib/toast/toast-context";
 import "./globals.css";
 
 const display = Plus_Jakarta_Sans({
@@ -30,9 +31,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${displaySerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <SiteHeader user={user} />
-        <div className="flex flex-1 flex-col">{children}</div>
-        <SiteFooter />
+        <ToastProvider>
+          <SiteHeader user={user} />
+          <div className="flex flex-1 flex-col">{children}</div>
+          <SiteFooter />
+        </ToastProvider>
       </body>
     </html>
   );
