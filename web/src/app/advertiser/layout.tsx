@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth/require-user";
 import { UpgradePrompt } from "@/components/advertiser/upgrade-prompt";
+import { AdvertiserTabs } from "@/components/advertiser/advertiser-tabs";
 
 export default async function AdvertiserLayout({
   children,
@@ -14,5 +15,12 @@ export default async function AdvertiserLayout({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <div className="border-b border-border">
+        <AdvertiserTabs />
+      </div>
+      {children}
+    </>
+  );
 }

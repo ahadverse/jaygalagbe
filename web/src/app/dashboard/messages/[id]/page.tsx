@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
 import { fetchConversation, fetchMessages } from "@/lib/messaging/fetch-conversations";
-import { ReplyForm } from "@/components/messaging/reply-form";
-import { cn } from "@/lib/utils";
+import { ChatThread } from "@/components/messaging/chat-thread";
 
 export default async function ConversationPage({
   params,
@@ -33,30 +32,11 @@ export default async function ConversationPage({
         <p className="text-sm text-muted-foreground">{conversation.ad.title}</p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 rounded-xl border border-border p-4">
-        {messages.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No messages yet.</p>
-        ) : (
-          messages.map((message) => {
-            const mine = message.senderId === user.id;
-            return (
-              <div
-                key={message.id}
-                className={cn(
-                  "max-w-[80%] rounded-lg px-3 py-2 text-sm",
-                  mine
-                    ? "self-end bg-primary text-primary-foreground"
-                    : "self-start bg-muted text-foreground",
-                )}
-              >
-                {message.body}
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      <ReplyForm conversationId={conversation.id} />
+      <ChatThread
+        conversationId={conversation.id}
+        currentUserId={user.id}
+        initialMessages={messages}
+      />
     </main>
   );
 }
