@@ -5,6 +5,7 @@ import { ContactGate } from "@/components/ads/contact-gate";
 import { fetchAd } from "@/lib/ads/fetch-ad";
 import { describeAdAttributes } from "@/lib/ads/describe-attributes";
 import { formatPrice } from "@/lib/format";
+import { getCurrentUser } from "@/lib/auth/session";
 
 const statusBadge = {
   LIVE: { label: "Live", variant: "success" as const },
@@ -31,7 +32,7 @@ export async function generateMetadata({
 
 export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
   const { id } = await params;
-  const ad = await fetchAd(id);
+  const [ad, currentUser] = await Promise.all([fetchAd(id), getCurrentUser()]);
   if (!ad) {
     notFound();
   }
@@ -87,7 +88,11 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
         </div>
 
         <div className="flex flex-col gap-4">
-          <ContactGate adId={ad.id} />
+          <ContactGate
+            adId={ad.id}
+            ownerId={ad.ownerId}
+            currentUser={currentUser}
+          />
         </div>
       </div>
     </main>

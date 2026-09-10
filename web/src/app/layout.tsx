@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { getCurrentUser } from "@/lib/auth/session";
 import "./globals.css";
 
 const display = Plus_Jakarta_Sans({
@@ -14,11 +15,13 @@ export const metadata: Metadata = {
   description: "Find land and rental listings near you.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="en" className={`${display.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <SiteHeader />
+        <SiteHeader user={user} />
         <div className="flex flex-1 flex-col">{children}</div>
         <SiteFooter />
       </body>
