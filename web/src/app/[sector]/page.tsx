@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Button, Input } from "@/components/ui";
 import { AdCard } from "@/components/ads/ad-card";
+import { SectorFilters, type SectorFilterValues } from "@/components/ads/sector-filters";
 import { fetchLiveAds } from "@/lib/ads/fetch-live-ads";
+import { filterAndSortAds, type SortOption } from "@/lib/ads/filter-ads";
 import { getSectorConfig, sectorSlugs } from "@/lib/ads/sectors";
 
 export function generateStaticParams() {
@@ -24,18 +25,54 @@ export async function generateMetadata({
   };
 }
 
-export default async function SectorPage({ params, searchParams }: PageProps<"/[sector]">) {
+function firstValue(value?: string | string[]): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseNumber(value?: string): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+export default async function SectorPage({
+  params,
+  searchParams,
+}: PageProps<"/[sector]">) {
   const { sector } = await params;
   const config = getSectorConfig(sector);
   if (!config) {
     notFound();
   }
 
-  const resolvedSearchParams = await searchParams;
-  const locationParam = resolvedSearchParams?.location;
-  const location = Array.isArray(locationParam) ? locationParam[0] : locationParam;
+  const resolved = await searchParams;
+  const values: SectorFilterValues = {
+    q: firstValue(resolved?.q),
+    location: firstValue(resolved?.location),
+    minPrice: firstValue(resolved?.minPrice),
+    maxPrice: firstValue(resolved?.maxPrice),
+    propertyType: firstValue(resolved?.propertyType),
+    minSize: firstValue(resolved?.minSize),
+    bedrooms: firstValue(resolved?.bedrooms),
+    sort: firstValue(resolved?.sort),
+  };
+  const hasActiveFilters = Object.values(values).some(
+    (value) => value && value !== "newest",
+  );
 
-  const { ads, error } = await fetchLiveAds(config.sector, location);
+  const { ads, error } = await fetchLiveAds(config.sector);
+  const filteredAds = error
+    ? []
+    : filterAndSortAds(ads, config.sector, {
+        q: values.q,
+        location: values.location,
+        minPrice: parseNumber(values.minPrice),
+        maxPrice: parseNumber(values.maxPrice),
+        propertyType: values.propertyType || undefined,
+        minSize: parseNumber(values.minSize),
+        bedrooms: parseNumber(values.bedrooms),
+        sort: (values.sort as SortOption) || "newest",
+      });
 
   return (
     <main className="flex flex-1 flex-col">
@@ -48,20 +85,11 @@ export default async function SectorPage({ params, searchParams }: PageProps<"/[
             <p className="mt-1 text-muted-foreground">{config.description}</p>
           </div>
 
-          <form
-            action={`/${config.slug}`}
-            className="flex flex-col gap-2 sm:max-w-md sm:flex-row"
-          >
-            <div className="flex-1">
-              <Input
-                name="location"
-                defaultValue={location ?? ""}
-                placeholder={config.searchPlaceholder}
-                aria-label="Location"
-              />
-            </div>
-            <Button type="submit">Search</Button>
-          </form>
+          <SectorFilters
+            config={config}
+            values={values}
+            hasActiveFilters={hasActiveFilters}
+          />
         </div>
       </section>
 
@@ -70,19 +98,19 @@ export default async function SectorPage({ params, searchParams }: PageProps<"/[
           <p className="rounded-lg border border-border bg-muted p-6 text-center text-muted-foreground">
             Couldn&apos;t load listings right now. Please try again shortly.
           </p>
-        ) : ads.length === 0 ? (
+        ) : filteredAds.length === 0 ? (
           <p className="rounded-lg border border-border bg-muted p-6 text-center text-muted-foreground">
-            {location
-              ? `No live ${config.tagline.toLowerCase()} listings found for "${location}".`
+            {hasActiveFilters
+              ? `No live ${config.tagline.toLowerCase()} listings match your filters.`
               : `No live ${config.tagline.toLowerCase()} listings yet — check back soon.`}
           </p>
         ) : (
           <>
             <p className="mb-4 text-sm text-muted-foreground">
-              {ads.length} listing{ads.length === 1 ? "" : "s"} found
+              {filteredAds.length} listing{filteredAds.length === 1 ? "" : "s"} found
             </p>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {ads.map((ad) => (
+              {filteredAds.map((ad) => (
                 <AdCard key={ad.id} ad={ad} />
               ))}
             </div>

@@ -7,6 +7,7 @@ export type SectorConfig = {
   tagline: string;
   description: string;
   searchPlaceholder: string;
+  propertyTypes: string[];
 };
 
 export const sectorConfigs: Record<string, SectorConfig> = {
@@ -18,6 +19,7 @@ export const sectorConfigs: Record<string, SectorConfig> = {
     description:
       "Residential, commercial, and agricultural plots, verified before they go live.",
     searchPlaceholder: "Search by area, e.g. Bashundhara, Dhaka",
+    propertyTypes: ["Residential", "Commercial", "Agricultural"],
   },
   "basa-bhara": {
     slug: "basa-bhara",
@@ -27,6 +29,7 @@ export const sectorConfigs: Record<string, SectorConfig> = {
     description:
       "Flats, houses, rooms, and sublets, verified before they go live.",
     searchPlaceholder: "Search by area, e.g. Dhanmondi, Dhaka",
+    propertyTypes: ["Flat", "House", "Room", "Sublet"],
   },
 };
 
