@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui";
 import { ContactGate } from "@/components/ads/contact-gate";
+import { SaveAdButton } from "@/components/ads/save-ad-button";
+import { PhotoPlaceholder } from "@/components/ads/photo-placeholder";
 import { fetchAd } from "@/lib/ads/fetch-ad";
 import { describeAdAttributes } from "@/lib/ads/describe-attributes";
 import { formatPrice } from "@/lib/format";
@@ -42,7 +44,10 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
-      <div className="aspect-[16/9] w-full rounded-xl bg-muted" />
+      <PhotoPlaceholder
+        sector={ad.sector}
+        className="aspect-[16/9] w-full rounded-xl shadow-sm"
+      />
 
       <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
@@ -63,7 +68,7 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
           </div>
 
           {facts.length > 0 && (
-            <div className="grid grid-cols-2 gap-4 rounded-xl border border-border p-4 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 rounded-xl border border-border bg-muted/40 p-4 shadow-xs sm:grid-cols-4">
               {facts.map((fact) => (
                 <div key={fact.label} className="flex flex-col gap-0.5">
                   <span className="text-xs text-muted-foreground">
@@ -93,6 +98,7 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
             ownerId={ad.ownerId}
             currentUser={currentUser}
           />
+          <SaveAdButton adId={ad.id} />
         </div>
       </div>
     </main>

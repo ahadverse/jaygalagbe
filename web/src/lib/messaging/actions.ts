@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { API_URL } from "@/lib/api/config";
 import { getToken } from "@/lib/auth/session";
 
@@ -68,4 +69,44 @@ export async function sendFirstMessageAction(
   } catch {
     return { error: "Couldn't reach the server. Please try again." };
   }
+}
+
+export async function replyToConversationAction(
+  _prevState: SendMessageState,
+  formData: FormData,
+): Promise<SendMessageState> {
+  const conversationId = String(formData.get("conversationId") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+
+  if (!conversationId || !body) {
+    return { error: "Write a message before sending." };
+  }
+
+  const token = await getToken();
+  if (!token) {
+    return { error: "You need to be logged in to send a message." };
+  }
+
+  try {
+    const response = await fetch(
+      `${API_URL}/conversations/${conversationId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ body }),
+      },
+    );
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => null);
+      return { error: extractErrorMessage(errBody, "Couldn't send the message.") };
+    }
+  } catch {
+    return { error: "Couldn't reach the server. Please try again." };
+  }
+
+  revalidatePath(`/dashboard/messages/${conversationId}`);
+  return { success: true };
 }

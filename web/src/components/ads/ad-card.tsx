@@ -2,17 +2,20 @@ import Link from "next/link";
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import { formatPrice } from "@/lib/format";
 import { summarizeAdAttributes } from "@/lib/ads/describe-attributes";
+import { PhotoPlaceholder } from "./photo-placeholder";
 import type { Ad } from "@/lib/ads/types";
 
 export function AdCard({ ad }: { ad: Ad }) {
   const summary = summarizeAdAttributes(ad);
 
   return (
-    <Link href={`/ads/${ad.id}`}>
-      <Card className="flex h-full flex-col overflow-hidden transition-colors hover:border-primary">
-        <div className="aspect-[4/3] bg-muted" />
+    <Link href={`/ads/${ad.id}`} className="group block h-full">
+      <Card className="flex h-full flex-col overflow-hidden border-transparent transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+        <PhotoPlaceholder sector={ad.sector} className="aspect-[4/3]" />
         <CardHeader>
-          <CardTitle className="line-clamp-2">{ad.title}</CardTitle>
+          <CardTitle className="line-clamp-2 transition-colors group-hover:text-primary">
+            {ad.title}
+          </CardTitle>
           <p className="text-sm text-muted-foreground">
             {ad.locationArea}, {ad.locationDistrict}
           </p>

@@ -30,13 +30,26 @@ export function Hero() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-background">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-6 py-20 text-center sm:py-28">
-        <span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700">
+    <section className="relative overflow-hidden bg-background">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-brand-200/50 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-16 right-0 h-96 w-96 rounded-full bg-accent-200/40 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-brand-50/60 via-transparent to-background"
+      />
+
+      <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-8 px-6 py-20 text-center sm:py-28">
+        <span className="rounded-full border border-brand-200 bg-background/80 px-3 py-1 text-xs font-semibold text-brand-700 shadow-xs backdrop-blur">
           Land &amp; house rent, vetted before you ever see them
         </span>
 
-        <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+        <h1 className="max-w-3xl text-4xl leading-[1.1] text-foreground sm:text-6xl">
           Find your next <span className="text-primary">Jayga</span> or{" "}
           <span className="text-accent-600">Basa</span> with confidence
         </h1>
@@ -49,7 +62,7 @@ export function Hero() {
 
         <form
           onSubmit={handleSearch}
-          className="w-full max-w-2xl rounded-xl border border-border bg-background p-3 text-left shadow-sm"
+          className="w-full max-w-2xl rounded-xl border border-border bg-background p-3 text-left shadow-lg"
         >
           <div className="mb-3 inline-flex rounded-md bg-muted p-1">
             {sectors.map((option) => (

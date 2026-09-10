@@ -37,7 +37,7 @@ export function SectorCards() {
           <Link
             key={sector.href}
             href={sector.href}
-            className="group flex flex-col gap-4 rounded-xl border border-border bg-background p-6 transition-colors hover:border-primary"
+            className="group flex flex-col gap-4 rounded-xl border border-transparent bg-background p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
           >
             <Badge variant={sector.variant}>{sector.badge}</Badge>
             <h3 className="text-xl font-semibold text-foreground">
