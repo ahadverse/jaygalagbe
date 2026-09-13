@@ -204,7 +204,12 @@ async function seedTransactions(adIds: string[], ownerByAdId: Map<string, string
     const index = i + 1;
     const tier = BOOST_TIERS[index % BOOST_TIERS.length];
     const config = BOOST_TIER_CONFIG[tier];
-    const purchasedAt = daysAgo(175 - index * 3);
+    // Spread right up to today so the most recent purchases are still inside
+    // their boost window — otherwise every boost seeds as already expired and
+    // the "currently boosted" filter can never match anything.
+    const purchasedAt = daysAgo(
+      Math.round(178 - (index / adIds.length) * 178),
+    );
     const status =
       index % 9 === 0
         ? PaymentStatus.FAILED

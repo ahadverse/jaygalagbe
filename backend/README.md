@@ -84,5 +84,6 @@ GET /admin/ads?page=1&limit=20&sort=createdAt&order=desc&search=…&status=PENDI
 
 Responses are `{ data, meta }`, where `meta` carries `page`, `limit`, `total`,
 `totalPages`, `hasPreviousPage`, `hasNextPage`, plus the `sort` and `order`
-actually applied. Sort columns are allow-listed per endpoint, so an unknown
-`?sort=` falls back rather than reaching the database.
+actually applied. Sort columns are allow-listed per endpoint in two places: the
+DTO rejects an unknown `?sort=` with a 400, and `resolveSort` falls back to the
+endpoint's default, so no caller-supplied column name ever reaches the database.
