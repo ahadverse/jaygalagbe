@@ -33,6 +33,21 @@ export default function HomeLoading() {
         </div>
       </section>
 
+      <section className="mt-12 border-y border-border bg-gradient-to-b from-brand-50/80 to-brand-50/20 sm:mt-16">
+        <div className="shell py-12 sm:py-16">
+          <div className="mb-7 flex flex-col gap-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-4 w-full max-w-md" />
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <AdCardSkeleton key={index} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="shell py-14 sm:py-20">
         <div className="flex flex-col gap-10 lg:flex-row lg:gap-12">
           <div className="flex w-full shrink-0 flex-col gap-2.5 lg:w-72">
@@ -52,6 +67,43 @@ export default function HomeLoading() {
                 <AdCardSkeleton key={index} />
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="shell py-14 sm:py-20">
+        <div className="mb-7 flex flex-col gap-2">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-8 w-60" />
+          <Skeleton className="h-4 w-full max-w-lg" />
+        </div>
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl bg-border shadow-sm ring-1 ring-neutral-900/5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="flex flex-col gap-3 bg-card p-5">
+              <div className="flex items-baseline justify-between">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-3 w-14" />
+              </div>
+              <Skeleton className="h-8 w-28" />
+              <div className="flex gap-2 pt-1">
+                <Skeleton className="h-7 w-20 rounded-full" />
+                <Skeleton className="h-7 w-20 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-y border-border bg-muted/60">
+        <div className="shell py-14 sm:py-20">
+          <div className="mb-7 flex flex-col gap-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-8 w-56" />
+          </div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <Skeleton key={index} className="h-72 w-full rounded-2xl" />
+            ))}
           </div>
         </div>
       </section>

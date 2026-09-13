@@ -4,7 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 
-const DEFAULT_ORIGINS = 'http://localhost:3000,http://localhost:5173';
+const DEFAULT_ORIGINS = 'http://localhost:3000,http://localhost:5174';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
