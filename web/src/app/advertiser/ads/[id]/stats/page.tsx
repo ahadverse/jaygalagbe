@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -8,6 +9,10 @@ import {
   EmptyState,
   buttonVariants,
 } from "@/components/ui";
+=======
+import { notFound } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+>>>>>>> d25365ce5b7a25abf0fe934b5f79c9df7167f32f
 import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
 import { fetchAd } from "@/lib/ads/fetch-ad";
@@ -27,6 +32,7 @@ export default async function AdStatsPage({
   }
 
   const stats = await fetchAdStats(id, token);
+<<<<<<< HEAD
   const clickRate =
     stats && stats.impressions > 0 ? stats.visits / stats.impressions : 0;
 
@@ -90,6 +96,37 @@ export default async function AdStatsPage({
             </CardContent>
           </Card>
         </div>
+=======
+
+  return (
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-10">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Ad statistics</h1>
+        <p className="text-muted-foreground">{ad.title}</p>
+      </div>
+
+      {!stats ? (
+        <p className="rounded-lg border border-border bg-muted p-6 text-center text-muted-foreground">
+          Couldn&apos;t load statistics right now.
+        </p>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance funnel</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-6">
+            <StatsFunnel stats={stats} />
+            <div className="flex items-center justify-between rounded-lg bg-muted px-4 py-3">
+              <span className="text-sm font-medium text-foreground">
+                Conversion rate
+              </span>
+              <span className="text-lg font-semibold text-primary">
+                {(stats.conversionRate * 100).toFixed(1)}%
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+>>>>>>> d25365ce5b7a25abf0fe934b5f79c9df7167f32f
       )}
     </main>
   );
