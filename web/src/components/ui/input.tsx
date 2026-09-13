@@ -1,39 +1,62 @@
-import { type InputHTMLAttributes, forwardRef, useId } from "react";
+import { type InputHTMLAttributes, type ReactNode, forwardRef, useId } from "react";
 import { cn } from "@/lib/utils";
+import {
+  Field,
+  controlClassName,
+  controlErrorClassName,
+  describedBy,
+} from "./field";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  hint?: string;
   error?: string;
+  /** Rendered inside the field, before the text — e.g. a ৳ or a search glyph. */
+  adornment?: ReactNode;
+  fieldClassName?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, id, ...props }, ref) => {
+  (
+    { className, label, hint, error, adornment, fieldClassName, id, ...props },
+    ref,
+  ) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
 
     return (
-      <div className="flex flex-col gap-1.5">
-        {label && (
-          <label
-            htmlFor={inputId}
-            className="text-sm font-medium text-foreground"
-          >
-            {label}
-          </label>
-        )}
-        <input
-          ref={ref}
-          id={inputId}
-          aria-invalid={Boolean(error)}
-          className={cn(
-            "h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground shadow-xs transition-colors placeholder:text-muted-foreground hover:border-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50",
-            error && "border-danger-500 focus-visible:ring-danger-500",
-            className,
+      <Field
+        id={inputId}
+        label={label}
+        hint={hint}
+        error={error}
+        className={fieldClassName}
+      >
+        <div className="relative">
+          {adornment && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-sm text-subtle-foreground"
+            >
+              {adornment}
+            </span>
           )}
-          {...props}
-        />
-        {error && <p className="text-xs text-danger-600">{error}</p>}
-      </div>
+          <input
+            ref={ref}
+            id={inputId}
+            aria-invalid={Boolean(error) || undefined}
+            aria-describedby={describedBy(inputId, hint, error)}
+            className={cn(
+              controlClassName,
+              "h-11 px-3.5",
+              adornment && "pl-9",
+              error && controlErrorClassName,
+              className,
+            )}
+            {...props}
+          />
+        </div>
+      </Field>
     );
   },
 );

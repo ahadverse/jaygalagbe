@@ -52,13 +52,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 top-16 z-50 flex flex-col items-end gap-2 px-4 sm:top-20 sm:px-6">
+      <div className="pointer-events-none fixed inset-x-0 top-20 z-50 flex flex-col items-end gap-2 px-4 sm:top-24 sm:px-6">
         {toasts.map((entry) => {
           const content = (
-            <Toast variant={entry.variant}>
-              <p className="font-medium text-foreground">{entry.title}</p>
+            <Toast variant={entry.variant} className="animate-slide-down">
+              <p className="text-sm font-semibold text-white">{entry.title}</p>
               {entry.description && (
-                <p className="line-clamp-2 text-xs text-muted-foreground">
+                <p className="line-clamp-2 text-xs leading-relaxed text-neutral-400">
                   {entry.description}
                 </p>
               )}
