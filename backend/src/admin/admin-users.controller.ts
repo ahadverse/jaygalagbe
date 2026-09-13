@@ -1,13 +1,9 @@
 import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminUsersService } from './admin-users.service.js';
+import { ListUsersDto } from './dto/list-users.dto.js';
 import { Auth } from '../auth/auth.decorator.js';
 import { Role } from '../auth/role.enum.js';
-
-function parseBoolean(value?: string): boolean | undefined {
-  if (value === undefined) return undefined;
-  return value === 'true';
-}
 
 @ApiTags('Admin — Users')
 @ApiBearerAuth()
@@ -17,16 +13,8 @@ export class AdminUsersController {
   constructor(private readonly adminUsersService: AdminUsersService) {}
 
   @Get()
-  findAll(
-    @Query('search') search?: string,
-    @Query('role') role?: Role,
-    @Query('suspended') suspended?: string,
-  ) {
-    return this.adminUsersService.findAll({
-      search,
-      role,
-      suspended: parseBoolean(suspended),
-    });
+  findAll(@Query() query: ListUsersDto) {
+    return this.adminUsersService.findAll(query);
   }
 
   @Get(':id')
