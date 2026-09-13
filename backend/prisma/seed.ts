@@ -21,8 +21,51 @@ function daysAgo(days: number): Date {
   return new Date(Date.now() - days * DAY_MS);
 }
 
-function photos(...ids: number[]): string[] {
-  return ids.map((id) => `https://picsum.photos/id/${id}/800/600`);
+function photo(id: number): string {
+  return `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=1200`;
+}
+
+/*
+ * Listing photos are drawn from subject-matched pools rather than a random
+ * image service — a seascape or a castle on a Khulshi flat makes the whole
+ * product look broken. Land ads get plots and open ground; rental ads get
+ * building exteriors interleaved with interiors, so a gallery reads like a
+ * real listing.
+ */
+const landPhotoIds = [
+  5626130, 15422584, 25461690, 12445117, 5849570, 8386437, 6224289, 6322070,
+  7765190, 3030307, 3963063, 5999540,
+];
+
+const buildingPhotoIds = [
+  20296321, 11576307, 16543093, 269077, 934350, 7314547, 12446411, 668300,
+  358549, 17729218, 6903157, 11631278,
+];
+
+const homePhotoIds = [
+  8089172, 3137050, 4913326, 7166645, 8092431, 1974596, 323781, 7031581,
+];
+
+const interiorPhotoIds = [
+  8146330, 8082324, 8146214, 7031621, 6489084, 7045322, 3958956,
+];
+
+function pick(pool: number[], seed: number, offset: number): number {
+  return pool[(seed * 5 + offset * 3) % pool.length];
+}
+
+function landPhotos(seed: number): string[] {
+  return [0, 1, 2, 3].map((offset) => photo(pick(landPhotoIds, seed, offset)));
+}
+
+/** Exterior first — it is the card thumbnail — then interiors. */
+function rentPhotos(seed: number): string[] {
+  return [
+    photo(pick(buildingPhotoIds, seed, 0)),
+    photo(pick(interiorPhotoIds, seed, 1)),
+    photo(pick(homePhotoIds, seed, 2)),
+    photo(pick(interiorPhotoIds, seed, 3)),
+  ];
 }
 
 type SeedAd = {
@@ -69,18 +112,6 @@ function locationFor(index: number): { area: string; district: string } {
   return { area: dhakaAreas[index % dhakaAreas.length], district: 'Dhaka' };
 }
 
-const photoPool = [
-  1015, 1016, 1018, 1019, 1021, 1024, 1033, 1035, 1040, 1041, 1043, 1044,
-  1048, 1049, 1050, 1052, 1053, 1057, 1060, 1062, 1069, 1074, 1084, 106, 110,
-  119, 129, 133, 146, 152, 160, 164, 177, 180,
-];
-
-function photosFor(index: number): string[] {
-  const a = photoPool[index % photoPool.length];
-  const b = photoPool[(index + 5) % photoPool.length];
-  return photos(a, b);
-}
-
 const landPropertyTypes = ['Residential', 'Commercial', 'Agricultural'] as const;
 const landSizes = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20];
 
@@ -101,7 +132,7 @@ function generateLandAds(count: number, startIndex: number): SeedAd[] {
       price,
       locationArea: area,
       locationDistrict: district,
-      photos: photosFor(index),
+      photos: landPhotos(index),
       attributes: { sizeKatha: size, propertyType },
       status: 'LIVE',
     };
@@ -131,7 +162,7 @@ function generateHouseAds(count: number, startIndex: number): SeedAd[] {
       price,
       locationArea: area,
       locationDistrict: district,
-      photos: photosFor(index + 11),
+      photos: rentPhotos(index),
       attributes: { bedrooms, bathrooms: Math.max(1, bedrooms - 1), furnished, propertyType },
       status: 'LIVE',
     };
@@ -358,7 +389,7 @@ async function main() {
       price: 8500000,
       locationArea: 'Bashundhara R/A',
       locationDistrict: 'Dhaka',
-      photos: photos(1018, 1015),
+      photos: landPhotos(100),
       attributes: { sizeKatha: 5, propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
@@ -370,7 +401,7 @@ async function main() {
       price: 4200000,
       locationArea: 'Bosila',
       locationDistrict: 'Dhaka',
-      photos: photos(1016, 1019),
+      photos: landPhotos(101),
       attributes: { sizeKatha: 3, propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
@@ -382,7 +413,7 @@ async function main() {
       price: 25000000,
       locationArea: 'Mirpur Road',
       locationDistrict: 'Dhaka',
-      photos: photos(1021, 1024),
+      photos: landPhotos(102),
       attributes: { sizeKatha: 10, propertyType: 'Commercial' },
       status: 'LIVE' as const,
     },
@@ -394,7 +425,7 @@ async function main() {
       price: 6000000,
       locationArea: 'Purbachal Sector 12',
       locationDistrict: 'Dhaka',
-      photos: photos(1033, 1035),
+      photos: landPhotos(103),
       attributes: { sizeKatha: 6, propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
@@ -406,7 +437,7 @@ async function main() {
       price: 1800000,
       locationArea: 'Gazipur Bypass',
       locationDistrict: 'Gazipur',
-      photos: photos(1041, 1044),
+      photos: landPhotos(104),
       attributes: { sizeKatha: 4, propertyType: 'Agricultural' },
       status: 'LIVE' as const,
     },
@@ -418,7 +449,7 @@ async function main() {
       price: 3500000,
       locationArea: 'Savar EPZ',
       locationDistrict: 'Dhaka',
-      photos: photos(1048, 1049),
+      photos: landPhotos(105),
       attributes: { sizeKatha: 8, propertyType: 'Commercial' },
       status: 'LIVE' as const,
     },
@@ -430,7 +461,7 @@ async function main() {
       price: 7200000,
       locationArea: 'Halishahar',
       locationDistrict: 'Chattogram',
-      photos: photos(1050, 1052),
+      photos: landPhotos(106),
       attributes: { sizeKatha: 5, propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
@@ -442,7 +473,7 @@ async function main() {
       price: 2000000,
       locationArea: 'Ambarkhana',
       locationDistrict: 'Sylhet',
-      photos: photos(1053, 1057),
+      photos: landPhotos(107),
       attributes: { sizeKatha: 2, propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
@@ -454,7 +485,7 @@ async function main() {
       price: 4500000,
       locationArea: 'Rajshahi City',
       locationDistrict: 'Rajshahi',
-      photos: photos(1060, 1062),
+      photos: landPhotos(108),
       attributes: { sizeKatha: 15, propertyType: 'Agricultural' },
       status: 'REJECTED' as const,
       rejectionReason: 'Ownership documents unclear — please resubmit with an updated deed.',
@@ -470,7 +501,7 @@ async function main() {
       price: 25000,
       locationArea: 'Sector 7',
       locationDistrict: 'Uttara',
-      photos: photos(1040, 1043),
+      photos: rentPhotos(100),
       attributes: { bedrooms: 2, bathrooms: 2, furnished: false, propertyType: 'Flat' },
       status: 'PENDING' as const,
     },
@@ -482,7 +513,7 @@ async function main() {
       price: 45000,
       locationArea: 'Dhanmondi',
       locationDistrict: 'Dhaka',
-      photos: photos(1015, 1018),
+      photos: rentPhotos(101),
       attributes: { bedrooms: 3, bathrooms: 2, furnished: false, propertyType: 'Flat' },
       status: 'LIVE' as const,
     },
@@ -494,7 +525,7 @@ async function main() {
       price: 30000,
       locationArea: 'Gulshan 2',
       locationDistrict: 'Dhaka',
-      photos: photos(1019, 1016),
+      photos: rentPhotos(102),
       attributes: { bedrooms: 1, bathrooms: 1, furnished: true, propertyType: 'Flat' },
       status: 'LIVE' as const,
     },
@@ -506,7 +537,7 @@ async function main() {
       price: 38000,
       locationArea: 'Banani',
       locationDistrict: 'Dhaka',
-      photos: photos(1024, 1021),
+      photos: rentPhotos(103),
       attributes: { bedrooms: 2, bathrooms: 2, furnished: false, propertyType: 'Flat' },
       status: 'LIVE' as const,
     },
@@ -518,7 +549,7 @@ async function main() {
       price: 60000,
       locationArea: 'Bashundhara R/A',
       locationDistrict: 'Dhaka',
-      photos: photos(1035, 1033),
+      photos: rentPhotos(104),
       attributes: { bedrooms: 4, bathrooms: 3, furnished: false, propertyType: 'House' },
       status: 'LIVE' as const,
     },
@@ -530,7 +561,7 @@ async function main() {
       price: 12000,
       locationArea: 'Mohammadpur',
       locationDistrict: 'Dhaka',
-      photos: photos(1044, 1041),
+      photos: rentPhotos(105),
       attributes: { bedrooms: 1, bathrooms: 1, furnished: true, propertyType: 'Sublet' },
       status: 'LIVE' as const,
     },
@@ -542,7 +573,7 @@ async function main() {
       price: 28000,
       locationArea: 'Agrabad',
       locationDistrict: 'Chattogram',
-      photos: photos(1049, 1048),
+      photos: rentPhotos(106),
       attributes: { bedrooms: 3, bathrooms: 2, furnished: false, propertyType: 'Flat' },
       status: 'LIVE' as const,
     },
@@ -553,7 +584,7 @@ async function main() {
       price: 18000,
       locationArea: 'Zindabazar',
       locationDistrict: 'Sylhet',
-      photos: photos(1052, 1050),
+      photos: rentPhotos(107),
       attributes: { bedrooms: 2, bathrooms: 1, furnished: false, propertyType: 'Flat' },
       status: 'LIVE' as const,
     },
@@ -564,7 +595,7 @@ async function main() {
       price: 35000,
       locationArea: 'Baridhara',
       locationDistrict: 'Dhaka',
-      photos: photos(1057, 1053),
+      photos: rentPhotos(108),
       attributes: { bedrooms: 1, bathrooms: 1, furnished: true, propertyType: 'Flat' },
       status: 'SOLD' as const,
     },
