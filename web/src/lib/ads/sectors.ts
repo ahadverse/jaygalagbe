@@ -11,20 +11,20 @@ export type SectorConfig = {
 };
 
 export const sectorConfigs: Record<string, SectorConfig> = {
-  "jayga-bikroy": {
-    slug: "jayga-bikroy",
+  "jayga-jomi": {
+    slug: "jayga-jomi",
     sector: "LAND",
-    name: "Jayga Bikroy",
+    name: "Jayga Jomi",
     tagline: "Land for sale",
     description:
       "Residential, commercial, and agricultural plots, verified before they go live.",
     searchPlaceholder: "Search by area, e.g. Bashundhara, Dhaka",
     propertyTypes: ["Residential", "Commercial", "Agricultural"],
   },
-  "basa-bhara": {
-    slug: "basa-bhara",
+  "basha-bhara": {
+    slug: "basha-bhara",
     sector: "HOUSE_RENT",
-    name: "Basa Bhara",
+    name: "Basha Bhara",
     tagline: "Houses for rent",
     description:
       "Flats, houses, rooms, and sublets, verified before they go live.",
