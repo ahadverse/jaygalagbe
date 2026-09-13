@@ -9,15 +9,17 @@ export default async function AdvertiserLayout({
 
   if (!user.isAdvertiser) {
     return (
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
-        <UpgradePrompt />
+      <main className="grain relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-brand-50 to-background px-5 py-14 sm:py-20">
+        <div className="w-full max-w-md">
+          <UpgradePrompt />
+        </div>
       </main>
     );
   }
 
   return (
     <>
-      <div className="border-b border-border">
+      <div className="sticky top-16 z-30 border-b border-border bg-background/85 backdrop-blur-md sm:top-18">
         <AdvertiserTabs />
       </div>
       {children}

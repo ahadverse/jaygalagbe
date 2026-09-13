@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Badge, Button, buttonVariants } from "@/components/ui";
+import { Badge, Button, EmptyState, buttonVariants } from "@/components/ui";
 import { PhotoPlaceholder } from "@/components/ads/photo-placeholder";
 import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
 import { fetchMyAds } from "@/lib/ads/fetch-my-ads";
-import { formatPrice } from "@/lib/format";
+import { formatAmount, formatRelativeTime } from "@/lib/format";
 import { markSoldAction, resubmitAdAction, deleteAdAction } from "@/lib/ads/actions";
 
 export const metadata: Metadata = {
@@ -25,60 +25,93 @@ export default async function AdvertiserDashboardPage() {
   const token = (await getToken())!;
   const ads = await fetchMyAds(token);
 
+  const liveCount = ads.filter((ad) => ad.status === "LIVE").length;
+  const pendingCount = ads.filter((ad) => ad.status === "PENDING").length;
+
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Your ads</h1>
-          <p className="text-muted-foreground">
-            Manage listings, boosts, and stats.
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-7 px-5 py-10 sm:px-8 sm:py-12">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="font-heading text-title text-neutral-900">Your ads</h1>
+          <p className="text-sm text-muted-foreground">
+            {ads.length === 0
+              ? "Manage listings, boosts, and performance from here."
+              : `${liveCount} live${pendingCount > 0 ? ` · ${pendingCount} awaiting review` : ""} · ${ads.length} total`}
           </p>
         </div>
         <Link
           href="/advertiser/ads/new"
-          className={buttonVariants({ variant: "accent" })}
+          className={buttonVariants({ variant: "primary" })}
         >
           Post a new ad
         </Link>
-      </div>
+      </header>
 
       {ads.length === 0 ? (
-        <p className="rounded-lg border border-border bg-muted p-6 text-center text-muted-foreground">
-          You haven&apos;t posted any ads yet.
-        </p>
+        <EmptyState
+          title="No listings yet"
+          description="Post your first property and it will be reviewed and published, usually within a day."
+          action={
+            <Link
+              href="/advertiser/ads/new"
+              className={buttonVariants({ variant: "primary", size: "sm" })}
+            >
+              Post your first ad
+            </Link>
+          }
+        />
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {ads.map((ad) => {
             const badge = statusBadge[ad.status];
             return (
-              <div
+              <article
                 key={ad.id}
-                className="flex flex-col gap-4 rounded-xl border border-border p-4 shadow-sm sm:flex-row"
+                className="flex flex-col gap-4 rounded-xl bg-card p-4 shadow-sm ring-1 ring-neutral-900/5 transition-shadow duration-200 hover:shadow-md sm:flex-row sm:p-5"
               >
                 <PhotoPlaceholder
                   sector={ad.sector}
-                  className="h-40 w-full shrink-0 rounded-lg sm:h-20 sm:w-28"
+                  photo={ad.photos[0]}
+                  alt={ad.title}
+                  className="h-36 w-full shrink-0 overflow-hidden rounded-lg sm:h-24 sm:w-32"
                 />
-                <div className="flex flex-1 flex-col gap-1">
+
+                <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={badge.variant}>{badge.label}</Badge>
-                    {ad.status === "REJECTED" && ad.rejectionReason && (
-                      <span className="text-xs text-danger-600">
-                        {ad.rejectionReason}
-                      </span>
-                    )}
+                    <Badge variant={badge.variant} size="sm">
+                      {badge.label}
+                    </Badge>
+                    <span className="text-2xs text-subtle-foreground">
+                      {formatRelativeTime(ad.createdAt)}
+                    </span>
                   </div>
-                  <Link
-                    href={`/ads/${ad.id}`}
-                    className="font-medium text-foreground hover:text-primary"
-                  >
-                    {ad.title}
-                  </Link>
-                  <p className="text-sm text-muted-foreground">
-                    {ad.locationArea}, {ad.locationDistrict} —{" "}
-                    {formatPrice(ad.price)}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
+
+                  <div className="flex flex-col gap-1">
+                    <Link
+                      href={`/ads/${ad.id}`}
+                      className="font-heading text-base font-bold tracking-tight text-foreground transition-colors hover:text-primary"
+                    >
+                      {ad.title}
+                    </Link>
+                    <p className="text-sm text-muted-foreground">
+                      {ad.locationArea}, {ad.locationDistrict}
+                      <span aria-hidden="true" className="mx-1.5 text-neutral-300">
+                        ·
+                      </span>
+                      <span className="numeric font-semibold text-primary">
+                        ৳ {formatAmount(ad.price)}
+                      </span>
+                    </p>
+                  </div>
+
+                  {ad.status === "REJECTED" && ad.rejectionReason && (
+                    <p className="rounded-lg bg-danger-50 px-3 py-2 text-xs text-danger-800 ring-1 ring-danger-100">
+                      <span className="font-semibold">Rejected:</span>{" "}
+                      {ad.rejectionReason}
+                    </p>
+                  )}
+
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
                     <Link
                       href={`/advertiser/ads/${ad.id}/edit`}
                       className={buttonVariants({ variant: "outline", size: "sm" })}
@@ -89,8 +122,18 @@ export default async function AdvertiserDashboardPage() {
                       <>
                         <Link
                           href={`/advertiser/ads/${ad.id}/boost`}
-                          className={buttonVariants({ variant: "outline", size: "sm" })}
+                          className={buttonVariants({ variant: "soft", size: "sm" })}
                         >
+                          <svg
+                            viewBox="0 0 12 12"
+                            aria-hidden="true"
+                            className="size-3"
+                          >
+                            <path
+                              d="M6.6 1 2.2 6.9h3L5.4 11l4.4-5.9h-3L6.6 1Z"
+                              fill="currentColor"
+                            />
+                          </svg>
                           Boost
                         </Link>
                         <Link
@@ -115,15 +158,20 @@ export default async function AdvertiserDashboardPage() {
                         </Button>
                       </form>
                     )}
-                    <form action={deleteAdAction}>
+                    <form action={deleteAdAction} className="sm:ml-auto">
                       <input type="hidden" name="id" value={ad.id} />
-                      <Button type="submit" variant="ghost" size="sm">
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:bg-danger-50 hover:text-danger-700"
+                      >
                         Remove
                       </Button>
                     </form>
                   </div>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>

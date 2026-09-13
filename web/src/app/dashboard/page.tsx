@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  buttonVariants,
+} from "@/components/ui";
 import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
 import { fetchMyConversations } from "@/lib/messaging/fetch-conversations";
 import { fetchAdvertiserReviews } from "@/lib/reviews/fetch-advertiser-reviews";
+import { ConversationCard } from "@/components/messaging/conversation-card";
 import { ReviewForm } from "@/components/reviews/review-form";
 import { SavedAdsSection } from "@/components/dashboard/saved-ads-section";
 
@@ -34,58 +42,100 @@ export default async function DashboardPage() {
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-10">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Welcome back, {user.name.split(" ")[0]}
-        </h1>
-        <p className="text-muted-foreground">
-          Your saved ads, messages, and reviews.
-        </p>
-      </div>
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-5 py-10 sm:px-8 sm:py-14">
+      <header className="flex items-center gap-4">
+        <span
+          aria-hidden="true"
+          className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-600 font-heading text-lg font-bold text-white shadow-brand"
+        >
+          {user.name.trim().charAt(0).toUpperCase()}
+        </span>
+        <div className="flex flex-col gap-1">
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
+            Welcome back, {user.name.split(" ")[0]}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Your saved ads, messages, and reviews.
+          </p>
+        </div>
+      </header>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-foreground">Saved ads</h2>
+        <h2 className="font-heading text-lg font-bold tracking-tight text-neutral-900">
+          Saved ads
+        </h2>
         <SavedAdsSection />
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-foreground">Messages</h2>
+        <h2 className="font-heading text-lg font-bold tracking-tight text-neutral-900">
+          Messages
+        </h2>
         {myConversations.length === 0 ? (
-          <p className="rounded-lg border border-border bg-muted p-4 text-sm text-muted-foreground">
-            Messages you send to advertisers will show up here.
-          </p>
+          <EmptyState
+            compact
+            title="No conversations yet"
+            description="Message an advertiser from any listing and the thread will appear here."
+            action={
+              <Link
+                href="/jayga-jomi"
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                Browse listings
+              </Link>
+            }
+            icon={
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="size-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                strokeLinejoin="round"
+              >
+                <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5v-8Z" />
+              </svg>
+            }
+          />
         ) : (
-          <div className="flex flex-col gap-2">
-            {myConversations.map((conversation) => {
-              const lastMessage = conversation.messages?.[0];
-              return (
-                <Link
-                  key={conversation.id}
-                  href={`/dashboard/messages/${conversation.id}`}
-                  className="flex flex-col gap-1 rounded-lg border border-border p-4 transition-colors hover:border-primary"
-                >
-                  <p className="font-medium text-foreground">
-                    {conversation.advertiser.name} — {conversation.ad.title}
-                  </p>
-                  {lastMessage && (
-                    <p className="line-clamp-1 text-sm text-muted-foreground">
-                      {lastMessage.body}
-                    </p>
-                  )}
-                </Link>
-              );
-            })}
+          <div className="flex flex-col gap-2.5">
+            {myConversations.map((conversation) => (
+              <ConversationCard
+                key={conversation.id}
+                href={`/dashboard/messages/${conversation.id}`}
+                name={conversation.advertiser.name}
+                adTitle={conversation.ad.title}
+                preview={conversation.messages?.[0]?.body}
+              />
+            ))}
           </div>
         )}
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-foreground">Reviews</h2>
+        <h2 className="font-heading text-lg font-bold tracking-tight text-neutral-900">
+          Reviews
+        </h2>
         {advertisers.length === 0 ? (
-          <p className="rounded-lg border border-border bg-muted p-4 text-sm text-muted-foreground">
-            Contact an advertiser to leave them a review.
-          </p>
+          <EmptyState
+            compact
+            title="Nothing to review yet"
+            description="Once you've contacted an advertiser you can rate how the conversation went."
+            icon={
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="size-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                strokeLinejoin="round"
+              >
+                <path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8L12 4Z" />
+              </svg>
+            }
+          />
         ) : (
           <div className="flex flex-col gap-4">
             {advertisers.map((advertiser, index) => {

@@ -32,7 +32,7 @@ function useVisitId(adId: string): string | null {
 function SendButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
+    <Button type="submit" loading={pending} className="w-full">
       {pending ? "Sending…" : "Send message"}
     </Button>
   );
@@ -46,9 +46,26 @@ function MessageForm({ adId }: { adId: string }) {
 
   if (state.success) {
     return (
-      <p className="text-sm text-success-700">
-        Message sent — the advertiser will reply here soon.
-      </p>
+      <div className="flex animate-fade-in flex-col items-center gap-2 rounded-lg bg-success-50 px-4 py-6 text-center ring-1 ring-success-100">
+        <span className="flex size-9 items-center justify-center rounded-full bg-success-100 text-success-700">
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m5 12.5 4.5 4.5L19 7.5" />
+          </svg>
+        </span>
+        <p className="text-sm font-semibold text-success-800">Message sent</p>
+        <p className="text-xs text-success-700">
+          The advertiser will reply in your inbox.
+        </p>
+      </div>
     );
   }
 
@@ -57,13 +74,16 @@ function MessageForm({ adId }: { adId: string }) {
       <input type="hidden" name="adId" value={adId} />
       <Textarea
         name="body"
-        placeholder="Hi, I'm interested in this listing..."
+        placeholder="Hi, I'm interested in this listing — is it still available?"
         required
         minLength={1}
         maxLength={2000}
+        error={state.error}
       />
-      {state.error && <p className="text-sm text-danger-600">{state.error}</p>}
       <SendButton />
+      <p className="text-2xs leading-relaxed text-subtle-foreground">
+        Your name is shared with the advertiser when you send a message.
+      </p>
     </form>
   );
 }
@@ -88,9 +108,9 @@ export function ContactGate({
         <CardContent>
           <Link
             href="/advertiser"
-            className={buttonVariants({ variant: "outline" })}
+            className={buttonVariants({ variant: "outline", className: "w-full" })}
           >
-            Manage in advertiser dashboard
+            Manage in dashboard
           </Link>
         </CardContent>
       </Card>
@@ -116,28 +136,44 @@ export function ContactGate({
   }`;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Contact the advertiser</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">
-          Log in or create a free account to message the advertiser directly.
+    <Card className="overflow-hidden">
+      {/* Registration gate — the conversion moment, so it gets the warm tint. */}
+      <div className="bg-gradient-to-br from-brand-50 to-accent-50 px-5 py-5">
+        <span className="flex size-10 items-center justify-center rounded-xl bg-card text-brand-700 shadow-xs">
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="size-5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5v-8Z" />
+          </svg>
+        </span>
+        <p className="mt-3 font-heading text-lg font-bold tracking-tight text-neutral-900">
+          Contact the advertiser
         </p>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Link
-            href={`/login?${suffix}`}
-            className={buttonVariants({ variant: "primary" })}
-          >
-            Log in
-          </Link>
-          <Link
-            href={`/register?${suffix}`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Create account
-          </Link>
-        </div>
+        <p className="mt-1 text-sm leading-relaxed text-neutral-700">
+          Create a free account to chat directly with the owner — no broker, no
+          fee.
+        </p>
+      </div>
+      <CardContent className="flex flex-col gap-2 pt-4">
+        <Link
+          href={`/register?${suffix}`}
+          className={buttonVariants({ variant: "primary", className: "w-full" })}
+        >
+          Create free account
+        </Link>
+        <Link
+          href={`/login?${suffix}`}
+          className={buttonVariants({ variant: "ghost", className: "w-full" })}
+        >
+          I already have an account
+        </Link>
       </CardContent>
     </Card>
   );

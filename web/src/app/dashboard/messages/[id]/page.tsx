@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
@@ -26,11 +27,26 @@ export default async function ConversationPage({
       : conversation.customer;
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-10">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">{otherParty.name}</h1>
-        <p className="text-sm text-muted-foreground">{conversation.ad.title}</p>
-      </div>
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-5 py-8 sm:px-8 sm:py-10">
+      <header className="flex items-center gap-3.5">
+        <span
+          aria-hidden="true"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-100 font-heading text-base font-bold text-brand-800"
+        >
+          {otherParty.name.trim().charAt(0).toUpperCase()}
+        </span>
+        <div className="flex min-w-0 flex-col">
+          <h1 className="truncate font-heading text-xl font-bold tracking-tight text-neutral-900">
+            {otherParty.name}
+          </h1>
+          <Link
+            href={`/ads/${conversation.ad.id}`}
+            className="truncate text-sm text-muted-foreground transition-colors hover:text-primary"
+          >
+            {conversation.ad.title}
+          </Link>
+        </div>
+      </header>
 
       <ChatThread
         conversationId={conversation.id}

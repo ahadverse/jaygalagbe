@@ -15,6 +15,20 @@ export type SectorFilterValues = {
 
 const bedroomOptions = [1, 2, 3, 4, 5];
 
+const searchIcon = (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.8}
+    aria-hidden="true"
+    className="size-4"
+  >
+    <circle cx="11" cy="11" r="7" />
+    <path strokeLinecap="round" d="m20 20-3.5-3.5" />
+  </svg>
+);
+
 export function SectorFilters({
   config,
   values,
@@ -27,13 +41,14 @@ export function SectorFilters({
   return (
     <form
       action={`/${config.slug}`}
-      className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4"
+      className="rounded-2xl bg-card p-4 shadow-md ring-1 ring-neutral-900/5 sm:p-5"
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Input
           name="q"
           label="Keyword"
           defaultValue={values.q}
+          adornment={searchIcon}
           placeholder="e.g. corner plot, near school"
         />
         <Input
@@ -42,19 +57,30 @@ export function SectorFilters({
           defaultValue={values.location}
           placeholder={config.searchPlaceholder}
         />
+      </div>
+
+      <div className="mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-4">
         <Input
           name="minPrice"
           type="number"
+          inputMode="numeric"
           min={0}
-          label="Min price (৳)"
+          label="Min price"
+          adornment="৳"
+          placeholder="0"
           defaultValue={values.minPrice}
+          className="numeric"
         />
         <Input
           name="maxPrice"
           type="number"
+          inputMode="numeric"
           min={0}
-          label="Max price (৳)"
+          label="Max price"
+          adornment="৳"
+          placeholder="Any"
           defaultValue={values.maxPrice}
+          className="numeric"
         />
 
         <Select
@@ -62,7 +88,7 @@ export function SectorFilters({
           label="Property type"
           defaultValue={values.propertyType ?? ""}
         >
-          <option value="">Any</option>
+          <option value="">Any type</option>
           {config.propertyTypes.map((type) => (
             <option key={type} value={type}>
               {type}
@@ -74,10 +100,13 @@ export function SectorFilters({
           <Input
             name="minSize"
             type="number"
-            min={0}
+            inputMode="decimal"
             step="0.5"
-            label="Min size (katha)"
+            min={0}
+            label="Min size"
+            placeholder="Katha"
             defaultValue={values.minSize}
+            className="numeric"
           />
         ) : (
           <Select
@@ -93,24 +122,33 @@ export function SectorFilters({
             ))}
           </Select>
         )}
+      </div>
 
-        <Select name="sort" label="Sort by" defaultValue={values.sort ?? "newest"}>
-          <option value="newest">Newest</option>
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-4 border-t border-border pt-4">
+        <Select
+          name="sort"
+          label="Sort by"
+          defaultValue={values.sort ?? "newest"}
+          fieldClassName="w-full sm:w-52"
+        >
+          <option value="newest">Newest first</option>
           <option value="price_asc">Price: low to high</option>
           <option value="price_desc">Price: high to low</option>
         </Select>
-      </div>
 
-      <div className="flex items-center gap-4">
-        <Button type="submit">Apply filters</Button>
-        {hasActiveFilters && (
-          <Link
-            href={`/${config.slug}`}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Clear filters
-          </Link>
-        )}
+        <div className="flex w-full items-center gap-3 sm:w-auto">
+          <Button type="submit" className="flex-1 sm:flex-none">
+            Apply filters
+          </Button>
+          {hasActiveFilters && (
+            <Link
+              href={`/${config.slug}`}
+              className="shrink-0 rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Clear
+            </Link>
+          )}
+        </div>
       </div>
     </form>
   );

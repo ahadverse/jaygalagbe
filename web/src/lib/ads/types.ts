@@ -14,6 +14,10 @@ export type HouseRentAttributes = {
   propertyType?: string;
 };
 
+export type AdBoost = {
+  endAt: string;
+};
+
 export type Ad = {
   id: string;
   ownerId: string;
@@ -28,6 +32,12 @@ export type Ad = {
   attributes: LandAttributes | HouseRentAttributes | null;
   status: AdStatus;
   rejectionReason?: string | null;
+  /** Present only on endpoints that expand boosts; absent means "not boosted". */
+  boosts?: AdBoost[];
   createdAt: string;
   updatedAt: string;
 };
+
+export function isAdBoosted(ad: Ad, now = Date.now()): boolean {
+  return (ad.boosts ?? []).some((boost) => new Date(boost.endAt).getTime() > now);
+}
