@@ -11,6 +11,7 @@ import { PaymentsModule } from './payments/payments.module.js';
 import { MessagingModule } from './messaging/messaging.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
+import { ReportsModule } from './reports/reports.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
 import { AdminModule } from './admin/admin.module.js';
 
@@ -26,6 +27,7 @@ import { AdminModule } from './admin/admin.module.js';
     MessagingModule,
     NotificationsModule,
     ReviewsModule,
+    ReportsModule,
     AnalyticsModule,
     AdminModule,
   ],
