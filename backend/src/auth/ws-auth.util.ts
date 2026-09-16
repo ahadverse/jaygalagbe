@@ -26,7 +26,7 @@ export async function authenticateSocket(
 
   const payload = jwtService.verify<JwtPayload>(token);
   const user = await prisma.user.findUnique({ where: { id: payload.sub } });
-  if (!user) {
+  if (!user || user.isSuspended) {
     throw new UnauthorizedException('Invalid auth token');
   }
 
