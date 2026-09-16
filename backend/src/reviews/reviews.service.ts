@@ -5,7 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { UpsertReviewDto } from './dto/upsert-review.dto.js';
+
+type ReviewWithCustomer = Prisma.ReviewGetPayload<{
+  include: { customer: { select: { id: true; name: true } } };
+}>;
 
 @Injectable()
 export class ReviewsService {
@@ -63,6 +68,51 @@ export class ReviewsService {
       averageRating: aggregate._avg.rating ?? 0,
       reviewCount: aggregate._count,
     };
+  }
+
+  async findByAdvertisers(advertiserIds: string[]) {
+    const uniqueIds = [...new Set(advertiserIds)];
+    const result: Record<
+      string,
+      {
+        reviews: ReviewWithCustomer[];
+        averageRating: number;
+        reviewCount: number;
+      }
+    > = {};
+    for (const id of uniqueIds) {
+      result[id] = { reviews: [], averageRating: 0, reviewCount: 0 };
+    }
+    if (uniqueIds.length === 0) {
+      return result;
+    }
+
+    const [reviews, aggregates] = await this.prisma.$transaction([
+      this.prisma.review.findMany({
+        where: { advertiserId: { in: uniqueIds } },
+        orderBy: { createdAt: 'desc' },
+        include: { customer: { select: { id: true, name: true } } },
+      }),
+      this.prisma.review.groupBy({
+        by: ['advertiserId'],
+        where: { advertiserId: { in: uniqueIds } },
+        _avg: { rating: true },
+        _count: true,
+      }),
+    ]);
+
+    for (const review of reviews) {
+      result[review.advertiserId]?.reviews.push(review);
+    }
+    for (const aggregate of aggregates) {
+      const entry = result[aggregate.advertiserId];
+      if (entry) {
+        entry.averageRating = aggregate._avg.rating ?? 0;
+        entry.reviewCount = aggregate._count;
+      }
+    }
+
+    return result;
   }
 
   async remove(customerId: string, advertiserId: string) {

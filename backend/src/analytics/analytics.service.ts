@@ -41,8 +41,8 @@ export class AnalyticsService {
     const from = query.from
       ? new Date(query.from)
       : new Date(to.getTime() - (DEFAULT_RANGE_DAYS - 1) * DAY_MS);
-    from.setHours(0, 0, 0, 0);
-    to.setHours(23, 59, 59, 999);
+    from.setUTCHours(0, 0, 0, 0);
+    to.setUTCHours(23, 59, 59, 999);
     return { from, to };
   }
 
@@ -116,14 +116,31 @@ export class AnalyticsService {
       if (visit.conversion) {
         throw new ConflictException('Visit already converted');
       }
+
+      return this.prisma.adConversion.create({
+        data: {
+          adId,
+          userId,
+          visitId: dto.visitId,
+        },
+      });
     }
 
-    return this.prisma.adConversion.create({
-      data: {
-        adId,
-        userId,
-        visitId: dto.visitId,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.adConversion.findFirst({
+        where: { adId, userId, visitId: null },
+      });
+      if (existing) {
+        return existing;
+      }
+
+      return tx.adConversion.create({
+        data: {
+          adId,
+          userId,
+          visitId: dto.visitId,
+        },
+      });
     });
   }
 
@@ -147,9 +164,15 @@ export class AnalyticsService {
       visitRows,
       conversionRows,
     ] = await this.prisma.$transaction([
-      this.prisma.adImpression.count({ where: { adId } }),
-      this.prisma.adVisit.count({ where: { adId } }),
-      this.prisma.adConversion.count({ where: { adId } }),
+      this.prisma.adImpression.count({
+        where: { adId, createdAt: { gte: from, lte: to } },
+      }),
+      this.prisma.adVisit.count({
+        where: { adId, createdAt: { gte: from, lte: to } },
+      }),
+      this.prisma.adConversion.count({
+        where: { adId, convertedAt: { gte: from, lte: to } },
+      }),
       this.prisma.adImpression.findMany({
         where: { adId, createdAt: { gte: from, lte: to } },
         select: { createdAt: true },
@@ -218,17 +241,17 @@ export class AnalyticsService {
     ] = await this.prisma.$transaction([
       this.prisma.adImpression.groupBy({
         by: ['adId'],
-        where: { adId: { in: adIds } },
+        where: { adId: { in: adIds }, createdAt: { gte: from, lte: to } },
         _count: { _all: true },
       }),
       this.prisma.adVisit.groupBy({
         by: ['adId'],
-        where: { adId: { in: adIds } },
+        where: { adId: { in: adIds }, createdAt: { gte: from, lte: to } },
         _count: { _all: true },
       }),
       this.prisma.adConversion.groupBy({
         by: ['adId'],
-        where: { adId: { in: adIds } },
+        where: { adId: { in: adIds }, convertedAt: { gte: from, lte: to } },
         _count: { _all: true },
       }),
       this.prisma.adImpression.findMany({

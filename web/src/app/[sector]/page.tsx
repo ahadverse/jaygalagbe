@@ -81,7 +81,7 @@ export default async function SectorPage({
     (value) => value && value !== "newest",
   );
 
-  const { ads, error } = await fetchLiveAds(config.sector);
+  const { ads, error } = await fetchLiveAds(config.sector, { take: 200 });
   const filteredAds = error
     ? []
     : filterAndSortAds(ads, config.sector, {

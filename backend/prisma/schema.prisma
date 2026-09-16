@@ -128,6 +128,8 @@ model Payment {
   @@map("payments")
 }
 
+// Partial unique index on (adId) WHERE status IN (PENDING, ACTIVE) exists
+// in the database (see migrations/); not representable in this DSL.
 model Boost {
   id        String      @id @default(cuid())
   adId      String

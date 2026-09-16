@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -15,6 +16,21 @@ import { UpsertReviewDto } from './dto/upsert-review.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
+
+@ApiTags('Reviews')
+@Controller('reviews')
+export class ReviewsBatchController {
+  constructor(private readonly reviewsService: ReviewsService) {}
+
+  @Get('batch')
+  findBatch(@Query('advertiserIds') advertiserIds?: string) {
+    const ids = (advertiserIds ?? '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+    return this.reviewsService.findByAdvertisers(ids);
+  }
+}
 
 @ApiTags('Reviews')
 @ApiBearerAuth()

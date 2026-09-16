@@ -54,7 +54,7 @@ export class MessagingController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateMessageDto,
   ) {
-    return this.messagingService.sendMessage(id, user.id, dto);
+    return this.messagingService.sendMessage(id, user, dto);
   }
 
   @Patch(':id/read')
