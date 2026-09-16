@@ -11,6 +11,17 @@ export default function AdvertiserAdsLoading() {
         <Skeleton className="h-11 w-40 rounded-full" />
       </div>
 
+      <div className="flex flex-col gap-5">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-72 w-full rounded-xl" />
+      </div>
+
       <div className="flex flex-col gap-3">
         {Array.from({ length: 3 }).map((_, index) => (
           <div

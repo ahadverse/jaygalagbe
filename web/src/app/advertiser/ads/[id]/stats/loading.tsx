@@ -9,9 +9,11 @@ export default function AdStatsLoading() {
         <Skeleton className="h-4 w-2/3" />
       </div>
 
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-border ring-1 ring-neutral-900/5">
-        {Array.from({ length: 2 }).map((_, index) => (
-          <div key={index} className="flex flex-col gap-2 bg-card px-5 py-4">
+      <Skeleton className="h-20 w-full rounded-xl" />
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="flex flex-col gap-2 rounded-xl bg-card px-5 py-4 shadow-sm ring-1 ring-neutral-900/5">
             <Skeleton className="h-2.5 w-20" />
             <Skeleton className="h-7 w-16" />
             <Skeleton className="h-3 w-28" />
@@ -19,18 +21,14 @@ export default function AdStatsLoading() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-5 rounded-xl bg-card p-5 shadow-sm ring-1 ring-neutral-900/5">
+      <div className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-neutral-900/5">
         <Skeleton className="h-5 w-44" />
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="flex flex-col gap-2">
-            <div className="flex justify-between">
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-5 w-12" />
-            </div>
-            <Skeleton className="h-2.5 w-full rounded-full" />
-            <Skeleton className="h-3 w-48" />
-          </div>
-        ))}
+        <Skeleton className="h-72 w-full rounded-lg" />
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-neutral-900/5">
+        <Skeleton className="h-5 w-44" />
+        <Skeleton className="h-52 w-full rounded-lg" />
       </div>
     </main>
   );

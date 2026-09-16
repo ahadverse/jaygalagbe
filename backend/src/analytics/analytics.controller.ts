@@ -1,9 +1,13 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service.js';
 import { LogImpressionDto } from './dto/log-impression.dto.js';
 import { LogVisitDto } from './dto/log-visit.dto.js';
 import { LogConversionDto } from './dto/log-conversion.dto.js';
+import {
+  GetOverviewQueryDto,
+  GetStatsQueryDto,
+} from './dto/get-stats-query.dto.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
@@ -50,7 +54,24 @@ export class AnalyticsController {
   getStats(
     @Param('adId') adId: string,
     @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetStatsQueryDto,
   ) {
-    return this.analyticsService.getStats(adId, user);
+    return this.analyticsService.getStats(adId, user, query);
+  }
+}
+
+@ApiTags('Analytics')
+@ApiBearerAuth()
+@Controller('analytics')
+export class AnalyticsOverviewController {
+  constructor(private readonly analyticsService: AnalyticsService) {}
+
+  @Get('overview')
+  @UseGuards(JwtAuthGuard)
+  getOverview(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetOverviewQueryDto,
+  ) {
+    return this.analyticsService.getOverview(user, query);
   }
 }

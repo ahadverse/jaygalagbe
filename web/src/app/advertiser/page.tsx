@@ -2,10 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, Button, EmptyState, buttonVariants } from "@/components/ui";
 import { PhotoPlaceholder } from "@/components/ads/photo-placeholder";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { DashboardSection } from "@/components/dashboard/dashboard-section";
+import { StatsFilters } from "@/components/dashboard/stats-filters";
+import { TrendChart } from "@/components/charts/trend-chart";
+import { AdBreakdownChart } from "@/components/charts/ad-breakdown-chart";
 import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
 import { fetchMyAds } from "@/lib/ads/fetch-my-ads";
+import { fetchAnalyticsOverview } from "@/lib/analytics/fetch-overview";
+import { resolveStatsRange } from "@/lib/analytics/date-range";
 import { formatAmount, formatRelativeTime } from "@/lib/format";
+import { firstSearchParam } from "@/lib/utils";
 import { markSoldAction, resubmitAdAction, deleteAdAction } from "@/lib/ads/actions";
 
 export const metadata: Metadata = {
@@ -20,13 +28,34 @@ const statusBadge = {
   REMOVED: { label: "Removed", variant: "neutral" as const },
 };
 
-export default async function AdvertiserDashboardPage() {
+export default async function AdvertiserDashboardPage({
+  searchParams,
+}: PageProps<"/advertiser">) {
   await requireUser();
   const token = (await getToken())!;
   const ads = await fetchMyAds(token);
 
   const liveCount = ads.filter((ad) => ad.status === "LIVE").length;
   const pendingCount = ads.filter((ad) => ad.status === "PENDING").length;
+
+  const resolved = await searchParams;
+  const { range, from, to } = resolveStatsRange(firstSearchParam(resolved?.range));
+  const adId = firstSearchParam(resolved?.adId) || undefined;
+  const overview =
+    ads.length > 0 ? await fetchAnalyticsOverview(token, { from, to, adId }) : null;
+
+  const hasOverviewData =
+    !!overview &&
+    (overview.totals.impressions > 0 ||
+      overview.totals.visits > 0 ||
+      overview.totals.conversions > 0);
+  const seriesHasData =
+    !!overview &&
+    overview.series.some(
+      (point) => point.impressions > 0 || point.visits > 0 || point.conversions > 0,
+    );
+  const breakdownHasData =
+    !!overview && overview.ads.filter((ad) => ad.visits > 0).length > 1;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-7 px-5 py-10 sm:px-8 sm:py-12">
@@ -61,8 +90,73 @@ export default async function AdvertiserDashboardPage() {
           }
         />
       ) : (
-        <div className="flex flex-col gap-3">
-          {ads.map((ad) => {
+        <>
+          {hasOverviewData && (
+            <DashboardSection
+              title="Performance overview"
+              description="Across all your live ads, based on the filters below."
+            >
+              <div className="flex flex-col gap-5">
+                <StatsFilters
+                  action="/advertiser"
+                  range={range}
+                  ads={ads.map((ad) => ({ id: ad.id, title: ad.title }))}
+                  adId={adId}
+                />
+
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <StatCard
+                    label="Impressions"
+                    value={overview.totals.impressions.toLocaleString()}
+                    hint="Times shown in a feed"
+                  />
+                  <StatCard
+                    label="Visits"
+                    value={overview.totals.visits.toLocaleString()}
+                    hint="Listings opened"
+                  />
+                  <StatCard
+                    label="Conversions"
+                    value={overview.totals.conversions.toLocaleString()}
+                    hint="Sign-ups to contact you"
+                    tone="accent"
+                  />
+                  <StatCard
+                    label="Conversion rate"
+                    value={`${(overview.totals.conversionRate * 100).toFixed(1)}%`}
+                    hint="Sign-ups ÷ visits"
+                    tone="success"
+                  />
+                </div>
+
+                {seriesHasData && (
+                  <div className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-neutral-900/5">
+                    <div className="flex flex-col gap-1">
+                      <h3 className="font-heading text-base font-bold text-foreground">
+                        Activity over time
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Impressions, visits, and conversions per day.
+                      </p>
+                    </div>
+                    <TrendChart data={overview.series} />
+                  </div>
+                )}
+
+                {breakdownHasData && (
+                  <div className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-neutral-900/5">
+                    <h3 className="font-heading text-base font-bold text-foreground">
+                      Top ads by visits
+                    </h3>
+                    <AdBreakdownChart ads={overview.ads} />
+                  </div>
+                )}
+              </div>
+            </DashboardSection>
+          )}
+
+          <div className="flex flex-col gap-3">
+            {ads.map((ad) => {
             const badge = statusBadge[ad.status];
             return (
               <article
@@ -174,7 +268,8 @@ export default async function AdvertiserDashboardPage() {
               </article>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
     </main>
   );

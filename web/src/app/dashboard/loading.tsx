@@ -12,6 +12,12 @@ export default function DashboardLoading() {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Skeleton key={index} className="h-20 w-full rounded-xl" />
+        ))}
+      </div>
+
       <section className="flex flex-col gap-4">
         <Skeleton className="h-6 w-28" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
