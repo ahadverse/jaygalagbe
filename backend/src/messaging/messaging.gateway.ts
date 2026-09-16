@@ -1,5 +1,6 @@
 import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { OnEvent } from '@nestjs/event-emitter';
 import {
   ConnectedSocket,
   MessageBody,
@@ -17,6 +18,10 @@ import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import { MessagingService } from './messaging.service.js';
 import { ConversationRoomDto } from './dto/conversation-room.dto.js';
 import { SendMessageWsDto } from './dto/send-message-ws.dto.js';
+import {
+  MessagingEvent,
+  type MessageCreatedPayload,
+} from './messaging-events.js';
 
 function roomName(conversationId: string): string {
   return `conversation:${conversationId}`;
@@ -78,14 +83,16 @@ export class MessagingGateway
     @MessageBody() dto: SendMessageWsDto,
   ) {
     const user = this.requireUser(client);
-    const message = await this.messagingService.sendMessage(
-      dto.conversationId,
-      user.id,
-      { body: dto.body },
-    );
-    const payload = { ...message, sender: { id: user.id, name: user.name } };
-    this.server.to(roomName(dto.conversationId)).emit('message:new', payload);
-    return message;
+    return this.messagingService.sendMessage(dto.conversationId, user, {
+      body: dto.body,
+    });
+  }
+
+  @OnEvent(MessagingEvent.MessageCreated)
+  handleMessageCreated(payload: MessageCreatedPayload) {
+    this.server
+      .to(roomName(payload.conversationId))
+      .emit('message:new', payload.message);
   }
 
   @SubscribeMessage('message:read')
@@ -98,6 +105,17 @@ export class MessagingGateway
     this.server.to(roomName(dto.conversationId)).emit('message:read', {
       conversationId: dto.conversationId,
       readerId: user.id,
+    });
+  }
+
+  async isUserConnectedToConversation(
+    conversationId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const sockets = await this.server.in(roomName(conversationId)).fetchSockets();
+    return sockets.some((socket) => {
+      const user = socket.data.user as AuthenticatedUser | undefined;
+      return user?.id === userId;
     });
   }
 

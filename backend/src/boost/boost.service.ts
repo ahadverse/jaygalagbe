@@ -29,21 +29,21 @@ export class BoostService {
       throw new BadRequestException('Only live ads can be boosted');
     }
 
-    const existingBoost = await this.prisma.boost.findFirst({
-      where: {
-        adId,
-        status: { in: [BoostStatus.PENDING, BoostStatus.ACTIVE] },
-      },
-    });
-    if (existingBoost) {
-      throw new BadRequestException(
-        'This ad already has a pending or active boost',
-      );
-    }
-
     const { priceBdt } = BOOST_TIER_CONFIG[dto.tier];
 
     return this.prisma.$transaction(async (tx) => {
+      const existingBoost = await tx.boost.findFirst({
+        where: {
+          adId,
+          status: { in: [BoostStatus.PENDING, BoostStatus.ACTIVE] },
+        },
+      });
+      if (existingBoost) {
+        throw new BadRequestException(
+          'This ad already has a pending or active boost',
+        );
+      }
+
       const payment = await tx.payment.create({
         data: {
           userId: ownerId,

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { MessagingGateway } from '../messaging/messaging.gateway.js';
 import { EmailService } from './email.service.js';
 import {
   NotificationEvent,
@@ -14,6 +15,7 @@ export class EmailNotificationsListener {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
+    private readonly messagingGateway: MessagingGateway,
   ) {}
 
   @OnEvent(NotificationEvent.AdApproved)
@@ -33,7 +35,16 @@ export class EmailNotificationsListener {
   }
 
   @OnEvent(NotificationEvent.MessageReceived)
-  handleMessageReceived(payload: MessageReceivedPayload) {
+  async handleMessageReceived(payload: MessageReceivedPayload) {
+    const isViewingConversation =
+      await this.messagingGateway.isUserConnectedToConversation(
+        payload.conversationId,
+        payload.userId,
+      );
+    if (isViewingConversation) {
+      return;
+    }
+
     return this.notify(payload.userId, {
       subject: 'You have a new message',
       text: `You received a new message: "${payload.body}"`,

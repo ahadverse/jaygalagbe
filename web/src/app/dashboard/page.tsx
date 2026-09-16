@@ -5,7 +5,8 @@ import { CustomerStatsRow } from "@/components/dashboard/customer-stats-row";
 import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
 import { fetchMyConversations } from "@/lib/messaging/fetch-conversations";
-import { fetchAdvertiserReviews } from "@/lib/reviews/fetch-advertiser-reviews";
+import { fetchAdvertiserReviewsBatch } from "@/lib/reviews/fetch-advertiser-reviews-batch";
+import type { AdvertiserReviews } from "@/lib/reviews/types";
 import { ConversationCard } from "@/components/messaging/conversation-card";
 import { ReviewForm } from "@/components/reviews/review-form";
 import { SavedAdsSection } from "@/components/dashboard/saved-ads-section";
@@ -31,9 +32,14 @@ export default async function DashboardPage() {
       ]),
     ).values(),
   );
-  const advertiserReviews = await Promise.all(
-    advertisers.map((advertiser) => fetchAdvertiserReviews(advertiser.id)),
+  const advertiserReviewsById = await fetchAdvertiserReviewsBatch(
+    advertisers.map((advertiser) => advertiser.id),
   );
+  const emptyReviews: AdvertiserReviews = {
+    reviews: [],
+    averageRating: 0,
+    reviewCount: 0,
+  };
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 py-10 sm:px-8 sm:py-14">
@@ -82,10 +88,10 @@ export default async function DashboardPage() {
       {advertisers.length > 0 && (
         <DashboardSection title="Reviews">
           <div className="flex flex-col gap-4">
-            {advertisers.map((advertiser, index) => {
-              const existing = advertiserReviews[index].reviews.find(
-                (review) => review.customerId === user.id,
-              );
+            {advertisers.map((advertiser) => {
+              const existing = (
+                advertiserReviewsById[advertiser.id] ?? emptyReviews
+              ).reviews.find((review) => review.customerId === user.id);
               return (
                 <Card key={advertiser.id}>
                   <CardHeader>

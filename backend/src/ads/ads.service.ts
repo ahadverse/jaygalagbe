@@ -24,6 +24,9 @@ function toInputJson(
   return attributes as Prisma.InputJsonValue | undefined;
 }
 
+const DEFAULT_LIVE_ADS_TAKE = 200;
+const MAX_LIVE_ADS_TAKE = 200;
+
 @Injectable()
 export class AdsService {
   constructor(
@@ -52,10 +55,18 @@ export class AdsService {
     });
   }
 
-  findLive(sector?: Sector) {
+  findLive(sector?: Sector, pagination?: { take?: number; skip?: number }) {
+    const take = Math.max(
+      1,
+      Math.min(pagination?.take ?? DEFAULT_LIVE_ADS_TAKE, MAX_LIVE_ADS_TAKE),
+    );
+    const skip = Math.max(0, pagination?.skip ?? 0);
+
     return this.prisma.ad.findMany({
       where: { status: AdStatus.LIVE, sector },
       orderBy: { createdAt: 'desc' },
+      take,
+      skip,
     });
   }
 

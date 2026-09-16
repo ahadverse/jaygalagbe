@@ -37,8 +37,15 @@ export class AdsController {
   }
 
   @Get()
-  findLive(@Query('sector') sector?: Sector) {
-    return this.adsService.findLive(sector);
+  findLive(
+    @Query('sector') sector?: Sector,
+    @Query('take') take?: string,
+    @Query('skip') skip?: string,
+  ) {
+    return this.adsService.findLive(sector, {
+      take: take ? Number(take) : undefined,
+      skip: skip ? Number(skip) : undefined,
+    });
   }
 
   @Get('mine')

@@ -37,16 +37,27 @@ export function ChatThread({
   });
   const listRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastSentBodyRef = useRef<string | null>(null);
 
   useEffect(() => {
     const node = listRef.current;
     if (node) node.scrollTop = node.scrollHeight;
   }, [messages.length]);
 
+  useEffect(() => {
+    if (!error || lastSentBodyRef.current === null) return;
+    if (textareaRef.current) {
+      textareaRef.current.value = lastSentBodyRef.current;
+    }
+    lastSentBodyRef.current = null;
+  }, [error]);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const body = String(new FormData(event.currentTarget).get("body") ?? "").trim();
     if (!body) return;
+    lastSentBodyRef.current = body;
     sendMessage(body);
     formRef.current?.reset();
   }
@@ -126,6 +137,7 @@ export function ChatThread({
         {error && <Alert>{error}</Alert>}
         <div className="flex items-end gap-2 rounded-2xl bg-card p-2 shadow-sm ring-1 ring-neutral-900/5">
           <textarea
+            ref={textareaRef}
             name="body"
             placeholder={connected ? "Write a message…" : "Connecting…"}
             required

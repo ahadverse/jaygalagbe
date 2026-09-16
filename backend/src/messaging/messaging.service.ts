@@ -7,10 +7,12 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Conversation } from '../generated/prisma/client.js';
+import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import {
   NotificationEvent,
   type MessageReceivedPayload,
 } from '../notifications/notification-events.js';
+import { MessagingEvent } from './messaging-events.js';
 import { CreateConversationDto } from './dto/create-conversation.dto.js';
 import { CreateMessageDto } from './dto/create-message.dto.js';
 
@@ -85,9 +87,10 @@ export class MessagingService {
 
   async sendMessage(
     conversationId: string,
-    senderId: string,
+    sender: Pick<AuthenticatedUser, 'id' | 'name'>,
     dto: CreateMessageDto,
   ) {
+    const senderId = sender.id;
     const conversation = await this.getParticipantConversation(
       conversationId,
       senderId,
@@ -106,6 +109,12 @@ export class MessagingService {
       conversation.customerId === senderId
         ? conversation.advertiserId
         : conversation.customerId;
+
+    this.eventEmitter.emit(MessagingEvent.MessageCreated, {
+      conversationId: conversation.id,
+      message: { ...message, sender: { id: sender.id, name: sender.name } },
+    });
+
     this.eventEmitter.emit(NotificationEvent.MessageReceived, {
       userId: recipientId,
       conversationId: conversation.id,
