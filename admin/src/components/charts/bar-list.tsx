@@ -9,11 +9,7 @@ export interface BarDatum {
   color: string;
 }
 
-/**
- * Horizontal labelled bars. Every row is direct-labelled with its name and
- * value, so the fill colour is never the only thing carrying identity — which
- * is what lets the status hues sit next to each other safely.
- */
+/** Every row is direct-labelled, so colour is never the only carrier of meaning. */
 export function BarList({
   data,
   formatValue = formatCount,

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { Conversation } from '../generated/prisma/client.js';
+import { AdStatus, type Conversation } from '../generated/prisma/client.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import {
   NotificationEvent,
@@ -15,6 +15,9 @@ import {
 import { MessagingEvent } from './messaging-events.js';
 import { CreateConversationDto } from './dto/create-conversation.dto.js';
 import { CreateMessageDto } from './dto/create-message.dto.js';
+
+const MAX_MESSAGES_PER_THREAD = 200;
+const MAX_CONVERSATIONS = 200;
 
 const conversationSummaryInclude = {
   ad: { select: { id: true, title: true, photos: true, sector: true } },
@@ -31,7 +34,9 @@ export class MessagingService {
 
   async startConversation(customerId: string, dto: CreateConversationDto) {
     const ad = await this.prisma.ad.findUnique({ where: { id: dto.adId } });
-    if (!ad) {
+    // Only a published listing is contactable — a pending or removed ad must
+    // not become a channel to its owner.
+    if (!ad || ad.status !== AdStatus.LIVE) {
       throw new NotFoundException('Ad not found');
     }
     if (ad.ownerId === customerId) {
@@ -58,6 +63,7 @@ export class MessagingService {
     return this.prisma.conversation.findMany({
       where: { OR: [{ customerId: userId }, { advertiserId: userId }] },
       orderBy: { updatedAt: 'desc' },
+      take: MAX_CONVERSATIONS,
       include: {
         ...conversationSummaryInclude,
         messages: { orderBy: { createdAt: 'desc' }, take: 1 },
@@ -79,10 +85,12 @@ export class MessagingService {
 
   async listMessages(conversationId: string, userId: string) {
     await this.getParticipantConversation(conversationId, userId);
-    return this.prisma.message.findMany({
+    const recent = await this.prisma.message.findMany({
       where: { conversationId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
+      take: MAX_MESSAGES_PER_THREAD,
     });
+    return recent.reverse();
   }
 
   async sendMessage(

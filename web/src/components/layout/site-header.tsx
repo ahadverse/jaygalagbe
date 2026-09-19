@@ -57,7 +57,7 @@ export function SiteHeader({ user }: { user: AuthUser | null }) {
             <>
               <NotificationBell />
               <Link
-                href={user.isAdvertiser ? "/advertiser" : "/dashboard"}
+                href="/dashboard"
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   "hidden gap-2 sm:inline-flex",
@@ -86,7 +86,7 @@ export function SiteHeader({ user }: { user: AuthUser | null }) {
             </Link>
           )}
           <Link
-            href="/advertiser/ads/new"
+            href="/dashboard/ads/new"
             className={cn(buttonVariants({ variant: "primary", size: "sm" }), "gap-1.5")}
           >
             <svg

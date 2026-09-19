@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { MessagingService } from './messaging.service.js';
 import { CreateConversationDto } from './dto/create-conversation.dto.js';
 import { CreateMessageDto } from './dto/create-message.dto.js';
@@ -49,6 +50,7 @@ export class MessagingController {
   }
 
   @Post(':id/messages')
+  @Throttle({ short: { ttl: 10_000, limit: 15 } })
   sendMessage(
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,

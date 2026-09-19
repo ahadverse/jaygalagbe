@@ -1,5 +1,14 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AnalyticsService } from './analytics.service.js';
 import { LogImpressionDto } from './dto/log-impression.dto.js';
 import { LogVisitDto } from './dto/log-visit.dto.js';
@@ -13,6 +22,15 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 
+/**
+ * Impression and visit pings are unauthenticated by design, so they carry a
+ * per-caller budget that keeps counts from being inflated by a loop.
+ */
+const TRACKING_THROTTLE = {
+  short: { ttl: 10_000, limit: 30 },
+  medium: { ttl: 60_000, limit: 120 },
+};
+
 @ApiTags('Analytics')
 @ApiBearerAuth()
 @Controller('ads/:adId')
@@ -21,6 +39,7 @@ export class AnalyticsController {
 
   @Post('impressions')
   @UseGuards(OptionalJwtAuthGuard)
+  @Throttle(TRACKING_THROTTLE)
   logImpression(
     @Param('adId') adId: string,
     @CurrentUser() user: AuthenticatedUser | undefined,
@@ -31,6 +50,7 @@ export class AnalyticsController {
 
   @Post('visits')
   @UseGuards(OptionalJwtAuthGuard)
+  @Throttle(TRACKING_THROTTLE)
   logVisit(
     @Param('adId') adId: string,
     @CurrentUser() user: AuthenticatedUser | undefined,

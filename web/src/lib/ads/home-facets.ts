@@ -1,10 +1,7 @@
 import { isAdBoosted, type Ad, type Sector } from "./types";
 
-/*
- * Everything the homepage browse sections show is derived from the live ads
- * already fetched for the page — no extra endpoints, no counts we can't back
- * up with a listing that actually exists.
- */
+/* Every homepage browse section is derived from the ads already fetched, so
+ * no count is shown that no listing backs. */
 
 export type DistrictFacet = {
   district: string;
@@ -94,7 +91,7 @@ export type FeaturedSelection = {
 };
 
 /*
- * Boosts win the slot whenever they exist — that is the thing advertisers pay
+ * Boosts win the slot whenever they exist — that is what owners pay
  * for, and a boost showing up twice on the page is the product working.
  *
  * Until the ads endpoint expands boosts there will never be any, so the

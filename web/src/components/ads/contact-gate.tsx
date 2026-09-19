@@ -107,7 +107,7 @@ export function ContactGate({
         </CardHeader>
         <CardContent>
           <Link
-            href="/advertiser"
+            href="/dashboard/ads"
             className={buttonVariants({ variant: "outline", className: "w-full" })}
           >
             Manage in dashboard

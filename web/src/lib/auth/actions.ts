@@ -2,8 +2,9 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { API_URL } from "@/lib/api/config";
+import { API_URL, apiUrl, isValidId } from "@/lib/api/config";
 import { SESSION_COOKIE } from "./session";
+import { safeRedirectPath } from "./safe-redirect";
 
 export type AuthFormState = { error?: string };
 
@@ -26,23 +27,21 @@ async function setSessionCookie(token: string) {
 }
 
 async function logConversionIfFromAd(
-  from: string | null,
+  from: string,
   visitId: string | null,
   token: string,
 ) {
-  if (!from) return;
-  const match = from.match(/^\/ads\/([^/?#]+)/);
-  if (!match) return;
-  const adId = match[1];
+  const adId = from.match(/^\/ads\/([^/?#]+)/)?.[1];
+  if (!isValidId(adId)) return;
 
   try {
-    await fetch(`${API_URL}/ads/${adId}/conversions`, {
+    await fetch(apiUrl`/ads/${adId}/conversions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(visitId ? { visitId } : {}),
+      body: JSON.stringify(isValidId(visitId) ? { visitId } : {}),
     });
   } catch {
     // Conversion tracking is best-effort; never block the auth flow on it.
@@ -68,8 +67,8 @@ export async function loginAction(
 ): Promise<AuthFormState> {
   const identifier = String(formData.get("identifier") ?? "");
   const password = String(formData.get("password") ?? "");
-  const from = formData.get("from") ? String(formData.get("from")) : null;
-  const visitId = formData.get("visitId") ? String(formData.get("visitId")) : null;
+  const from = safeRedirectPath(formData.get("from")?.toString());
+  const visitId = formData.get("visitId")?.toString() ?? null;
 
   if (!identifier || !password) {
     return { error: "Enter your email or phone and password." };
@@ -96,7 +95,7 @@ export async function loginAction(
 
   await setSessionCookie(token);
   await logConversionIfFromAd(from, visitId, token);
-  redirect(from || "/dashboard");
+  redirect(from);
 }
 
 export async function registerAction(
@@ -106,8 +105,8 @@ export async function registerAction(
   const name = String(formData.get("name") ?? "");
   const identifier = String(formData.get("identifier") ?? "");
   const password = String(formData.get("password") ?? "");
-  const from = formData.get("from") ? String(formData.get("from")) : null;
-  const visitId = formData.get("visitId") ? String(formData.get("visitId")) : null;
+  const from = safeRedirectPath(formData.get("from")?.toString());
+  const visitId = formData.get("visitId")?.toString() ?? null;
 
   if (!name || !identifier || !password) {
     return { error: "Fill in your name, email or phone, and password." };
@@ -134,7 +133,7 @@ export async function registerAction(
 
   await setSessionCookie(token);
   await logConversionIfFromAd(from, visitId, token);
-  redirect(from || "/dashboard");
+  redirect(from);
 }
 
 export async function logoutAction() {

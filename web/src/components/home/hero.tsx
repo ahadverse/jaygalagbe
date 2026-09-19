@@ -6,8 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-// Name only — the sector names carry themselves, and an appended English
-// tagline is what used to overflow this control.
 const sectors = [
   { value: "jayga-jomi", label: "Jayga Jomi" },
   { value: "basha-bhara", label: "Basha Bhara" },
@@ -23,13 +21,7 @@ const assurances = [
   "Chat directly with the owner",
 ];
 
-/*
- * Scrim, tuned against the actual pixels of the photo rather than guessed:
- * a soft centred vignette sits heaviest exactly under the centred column,
- * top and bottom fades anchor the band, and a warm rise off the skyline keeps
- * the frame inside the orange brand. Measured worst-case contrast in the copy
- * area is 6.8:1 for white and 5.6:1 for the subhead, from 360px up.
- */
+/* Keeps copy above 5.6:1 contrast over the photo, from 360px up. */
 const scrimLayers = [
   "radial-gradient(80% 90% at 50% 50%, oklch(12% 0.006 56 / 0.68), transparent 100%)",
   "linear-gradient(to bottom, oklch(12% 0.006 56 / 0.35), transparent 30%)",

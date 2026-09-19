@@ -3,7 +3,6 @@ export type AuthUser = {
   name: string;
   email?: string | null;
   phone?: string | null;
-  isAdvertiser: boolean;
   isAdmin: boolean;
   isVerified: boolean;
   isSuspended: boolean;

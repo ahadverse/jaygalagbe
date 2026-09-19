@@ -102,7 +102,7 @@ export function MobileNav({ user }: { user: AuthUser | null }) {
 
             <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4 sm:hidden">
               <Link
-                href={user ? (user.isAdvertiser ? "/advertiser" : "/dashboard") : "/login"}
+                href={user ? "/dashboard" : "/login"}
                 onClick={() => setOpen(false)}
                 className={buttonVariants({ variant: "outline" })}
               >

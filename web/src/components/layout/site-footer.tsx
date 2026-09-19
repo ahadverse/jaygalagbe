@@ -11,7 +11,7 @@ const footerColumns = [
   {
     title: "For advertisers",
     links: [
-      { href: "/advertiser/ads/new", label: "Post an ad" },
+      { href: "/dashboard/ads/new", label: "Post an ad" },
       { href: "/register", label: "Become an advertiser" },
     ],
   },

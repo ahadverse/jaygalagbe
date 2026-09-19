@@ -1,10 +1,7 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Shared chrome for every form control: label, optional hint, and an error
- * that is wired up with aria-describedby so it is announced, not just red.
- */
+/** The error is wired up with aria-describedby so it is announced, not just red. */
 export type FieldProps = {
   id: string;
   label?: string;

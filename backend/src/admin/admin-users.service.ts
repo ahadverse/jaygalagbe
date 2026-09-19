@@ -20,7 +20,6 @@ const LIST_SELECT = {
   name: true,
   email: true,
   phone: true,
-  isAdvertiser: true,
   isAdmin: true,
   isVerified: true,
   isSuspended: true,
@@ -44,11 +43,7 @@ function buildWhere(query: ListUsersDto): Prisma.UserWhereInput {
 
   if (query.role === Role.ADMIN) {
     where.isAdmin = true;
-  } else if (query.role === Role.ADVERTISER) {
-    where.isAdvertiser = true;
-    where.isAdmin = false;
-  } else if (query.role === Role.CUSTOMER) {
-    where.isAdvertiser = false;
+  } else if (query.role === Role.USER) {
     where.isAdmin = false;
   }
 

@@ -2,32 +2,49 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module.js';
+import { assertRequiredEnv, getCorsOrigins, isProduction } from './config/env.js';
 
-const DEFAULT_ORIGINS = 'http://localhost:3000,http://localhost:5174';
+const BODY_LIMIT = '256kb';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  assertRequiredEnv();
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
+  app.useBodyParser('json', { limit: BODY_LIMIT });
+  app.useBodyParser('urlencoded', { limit: BODY_LIMIT, extended: true });
+  app.set('trust proxy', 1);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // The admin panel is a separate origin (Vite), so it needs CORS; the Next.js
   // app only calls the API server-side but is allowlisted for local dev.
   app.enableCors({
-    origin: (process.env.CORS_ORIGINS ?? DEFAULT_ORIGINS)
-      .split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean),
+    origin: getCorsOrigins(),
     credentials: true,
   });
 
-  const config = new DocumentBuilder()
-    .setTitle('Jayga Lagbe API')
-    .setDescription('Backend API for the Jayga Lagbe marketplace platform')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  // Swagger documents every route including the admin surface, so it stays off
+  // in production unless explicitly opted back in.
+  if (!isProduction() || process.env.ENABLE_SWAGGER === 'true') {
+    const config = new DocumentBuilder()
+      .setTitle('Jayga Lagbe API')
+      .setDescription('Backend API for the Jayga Lagbe marketplace platform')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, config));
+  }
 
   await app.listen(process.env.PORT ?? 5000);
 }

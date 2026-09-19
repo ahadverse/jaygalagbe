@@ -21,7 +21,7 @@ export function formatNotification(notification: AppNotification): FormattedNoti
       return {
         title: "Ad rejected",
         description: `${notification.adTitle} — ${notification.reason}`,
-        href: `/advertiser/ads/${notification.adId}/edit`,
+        href: `/dashboard/ads/${notification.adId}/edit`,
         variant: "danger",
       };
     case "message.received":

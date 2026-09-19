@@ -1,19 +1,27 @@
 import { JwtService } from '@nestjs/jwt';
 import {
   OnGatewayConnection,
+  OnGatewayInit,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { authenticateSocket } from '../auth/ws-auth.util.js';
+import { useSocketAuth } from '../auth/ws-auth.util.js';
+import { getCorsOrigins } from '../config/env.js';
+import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 
 function userRoom(userId: string): string {
   return `user:${userId}`;
 }
 
-@WebSocketGateway({ cors: true, namespace: 'notifications' })
-export class NotificationsGateway implements OnGatewayConnection {
+@WebSocketGateway({
+  cors: { origin: getCorsOrigins(), credentials: true },
+  namespace: 'notifications',
+})
+export class NotificationsGateway
+  implements OnGatewayInit, OnGatewayConnection
+{
   @WebSocketServer()
   server!: Server;
 
@@ -22,18 +30,18 @@ export class NotificationsGateway implements OnGatewayConnection {
     private readonly prisma: PrismaService,
   ) {}
 
+  afterInit(server: Server) {
+    useSocketAuth(server, this.jwtService, this.prisma);
+  }
+
+  // The middleware has already authenticated, so this only joins the room.
   async handleConnection(client: Socket) {
-    try {
-      const user = await authenticateSocket(
-        client,
-        this.jwtService,
-        this.prisma,
-      );
-      client.data.user = user;
-      await client.join(userRoom(user.id));
-    } catch {
+    const user = client.data.user as AuthenticatedUser | undefined;
+    if (!user) {
       client.disconnect(true);
+      return;
     }
+    await client.join(userRoom(user.id));
   }
 
   sendToUser(userId: string, event: string, payload: unknown) {

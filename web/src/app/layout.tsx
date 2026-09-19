@@ -6,12 +6,6 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { ToastProvider } from "@/lib/toast/toast-context";
 import "./globals.css";
 
-/*
- * Bricolage carries headlines, prices, and numbers — it has enough character
- * at display sizes to stop the site reading as a default template. Inter does
- * every other job because transliterated Bangla place names live in dense
- * metadata rows, and Inter stays legible there at 12–14px.
- */
 const display = Bricolage_Grotesque({
   variable: "--font-display",
   subsets: ["latin"],

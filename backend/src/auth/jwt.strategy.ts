@@ -2,19 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { getJwtSecret } from '../config/env.js';
 
 export interface JwtPayload {
   sub: string;
-  isAdvertiser: boolean;
   isAdmin: boolean;
-}
-
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('JWT_SECRET is not set');
-  }
-  return secret;
 }
 
 @Injectable()

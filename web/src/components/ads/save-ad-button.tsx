@@ -1,29 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { isAdSaved, toggleSavedAd } from "@/lib/ads/saved-ads";
+import { toggleSavedAd, useSavedAdIds } from "@/lib/ads/local-lists";
 
 export function SaveAdButton({ adId }: { adId: string }) {
-  const [saved, setSaved] = useState(false);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      setSaved(isAdSaved(adId));
-      setReady(true);
-    });
-  }, [adId]);
+  const saved = useSavedAdIds().includes(adId);
 
   return (
     <Button
       type="button"
       variant="outline"
       aria-pressed={saved}
-      className={cn("w-full", saved && "border-brand-300 bg-brand-50 text-brand-800")}
-      disabled={!ready}
-      onClick={() => setSaved(toggleSavedAd(adId))}
+      className={cn(
+        "w-full",
+        saved && "border-brand-300 bg-brand-50 text-brand-800",
+      )}
+      onClick={() => toggleSavedAd(adId)}
     >
       <svg
         viewBox="0 0 24 24"

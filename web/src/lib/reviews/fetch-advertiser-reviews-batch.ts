@@ -1,17 +1,21 @@
-import { API_URL } from "@/lib/api/config";
+import { API_URL, isValidId } from "@/lib/api/config";
 import type { AdvertiserReviews } from "./types";
+
+const MAX_BATCH = 50;
 
 export async function fetchAdvertiserReviewsBatch(
   advertiserIds: string[],
 ): Promise<Record<string, AdvertiserReviews>> {
-  if (advertiserIds.length === 0) {
+  const ids = [...new Set(advertiserIds.filter(isValidId))].slice(0, MAX_BATCH);
+  if (ids.length === 0) {
     return {};
   }
+
   try {
-    const response = await fetch(
-      `${API_URL}/reviews/batch?advertiserIds=${advertiserIds.join(",")}`,
-      { cache: "no-store" },
-    );
+    const params = new URLSearchParams({ advertiserIds: ids.join(",") });
+    const response = await fetch(`${API_URL}/reviews/batch?${params}`, {
+      cache: "no-store",
+    });
     if (!response.ok) {
       return {};
     }

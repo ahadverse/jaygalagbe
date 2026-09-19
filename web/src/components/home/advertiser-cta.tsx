@@ -58,7 +58,7 @@ export function AdvertiserCta() {
 
           <div className="mt-1 flex flex-wrap gap-3">
             <Link
-              href="/advertiser/ads/new"
+              href="/dashboard/ads/new"
               className={buttonVariants({ variant: "primary", size: "lg" })}
             >
               Post your property

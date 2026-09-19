@@ -39,7 +39,7 @@ export function LatestListings({ ads }: { ads: Ad[] }) {
           description="Approved ads appear here as soon as they clear review. Check back shortly, or post the first one yourself."
           action={
             <Link
-              href="/advertiser/ads/new"
+              href="/dashboard/ads/new"
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
               Post an ad

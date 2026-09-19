@@ -12,6 +12,10 @@ type ReviewWithCustomer = Prisma.ReviewGetPayload<{
   include: { customer: { select: { id: true; name: true } } };
 }>;
 
+const MAX_REVIEWS_PER_ADVERTISER = 100;
+/** Caps the fan-out of the batch endpoint so one request cannot scan the table. */
+export const MAX_BATCH_ADVERTISERS = 50;
+
 @Injectable()
 export class ReviewsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -23,8 +27,9 @@ export class ReviewsService {
 
     const advertiser = await this.prisma.user.findUnique({
       where: { id: advertiserId },
+      select: { id: true },
     });
-    if (!advertiser || !advertiser.isAdvertiser) {
+    if (!advertiser) {
       throw new NotFoundException('Advertiser not found');
     }
 
@@ -54,6 +59,7 @@ export class ReviewsService {
       this.prisma.review.findMany({
         where: { advertiserId },
         orderBy: { createdAt: 'desc' },
+        take: MAX_REVIEWS_PER_ADVERTISER,
         include: { customer: { select: { id: true, name: true } } },
       }),
       this.prisma.review.aggregate({
@@ -71,7 +77,10 @@ export class ReviewsService {
   }
 
   async findByAdvertisers(advertiserIds: string[]) {
-    const uniqueIds = [...new Set(advertiserIds)];
+    const uniqueIds = [...new Set(advertiserIds)].slice(
+      0,
+      MAX_BATCH_ADVERTISERS,
+    );
     const result: Record<
       string,
       {
@@ -91,6 +100,7 @@ export class ReviewsService {
       this.prisma.review.findMany({
         where: { advertiserId: { in: uniqueIds } },
         orderBy: { createdAt: 'desc' },
+        take: MAX_REVIEWS_PER_ADVERTISER * uniqueIds.length,
         include: { customer: { select: { id: true, name: true } } },
       }),
       this.prisma.review.groupBy({

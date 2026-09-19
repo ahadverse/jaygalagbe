@@ -2,11 +2,8 @@ import Link from "next/link";
 import { AdCard } from "./ad-card";
 import type { Ad } from "@/lib/ads/types";
 
-/*
- * Deliberately plain AdCards rather than TrackedAdCard: the impression
- * contexts the API accepts describe feeds, and logging a related-listing
- * render as a homepage impression would skew an advertiser's funnel.
- */
+/* Plain AdCards, not TrackedAdCard: a related-listing render is not a feed
+ * impression and would skew the owner's funnel. */
 export function NearbyListings({
   ads,
   heading,

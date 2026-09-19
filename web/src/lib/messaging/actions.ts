@@ -1,31 +1,19 @@
 "use server";
 
-import { API_URL } from "@/lib/api/config";
+import { apiUrl, isValidId } from "@/lib/api/config";
+import { readError } from "@/lib/api/errors";
 import { getToken } from "@/lib/auth/session";
 
 export type SendMessageState = { error?: string; success?: boolean };
-
-function extractErrorMessage(body: unknown, fallback: string): string {
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (Array.isArray(message) && typeof message[0] === "string") {
-      return message[0];
-    }
-    if (typeof message === "string") {
-      return message;
-    }
-  }
-  return fallback;
-}
 
 export async function sendFirstMessageAction(
   _prevState: SendMessageState,
   formData: FormData,
 ): Promise<SendMessageState> {
-  const adId = String(formData.get("adId") ?? "");
+  const adId = formData.get("adId")?.toString();
   const body = String(formData.get("body") ?? "").trim();
 
-  if (!adId || !body) {
+  if (!isValidId(adId) || !body) {
     return { error: "Write a message before sending." };
   }
 
@@ -40,28 +28,29 @@ export async function sendFirstMessageAction(
   };
 
   try {
-    const convoResponse = await fetch(`${API_URL}/conversations`, {
+    const convoResponse = await fetch(apiUrl`/conversations`, {
       method: "POST",
       headers: authHeaders,
       body: JSON.stringify({ adId }),
     });
     if (!convoResponse.ok) {
-      const errBody = await convoResponse.json().catch(() => null);
-      return { error: extractErrorMessage(errBody, "Couldn't start the conversation.") };
+      return {
+        error: await readError(
+          convoResponse,
+          "Couldn't start the conversation.",
+        ),
+      };
     }
     const conversation = (await convoResponse.json()) as { id: string };
 
     const messageResponse = await fetch(
-      `${API_URL}/conversations/${conversation.id}/messages`,
-      {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({ body }),
-      },
+      apiUrl`/conversations/${conversation.id}/messages`,
+      { method: "POST", headers: authHeaders, body: JSON.stringify({ body }) },
     );
     if (!messageResponse.ok) {
-      const errBody = await messageResponse.json().catch(() => null);
-      return { error: extractErrorMessage(errBody, "Couldn't send the message.") };
+      return {
+        error: await readError(messageResponse, "Couldn't send the message."),
+      };
     }
 
     return { success: true };

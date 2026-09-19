@@ -25,6 +25,7 @@ export type Ad = {
   title: string;
   description: string;
   price: string | number;
+  locationDivision?: string | null;
   locationArea: string;
   locationDistrict: string;
   address?: string | null;

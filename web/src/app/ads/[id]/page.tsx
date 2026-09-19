@@ -7,6 +7,7 @@ import { AdGallery } from "@/components/ads/ad-gallery";
 import { NearbyListings } from "@/components/ads/nearby-listings";
 import { ContactGate } from "@/components/ads/contact-gate";
 import { SaveAdButton } from "@/components/ads/save-ad-button";
+import { ViewRecorder } from "@/components/ads/view-recorder";
 import { fetchAd } from "@/lib/ads/fetch-ad";
 import { fetchLiveAds } from "@/lib/ads/fetch-live-ads";
 import { describeAdAttributes } from "@/lib/ads/describe-attributes";
@@ -32,7 +33,7 @@ function formatDate(iso: string): string {
   });
 }
 
-/* Same district first, then anything else live in the sector, so the band
+/* Same district first, then anything else live in the sector, so the row
  * only disappears when the sector genuinely has nothing else to show. */
 function relatedAds(pool: Ad[], current: Ad): { ads: Ad[]; sameArea: boolean } {
   const others = pool.filter((ad) => ad.id !== current.id);
@@ -235,6 +236,7 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
               currentUser={currentUser}
             />
             <SaveAdButton adId={ad.id} />
+            <ViewRecorder adId={ad.id} />
 
             <section
               aria-labelledby="listing-details-heading"

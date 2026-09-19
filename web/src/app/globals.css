@@ -258,6 +258,23 @@
   padding-inline: clamp(1.125rem, 4.5vw, 2.5rem);
 }
 
+/*
+ * Lets a horizontal scroller run edge to edge inside a `shell` container, so
+ * an overflowing tab strip on a phone doesn't stop short of the screen.
+ */
+@utility bleed-shell {
+  margin-inline: calc(clamp(1.125rem, 4.5vw, 2.5rem) * -1);
+  padding-inline: clamp(1.125rem, 4.5vw, 2.5rem);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Comfortable measure for long-form copy. */
 @utility measure {
   max-width: 68ch;

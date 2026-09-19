@@ -24,10 +24,6 @@ export interface EmptyStateProps extends VariantProps<typeof iconToneVariants> {
   compact?: boolean;
 }
 
-/*
- * One shape for every "there is nothing here yet" and "that didn't load"
- * surface, so those states look designed instead of forgotten.
- */
 export function EmptyState({
   title,
   description,

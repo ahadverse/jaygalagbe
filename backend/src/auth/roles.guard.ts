@@ -36,9 +36,7 @@ function hasRole(user: AuthenticatedUser, role: Role): boolean {
   switch (role) {
     case Role.ADMIN:
       return user.isAdmin;
-    case Role.ADVERTISER:
-      return user.isAdvertiser;
-    case Role.CUSTOMER:
+    case Role.USER:
       return true;
   }
 }

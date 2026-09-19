@@ -62,7 +62,7 @@ async function readErrorMessage(response: Response): Promise<string> {
       if (typeof message === 'string') return message;
     }
   } catch {
-    // Fall through to the generic message below.
+    // Not JSON — fall back to the status text.
   }
   return response.statusText || 'Request failed';
 }
@@ -71,6 +71,14 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
   signal?: AbortSignal;
+}
+
+/** Fires when the API rejects the stored token, so the app can sign out. */
+const unauthorizedHandlers = new Set<() => void>();
+
+export function onUnauthorized(handler: () => void): () => void {
+  unauthorizedHandlers.add(handler);
+  return () => unauthorizedHandlers.delete(handler);
 }
 
 export async function apiRequest<T>(
@@ -90,6 +98,11 @@ export async function apiRequest<T>(
   });
 
   if (!response.ok) {
+    // An expired or revoked token must not leave a half-signed-in console up.
+    if ((response.status === 401 || response.status === 403) && token) {
+      writeToken(null);
+      for (const handler of unauthorizedHandlers) handler();
+    }
     throw new ApiError(response.status, await readErrorMessage(response));
   }
 

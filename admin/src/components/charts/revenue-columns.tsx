@@ -17,10 +17,6 @@ function monthLabel(month: string): string {
   return `${MONTH_LABELS[Number(index) - 1] ?? month} ${year.slice(2)}`;
 }
 
-/**
- * One measure over discrete monthly buckets — columns rather than a line,
- * because each month is a settled total, not a reading on a continuum.
- */
 export function RevenueColumns({ data }: { data: RevenuePoint[] }) {
   const [hovered, setHovered] = useState<number | null>(null);
 

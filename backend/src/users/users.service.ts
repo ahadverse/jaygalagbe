@@ -29,9 +29,12 @@ export class UsersService {
   }
 
   async updateProfile(id: string, dto: UpdateProfileDto) {
-    if (dto.email || dto.phone) {
+    const email = dto.email?.trim().toLowerCase();
+    const phone = dto.phone?.trim();
+
+    if (email || phone) {
       const existing = await this.prisma.user.findFirst({
-        where: { id: { not: id }, ...byEmailOrPhone(dto.email, dto.phone) },
+        where: { id: { not: id }, ...byEmailOrPhone(email, phone) },
       });
       if (existing) {
         throw new ConflictException(
@@ -40,37 +43,24 @@ export class UsersService {
       }
     }
 
-    const user = await this.prisma.user.update({
-      where: { id },
-      data: {
-        name: dto.name,
-        email: dto.email,
-        phone: dto.phone,
-      },
-    });
-
-    return sanitize(user);
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: { name: dto.name?.trim(), email, phone },
+      });
+      return sanitize(user);
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new ConflictException(
+          'An account with this email or phone already exists',
+        );
+      }
+      throw error;
+    }
   }
 
   async deleteAccount(id: string) {
     await this.prisma.user.delete({ where: { id } });
-  }
-
-  async upgradeToAdvertiser(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    if (user.isAdvertiser) {
-      throw new ConflictException('Already an advertiser');
-    }
-
-    const updated = await this.prisma.user.update({
-      where: { id },
-      data: { isAdvertiser: true },
-    });
-
-    return sanitize(updated);
   }
 
   async registerFcmToken(id: string, dto: RegisterFcmTokenDto) {

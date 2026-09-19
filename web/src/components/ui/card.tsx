@@ -2,12 +2,6 @@ import { type HTMLAttributes } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-/*
- * Three deliberate elevations rather than one grey box: `raised` is the
- * default white sheet floating on the paper canvas, `flat` is a tinted
- * grouping that should recede, `outline` is for dense data surfaces where a
- * shadow would add noise.
- */
 export const cardVariants = cva("rounded-xl", {
   variants: {
     variant: {

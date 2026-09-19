@@ -2,10 +2,6 @@ import type { SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement>;
 
-/**
- * Hand-rolled 24px stroke icons rather than an icon package — the console only
- * needs this handful, and inlining them keeps the bundle and the dep list small.
- */
 function Icon({ children, ...props }: IconProps) {
   return (
     <svg

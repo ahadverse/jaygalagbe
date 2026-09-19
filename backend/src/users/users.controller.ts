@@ -43,11 +43,6 @@ export class UsersController {
     return this.usersService.deleteAccount(user.id);
   }
 
-  @Post('me/advertiser-upgrade')
-  upgradeToAdvertiser(@CurrentUser() user: AuthenticatedUser) {
-    return this.usersService.upgradeToAdvertiser(user.id);
-  }
-
   @Post('me/fcm-token')
   @HttpCode(HttpStatus.NO_CONTENT)
   registerFcmToken(

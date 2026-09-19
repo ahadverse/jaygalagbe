@@ -78,7 +78,7 @@ export function SectorSidebar({ counts }: { counts: Record<string, number> }) {
             </p>
           </div>
           <Link
-            href="/advertiser/ads/new"
+            href="/dashboard/ads/new"
             className={buttonVariants({ variant: "accent", size: "sm" })}
           >
             Post an ad

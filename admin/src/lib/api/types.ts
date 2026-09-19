@@ -29,7 +29,6 @@ export interface AuthUser {
   name: string;
   email: string | null;
   phone: string | null;
-  isAdvertiser: boolean;
   isAdmin: boolean;
   isVerified: boolean;
   isSuspended: boolean;
@@ -67,7 +66,7 @@ export interface AdListItem {
 }
 
 export interface AdDetail extends Omit<AdListItem, 'boosts' | '_count'> {
-  owner: AdOwner & { isAdvertiser: boolean; createdAt: string };
+  owner: AdOwner & { createdAt: string };
   boosts: {
     id: string;
     tier: BoostTier;
@@ -101,7 +100,6 @@ export interface UserListItem {
   name: string;
   email: string | null;
   phone: string | null;
-  isAdvertiser: boolean;
   isAdmin: boolean;
   isVerified: boolean;
   isSuspended: boolean;

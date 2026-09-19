@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AdStatus, Prisma } from '../generated/prisma/client.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import { LogImpressionDto } from './dto/log-impression.dto.js';
 import { LogVisitDto } from './dto/log-visit.dto.js';
@@ -16,6 +18,9 @@ import {
 
 const DAY_MS = 86_400_000;
 const DEFAULT_RANGE_DAYS = 30;
+/** Hard ceiling on the requested window — the series is built one row per day. */
+const MAX_RANGE_DAYS = 366;
+const MAX_OVERVIEW_ADS = 500;
 
 type DailyBucket = {
   date: string;
@@ -23,6 +28,18 @@ type DailyBucket = {
   visits: number;
   conversions: number;
 };
+
+type AnalyticsTable = 'ad_impressions' | 'ad_visits' | 'ad_conversions';
+type DayCount = { day: Date; count: number };
+
+function parseDate(value?: string): Date | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new BadRequestException('Invalid date range');
+  }
+  return parsed;
+}
 
 @Injectable()
 export class AnalyticsService {
@@ -36,42 +53,89 @@ export class AnalyticsService {
     return ad;
   }
 
-  private resolveRange(query: GetStatsQueryDto) {
-    const to = query.to ? new Date(query.to) : new Date();
-    const from = query.from
-      ? new Date(query.from)
-      : new Date(to.getTime() - (DEFAULT_RANGE_DAYS - 1) * DAY_MS);
-    from.setUTCHours(0, 0, 0, 0);
-    to.setUTCHours(23, 59, 59, 999);
-    return { from, to };
+  /** Only a published ad can accrue traffic, so anything else is rejected. */
+  private async getLiveAdOrThrow(adId: string) {
+    const ad = await this.getAdOrThrow(adId);
+    if (ad.status !== AdStatus.LIVE) {
+      throw new NotFoundException('Ad not found');
+    }
+    return ad;
   }
 
-  private buildDailySeries(
+  private resolveRange(query: GetStatsQueryDto) {
+    const to = parseDate(query.to) ?? new Date();
+    to.setUTCHours(23, 59, 59, 999);
+
+    const from =
+      parseDate(query.from) ??
+      new Date(to.getTime() - (DEFAULT_RANGE_DAYS - 1) * DAY_MS);
+    from.setUTCHours(0, 0, 0, 0);
+
+    if (from > to) {
+      throw new BadRequestException('`from` must be on or before `to`');
+    }
+    const earliest = new Date(to.getTime() - (MAX_RANGE_DAYS - 1) * DAY_MS);
+    earliest.setUTCHours(0, 0, 0, 0);
+
+    return { from: from < earliest ? earliest : from, to };
+  }
+
+  /**
+   * Counts per day are grouped in the database rather than by loading every
+   * row: a busy ad can have millions of impressions in the window.
+   */
+  private async buildDailySeries(
+    adIds: string[],
     from: Date,
     to: Date,
-    impressionDates: Date[],
-    visitDates: Date[],
-    conversionDates: Date[],
-  ): DailyBucket[] {
+  ): Promise<DailyBucket[]> {
+    const [impressions, visits, conversions] = await Promise.all([
+      this.countByDay('ad_impressions', 'createdAt', adIds, from, to),
+      this.countByDay('ad_visits', 'createdAt', adIds, from, to),
+      this.countByDay('ad_conversions', 'convertedAt', adIds, from, to),
+    ]);
+
     const buckets = new Map<string, DailyBucket>();
     const cursor = new Date(from);
     while (cursor <= to) {
       const key = cursor.toISOString().slice(0, 10);
       buckets.set(key, { date: key, impressions: 0, visits: 0, conversions: 0 });
-      cursor.setDate(cursor.getDate() + 1);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
 
-    const tally = (dates: Date[], key: 'impressions' | 'visits' | 'conversions') => {
-      for (const date of dates) {
-        const bucket = buckets.get(date.toISOString().slice(0, 10));
-        if (bucket) bucket[key] += 1;
+    const tally = (
+      rows: DayCount[],
+      key: 'impressions' | 'visits' | 'conversions',
+    ) => {
+      for (const row of rows) {
+        const bucket = buckets.get(row.day.toISOString().slice(0, 10));
+        if (bucket) bucket[key] = Number(row.count);
       }
     };
-    tally(impressionDates, 'impressions');
-    tally(visitDates, 'visits');
-    tally(conversionDates, 'conversions');
+    tally(impressions, 'impressions');
+    tally(visits, 'visits');
+    tally(conversions, 'conversions');
 
     return [...buckets.values()];
+  }
+
+  private countByDay(
+    table: AnalyticsTable,
+    column: 'createdAt' | 'convertedAt',
+    adIds: string[],
+    from: Date,
+    to: Date,
+  ): Promise<DayCount[]> {
+    // Table and column come from the literal unions above, never from input;
+    // every value is still passed as a bound parameter.
+    return this.prisma.$queryRaw<DayCount[]>`
+      SELECT date_trunc('day', ${Prisma.raw(`"${column}"`)} AT TIME ZONE 'UTC') AS day,
+             COUNT(*)::int AS count
+      FROM ${Prisma.raw(`"${table}"`)}
+      WHERE "adId" = ANY(${adIds})
+        AND ${Prisma.raw(`"${column}"`)} BETWEEN ${from} AND ${to}
+      GROUP BY day
+    `;
   }
 
   async logImpression(
@@ -79,7 +143,7 @@ export class AnalyticsService {
     viewerId: string | undefined,
     dto: LogImpressionDto,
   ) {
-    await this.getAdOrThrow(adId);
+    await this.getLiveAdOrThrow(adId);
 
     return this.prisma.adImpression.create({
       data: {
@@ -91,7 +155,7 @@ export class AnalyticsService {
   }
 
   async logVisit(adId: string, viewerId: string | undefined, dto: LogVisitDto) {
-    await this.getAdOrThrow(adId);
+    await this.getLiveAdOrThrow(adId);
 
     return this.prisma.adVisit.create({
       data: {
@@ -103,7 +167,7 @@ export class AnalyticsService {
   }
 
   async logConversion(adId: string, userId: string, dto: LogConversionDto) {
-    await this.getAdOrThrow(adId);
+    await this.getLiveAdOrThrow(adId);
 
     if (dto.visitId) {
       const visit = await this.prisma.adVisit.findUnique({
@@ -156,14 +220,7 @@ export class AnalyticsService {
 
     const { from, to } = this.resolveRange(query);
 
-    const [
-      impressions,
-      visits,
-      conversions,
-      impressionRows,
-      visitRows,
-      conversionRows,
-    ] = await this.prisma.$transaction([
+    const [impressions, visits, conversions, series] = await Promise.all([
       this.prisma.adImpression.count({
         where: { adId, createdAt: { gte: from, lte: to } },
       }),
@@ -173,18 +230,7 @@ export class AnalyticsService {
       this.prisma.adConversion.count({
         where: { adId, convertedAt: { gte: from, lte: to } },
       }),
-      this.prisma.adImpression.findMany({
-        where: { adId, createdAt: { gte: from, lte: to } },
-        select: { createdAt: true },
-      }),
-      this.prisma.adVisit.findMany({
-        where: { adId, createdAt: { gte: from, lte: to } },
-        select: { createdAt: true },
-      }),
-      this.prisma.adConversion.findMany({
-        where: { adId, convertedAt: { gte: from, lte: to } },
-        select: { convertedAt: true },
-      }),
+      this.buildDailySeries([adId], from, to),
     ]);
 
     return {
@@ -192,13 +238,7 @@ export class AnalyticsService {
       visits,
       conversions,
       conversionRate: visits > 0 ? conversions / visits : 0,
-      series: this.buildDailySeries(
-        from,
-        to,
-        impressionRows.map((row) => row.createdAt),
-        visitRows.map((row) => row.createdAt),
-        conversionRows.map((row) => row.convertedAt),
-      ),
+      series,
     };
   }
 
@@ -210,6 +250,7 @@ export class AnalyticsService {
       },
       select: { id: true, title: true, status: true },
       orderBy: { createdAt: 'desc' },
+      take: MAX_OVERVIEW_ADS,
     });
 
     if (ads.length === 0) {
@@ -231,42 +272,25 @@ export class AnalyticsService {
     const adIds = ads.map((ad) => ad.id);
     const { from, to } = this.resolveRange(query);
 
-    const [
-      impressionGroups,
-      visitGroups,
-      conversionGroups,
-      impressionRows,
-      visitRows,
-      conversionRows,
-    ] = await this.prisma.$transaction([
-      this.prisma.adImpression.groupBy({
-        by: ['adId'],
-        where: { adId: { in: adIds }, createdAt: { gte: from, lte: to } },
-        _count: { _all: true },
-      }),
-      this.prisma.adVisit.groupBy({
-        by: ['adId'],
-        where: { adId: { in: adIds }, createdAt: { gte: from, lte: to } },
-        _count: { _all: true },
-      }),
-      this.prisma.adConversion.groupBy({
-        by: ['adId'],
-        where: { adId: { in: adIds }, convertedAt: { gte: from, lte: to } },
-        _count: { _all: true },
-      }),
-      this.prisma.adImpression.findMany({
-        where: { adId: { in: adIds }, createdAt: { gte: from, lte: to } },
-        select: { createdAt: true },
-      }),
-      this.prisma.adVisit.findMany({
-        where: { adId: { in: adIds }, createdAt: { gte: from, lte: to } },
-        select: { createdAt: true },
-      }),
-      this.prisma.adConversion.findMany({
-        where: { adId: { in: adIds }, convertedAt: { gte: from, lte: to } },
-        select: { convertedAt: true },
-      }),
-    ]);
+    const [impressionGroups, visitGroups, conversionGroups, series] =
+      await Promise.all([
+        this.prisma.adImpression.groupBy({
+          by: ['adId'],
+          where: { adId: { in: adIds }, createdAt: { gte: from, lte: to } },
+          _count: { _all: true },
+        }),
+        this.prisma.adVisit.groupBy({
+          by: ['adId'],
+          where: { adId: { in: adIds }, createdAt: { gte: from, lte: to } },
+          _count: { _all: true },
+        }),
+        this.prisma.adConversion.groupBy({
+          by: ['adId'],
+          where: { adId: { in: adIds }, convertedAt: { gte: from, lte: to } },
+          _count: { _all: true },
+        }),
+        this.buildDailySeries(adIds, from, to),
+      ]);
 
     const impressionsByAd = new Map(
       impressionGroups.map((group) => [group.adId, group._count._all]),
@@ -305,15 +329,10 @@ export class AnalyticsService {
     return {
       totals: {
         ...totals,
-        conversionRate: totals.visits > 0 ? totals.conversions / totals.visits : 0,
+        conversionRate:
+          totals.visits > 0 ? totals.conversions / totals.visits : 0,
       },
-      series: this.buildDailySeries(
-        from,
-        to,
-        impressionRows.map((row) => row.createdAt),
-        visitRows.map((row) => row.createdAt),
-        conversionRows.map((row) => row.convertedAt),
-      ),
+      series,
       ads: adBreakdown,
     };
   }

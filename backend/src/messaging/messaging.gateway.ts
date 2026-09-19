@@ -4,8 +4,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import {
   ConnectedSocket,
   MessageBody,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -13,7 +12,8 @@ import {
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { authenticateSocket } from '../auth/ws-auth.util.js';
+import { useSocketAuth } from '../auth/ws-auth.util.js';
+import { getCorsOrigins } from '../config/env.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import { MessagingService } from './messaging.service.js';
 import { ConversationRoomDto } from './dto/conversation-room.dto.js';
@@ -27,11 +27,15 @@ function roomName(conversationId: string): string {
   return `conversation:${conversationId}`;
 }
 
-@WebSocketGateway({ cors: true })
-@UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-export class MessagingGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+@WebSocketGateway({ cors: { origin: getCorsOrigins(), credentials: true } })
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+)
+export class MessagingGateway implements OnGatewayInit {
   @WebSocketServer()
   server!: Server;
 
@@ -41,19 +45,9 @@ export class MessagingGateway
     private readonly messagingService: MessagingService,
   ) {}
 
-  async handleConnection(client: Socket) {
-    try {
-      client.data.user = await authenticateSocket(
-        client,
-        this.jwtService,
-        this.prisma,
-      );
-    } catch {
-      client.disconnect(true);
-    }
+  afterInit(server: Server) {
+    useSocketAuth(server, this.jwtService, this.prisma);
   }
-
-  handleDisconnect(_client: Socket) {}
 
   @SubscribeMessage('conversation:join')
   async joinConversation(

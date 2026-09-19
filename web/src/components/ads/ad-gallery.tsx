@@ -5,10 +5,7 @@ import type { Sector } from "@/lib/ads/types";
 const tileClassName =
   "overflow-hidden rounded-2xl shadow-sm ring-1 ring-neutral-900/5";
 
-/* Every tile carries its own aspect ratio, so no cell can ever be sized by a
- * sibling — which is what left a hole in the mosaic when an ad had exactly one
- * secondary photo. 16/10 on both the lead and the thumbs is also the ratio
- * where a 2-column lead and two stacked thumbs come out the same height. */
+/* Every tile sets its own aspect ratio so no cell is sized by a sibling. */
 const MOSAIC_THUMBS = 2;
 
 export function AdGallery({

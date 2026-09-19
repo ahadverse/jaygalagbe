@@ -79,10 +79,6 @@ function RejectForm({
   );
 }
 
-/**
- * Mounted per ad, so the reason and note reset by unmounting rather than by an
- * effect that syncs them back to their defaults.
- */
 export function RejectDialog({
   adId,
   adTitle,

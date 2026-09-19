@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui";
 
 export default function ConversationLoading() {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-5 py-8 sm:px-8 sm:py-10">
+    <div className="flex w-full max-w-2xl flex-col gap-6">
       <div className="flex items-center gap-3.5">
         <Skeleton className="size-11 shrink-0 rounded-full" />
         <div className="flex flex-col gap-2">
@@ -20,6 +20,6 @@ export default function ConversationLoading() {
         </div>
         <Skeleton className="h-15 w-full rounded-2xl" />
       </div>
-    </main>
+    </div>
   );
 }

@@ -10,11 +10,7 @@ import { AD_STATUS_LABEL, SECTOR_LABEL } from '@/lib/ads/labels';
 import { formatCount, formatTaka } from '@/lib/format';
 import type { AdStatus } from '@/lib/api/types';
 
-/**
- * Lifecycle order, not size order — and it keeps the green "Live" bar away from
- * the red "Rejected" one, which is the pair colour-blind readers separate least
- * well. Every bar is direct-labelled regardless.
- */
+/** Lifecycle order, not size order. */
 const STATUS_ORDER: AdStatus[] = [
   'PENDING',
   'LIVE',

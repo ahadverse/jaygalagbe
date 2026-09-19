@@ -6,12 +6,14 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseEnumPipe,
   Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AdsService } from './ads.service.js';
 import { CreateAdDto } from './dto/create-ad.dto.js';
 import { UpdateAdDto } from './dto/update-ad.dto.js';
@@ -31,14 +33,16 @@ export class AdsController {
   constructor(private readonly adsService: AdsService) {}
 
   @Post()
-  @Auth(Role.ADVERTISER)
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ medium: { ttl: 3_600_000, limit: 20 } })
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateAdDto) {
     return this.adsService.create(user.id, dto);
   }
 
   @Get()
   findLive(
-    @Query('sector') sector?: Sector,
+    @Query('sector', new ParseEnumPipe(Sector, { optional: true }))
+    sector?: Sector,
     @Query('take') take?: string,
     @Query('skip') skip?: string,
   ) {

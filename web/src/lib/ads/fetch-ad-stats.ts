@@ -1,5 +1,8 @@
-import { API_URL } from "@/lib/api/config";
-import type { AnalyticsSeriesPoint, DateRangeQuery } from "@/lib/analytics/types";
+import { apiUrl } from "@/lib/api/config";
+import type {
+  AnalyticsSeriesPoint,
+  DateRangeQuery,
+} from "@/lib/analytics/types";
 
 export type AdStats = {
   impressions: number;
@@ -21,7 +24,7 @@ export async function fetchAdStats(
     const search = params.toString();
 
     const response = await fetch(
-      `${API_URL}/ads/${adId}/stats${search ? `?${search}` : ""}`,
+      `${apiUrl`/ads/${adId}/stats`}${search ? `?${search}` : ""}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",

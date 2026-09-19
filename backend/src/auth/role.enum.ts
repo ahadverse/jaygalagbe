@@ -1,5 +1,5 @@
 export enum Role {
-  CUSTOMER = 'customer',
-  ADVERTISER = 'advertiser',
+  /** Any signed-in account. Every account can browse, save, post ads and chat. */
+  USER = 'user',
   ADMIN = 'admin',
 }

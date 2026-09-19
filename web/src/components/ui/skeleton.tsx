@@ -1,10 +1,6 @@
 import { type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * A sweep rather than a pulse: opacity pulsing on a warm canvas reads as a
- * broken image, a moving highlight reads as loading.
- */
 export function Skeleton({
   className,
   ...props

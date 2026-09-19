@@ -1,11 +1,17 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { AdStatus, Sector, type Prisma } from '../generated/prisma/client.js';
+import {
+  AdStatus,
+  Sector,
+  type Ad,
+  type Prisma,
+} from '../generated/prisma/client.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import {
   NotificationEvent,
@@ -16,6 +22,7 @@ import { CreateAdDto } from './dto/create-ad.dto.js';
 import { UpdateAdDto } from './dto/update-ad.dto.js';
 import { validateSectorAttributes } from './sector-attributes.validator.js';
 import { assertTransition } from './ad-status.util.js';
+import { isValidBdLocation } from '../common/bd-geo.js';
 import { RejectAdDto } from './dto/reject-ad.dto.js';
 
 function toInputJson(
@@ -24,8 +31,61 @@ function toInputJson(
   return attributes as Prisma.InputJsonValue | undefined;
 }
 
+function assertValidLocation(
+  division: string | undefined,
+  district: string,
+  thana: string,
+) {
+  if (!isValidBdLocation(division, district, thana)) {
+    throw new BadRequestException(
+      'Pick a real division, district and thana combination',
+    );
+  }
+}
+
+function changesModeratedContent(current: Ad, dto: UpdateAdDto): boolean {
+  if (dto.attributes !== undefined) {
+    return true;
+  }
+
+  return MODERATED_FIELDS.some((field) => {
+    const next = dto[field];
+    if (next === undefined) return false;
+    if (field === 'price') return String(next) !== current.price.toString();
+    if (field === 'photos') {
+      return (next as string[]).join('\u0000') !== current.photos.join('\u0000');
+    }
+    return next !== current[field];
+  });
+}
+
 const DEFAULT_LIVE_ADS_TAKE = 200;
 const MAX_LIVE_ADS_TAKE = 200;
+const MAX_LIVE_ADS_SKIP = 10_000;
+
+/** Fields whose change makes a live ad a different listing to a reader. */
+const MODERATED_FIELDS = [
+  'title',
+  'description',
+  'price',
+  'photos',
+  'locationDivision',
+  'locationArea',
+  'locationDistrict',
+  'address',
+] as const;
+
+function clampInteger(
+  value: number | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (value === undefined || !Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, Math.trunc(value)));
+}
 
 @Injectable()
 export class AdsService {
@@ -36,6 +96,11 @@ export class AdsService {
 
   create(ownerId: string, dto: CreateAdDto) {
     const attributes = validateSectorAttributes(dto.sector, dto.attributes);
+    assertValidLocation(
+      dto.locationDivision,
+      dto.locationDistrict,
+      dto.locationArea,
+    );
 
     return this.prisma.ad.create({
       data: {
@@ -44,6 +109,7 @@ export class AdsService {
         title: dto.title,
         description: dto.description,
         price: dto.price,
+        locationDivision: dto.locationDivision,
         locationArea: dto.locationArea,
         locationDistrict: dto.locationDistrict,
         address: dto.address,
@@ -56,11 +122,13 @@ export class AdsService {
   }
 
   findLive(sector?: Sector, pagination?: { take?: number; skip?: number }) {
-    const take = Math.max(
+    const take = clampInteger(
+      pagination?.take,
+      DEFAULT_LIVE_ADS_TAKE,
       1,
-      Math.min(pagination?.take ?? DEFAULT_LIVE_ADS_TAKE, MAX_LIVE_ADS_TAKE),
+      MAX_LIVE_ADS_TAKE,
     );
-    const skip = Math.max(0, pagination?.skip ?? 0);
+    const skip = clampInteger(pagination?.skip, 0, 0, MAX_LIVE_ADS_SKIP);
 
     return this.prisma.ad.findMany({
       where: { status: AdStatus.LIVE, sector },
@@ -98,12 +166,28 @@ export class AdsService {
       ? validateSectorAttributes(ad.sector, dto.attributes)
       : undefined;
 
+    // An edit may send all three or none of them; a partial change still has to
+    // land on a real place, so the stored values fill the gaps.
+    if (dto.locationDivision || dto.locationDistrict || dto.locationArea) {
+      assertValidLocation(
+        dto.locationDivision ?? ad.locationDivision ?? undefined,
+        dto.locationDistrict ?? ad.locationDistrict,
+        dto.locationArea ?? ad.locationArea,
+      );
+    }
+
+    // Editing the substance of a published ad sends it back through review, so
+    // an approved listing cannot be swapped for unmoderated content.
+    const needsReview =
+      ad.status === AdStatus.LIVE && changesModeratedContent(ad, dto);
+
     return this.prisma.ad.update({
       where: { id },
       data: {
         title: dto.title,
         description: dto.description,
         price: dto.price,
+        locationDivision: dto.locationDivision,
         locationArea: dto.locationArea,
         locationDistrict: dto.locationDistrict,
         address: dto.address,
@@ -111,6 +195,9 @@ export class AdsService {
         longitude: dto.longitude,
         photos: dto.photos,
         attributes: toInputJson(attributes),
+        ...(needsReview
+          ? { status: AdStatus.PENDING, rejectionReason: null }
+          : {}),
       },
     });
   }

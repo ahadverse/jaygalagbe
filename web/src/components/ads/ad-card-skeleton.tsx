@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui";
 
-/* Mirrors ad-card.tsx exactly so the swap to real content is a crossfade,
+/* Mirrors ad-card.tsx so the swap to real content is a crossfade,
  * not a reflow. */
 export function AdCardSkeleton() {
   return (

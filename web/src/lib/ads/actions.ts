@@ -2,11 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { API_URL } from "@/lib/api/config";
+import { API_URL, apiUrl, isValidId } from "@/lib/api/config";
 import { getToken } from "@/lib/auth/session";
 import type { Sector } from "./types";
 
 export type AdFormState = { error?: string };
+
+const ADS_PATH = "/dashboard/ads";
 
 function extractErrorMessage(body: unknown, fallback: string): string {
   if (body && typeof body === "object" && "message" in body) {
@@ -21,7 +23,10 @@ function extractErrorMessage(body: unknown, fallback: string): string {
   return fallback;
 }
 
-function buildAttributes(sector: Sector, formData: FormData): Record<string, unknown> {
+function buildAttributes(
+  sector: Sector,
+  formData: FormData,
+): Record<string, unknown> {
   if (sector === "LAND") {
     const attributes: Record<string, unknown> = {
       sizeKatha: Number(formData.get("sizeKatha")),
@@ -47,8 +52,9 @@ function buildAdPayload(formData: FormData, sector: Sector) {
     title: String(formData.get("title") ?? ""),
     description: String(formData.get("description") ?? ""),
     price: Number(formData.get("price")),
-    locationArea: String(formData.get("locationArea") ?? ""),
+    locationDivision: String(formData.get("locationDivision") ?? ""),
     locationDistrict: String(formData.get("locationDistrict") ?? ""),
+    locationArea: String(formData.get("locationArea") ?? ""),
     address: String(formData.get("address") ?? "") || undefined,
     attributes: buildAttributes(sector, formData),
   };
@@ -83,8 +89,8 @@ export async function createAdAction(
     return { error: "Couldn't reach the server. Please try again." };
   }
 
-  revalidatePath("/advertiser");
-  redirect("/advertiser");
+  revalidatePath(ADS_PATH);
+  redirect(ADS_PATH);
 }
 
 export async function updateAdAction(
@@ -96,18 +102,21 @@ export async function updateAdAction(
     return { error: "You need to be logged in." };
   }
 
-  const id = String(formData.get("id") ?? "");
+  const id = formData.get("id")?.toString();
+  if (!isValidId(id)) {
+    return { error: "That listing could not be found." };
+  }
+
   const sector = String(formData.get("sector")) as Sector;
-  const payload = buildAdPayload(formData, sector);
 
   try {
-    const response = await fetch(`${API_URL}/ads/${id}`, {
+    const response = await fetch(apiUrl`/ads/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(buildAdPayload(formData, sector)),
     });
     if (!response.ok) {
       const body = await response.json().catch(() => null);
@@ -117,39 +126,30 @@ export async function updateAdAction(
     return { error: "Couldn't reach the server. Please try again." };
   }
 
-  revalidatePath("/advertiser");
-  redirect("/advertiser");
+  revalidatePath(ADS_PATH);
+  redirect(ADS_PATH);
+}
+
+async function mutateAd(formData: FormData, path: string, method: string) {
+  const token = await getToken();
+  const id = formData.get("id")?.toString();
+  if (!token || !isValidId(id)) return;
+
+  await fetch(`${apiUrl`/ads/${id}`}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  revalidatePath(ADS_PATH);
 }
 
 export async function markSoldAction(formData: FormData) {
-  const token = await getToken();
-  if (!token) return;
-  const id = String(formData.get("id") ?? "");
-  await fetch(`${API_URL}/ads/${id}/mark-sold`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  revalidatePath("/advertiser");
+  await mutateAd(formData, "/mark-sold", "PATCH");
 }
 
 export async function resubmitAdAction(formData: FormData) {
-  const token = await getToken();
-  if (!token) return;
-  const id = String(formData.get("id") ?? "");
-  await fetch(`${API_URL}/ads/${id}/resubmit`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  revalidatePath("/advertiser");
+  await mutateAd(formData, "/resubmit", "PATCH");
 }
 
 export async function deleteAdAction(formData: FormData) {
-  const token = await getToken();
-  if (!token) return;
-  const id = String(formData.get("id") ?? "");
-  await fetch(`${API_URL}/ads/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  revalidatePath("/advertiser");
+  await mutateAd(formData, "", "DELETE");
 }

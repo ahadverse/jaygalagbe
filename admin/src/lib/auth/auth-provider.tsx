@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ApiError, apiRequest, readToken, writeToken } from '@/lib/api/client';
+import {
+  ApiError,
+  apiRequest,
+  onUnauthorized,
+  readToken,
+  writeToken,
+} from '@/lib/api/client';
 import type { AuthUser } from '@/lib/api/types';
 import { AuthContext, type AuthState } from './auth-context';
 
@@ -31,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('anonymous');
     queryClient.clear();
   }, [queryClient]);
+
+  useEffect(() => onUnauthorized(logout), [logout]);
 
   // Restore the session on load: a stored token is only trusted once /auth/me
   // confirms it is still valid and still belongs to an admin.

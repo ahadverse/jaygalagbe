@@ -1,30 +1,39 @@
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export function ConversationCard({
   href,
   name,
   adTitle,
   preview,
+  unread,
 }: {
   href: string;
   name: string;
   adTitle: string;
   preview?: string;
+  unread?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3.5 rounded-xl bg-card p-4 shadow-sm ring-1 ring-neutral-900/5 transition-[transform,box-shadow] duration-200 ease-soft hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
+      className={cn(
+        "group flex items-center gap-3.5 rounded-xl bg-card p-3.5 shadow-sm ring-1 ring-neutral-900/5 transition-[transform,box-shadow] duration-200 ease-soft hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 sm:p-4",
+        unread && "ring-brand-200 bg-brand-50/40",
+      )}
     >
       <span
         aria-hidden="true"
-        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-100 font-heading text-sm font-bold text-brand-800"
+        className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-100 font-heading text-sm font-bold text-brand-800"
       >
         {name.trim().charAt(0).toUpperCase()}
+        {unread && (
+          <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-accent-500 ring-2 ring-card" />
+        )}
       </span>
 
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-baseline gap-2">
+        <span className="flex flex-wrap items-baseline gap-x-2">
           <span className="truncate font-heading text-sm font-bold text-foreground">
             {name}
           </span>
@@ -32,7 +41,12 @@ export function ConversationCard({
             {adTitle}
           </span>
         </span>
-        <span className="truncate text-sm text-muted-foreground">
+        <span
+          className={cn(
+            "truncate text-sm text-muted-foreground",
+            unread && "font-medium text-foreground",
+          )}
+        >
           {preview ?? "No messages yet"}
         </span>
       </span>

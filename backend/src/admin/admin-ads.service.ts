@@ -161,7 +161,6 @@ export class AdminAdsService {
             name: true,
             email: true,
             phone: true,
-            isAdvertiser: true,
             isSuspended: true,
             createdAt: true,
           },

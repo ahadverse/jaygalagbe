@@ -73,43 +73,45 @@ type SeedAd = {
   title: string;
   description: string;
   price: number;
-  locationArea: string;
+  locationDivision: string;
   locationDistrict: string;
+  locationArea: string;
   photos: string[];
   attributes: Prisma.InputJsonValue;
   status: 'LIVE' | 'PENDING' | 'REJECTED' | 'SOLD';
   rejectionReason?: string;
 };
 
-const dhakaAreas = [
-  'Bashundhara R/A', 'Dhanmondi', 'Gulshan 1', 'Gulshan 2', 'Banani',
-  'Uttara Sector 4', 'Uttara Sector 10', 'Mirpur 10', 'Mirpur DOHS',
-  'Mohammadpur', 'Badda', 'Rampura', 'Khilgaon', 'Wari', 'Lalmatia',
-  'Shyamoli', 'Kalabagan', 'Bosila', 'Savar', 'Purbachal Sector 5',
-  'Keraniganj',
+type SeedLocation = { division: string; district: string; area: string };
+
+/** Every row is a real division → district → thana path in bd-geo.ts. */
+const dhakaThanas: SeedLocation[] = [
+  'Badda', 'Banani', 'Bhatara', 'Cantonment', 'Dakshinkhan', 'Dhanmondi',
+  'Gulshan', 'Kafrul', 'Khilgaon', 'Khilkhet', 'Mirpur', 'Mohammadpur',
+  'Motijheel', 'Pallabi', 'Rampura', 'Sabujbagh', 'Shyampur', 'Tejgaon',
+  'Turag', 'Uttara East', 'Uttara West', 'Wari', 'Savar', 'Keraniganj',
+].map((area) => ({ division: 'Dhaka', district: 'Dhaka', area }));
+
+const otherThanas: SeedLocation[] = [
+  { division: 'Chattogram', district: 'Chattogram', area: 'Double Mooring' },
+  { division: 'Chattogram', district: 'Chattogram', area: 'Halishahar' },
+  { division: 'Chattogram', district: 'Chattogram', area: 'Panchlaish' },
+  { division: 'Chattogram', district: 'Chattogram', area: 'Khulshi' },
+  { division: 'Sylhet', district: 'Sylhet', area: 'Sylhet Kotwali' },
+  { division: 'Sylhet', district: 'Sylhet', area: 'Jalalabad' },
+  { division: 'Sylhet', district: 'Sylhet', area: 'Shahporan' },
+  { division: 'Rajshahi', district: 'Rajshahi', area: 'Boalia' },
+  { division: 'Rajshahi', district: 'Rajshahi', area: 'Rajpara' },
+  { division: 'Khulna', district: 'Khulna', area: 'Sonadanga' },
+  { division: 'Khulna', district: 'Khulna', area: 'Khalishpur' },
+  { division: 'Dhaka', district: 'Gazipur', area: 'Joydebpur' },
+  { division: 'Dhaka', district: 'Gazipur', area: 'Tongi' },
 ];
 
-const otherAreas = [
-  { area: 'Agrabad', district: 'Chattogram' },
-  { area: 'Halishahar', district: 'Chattogram' },
-  { area: 'Nasirabad', district: 'Chattogram' },
-  { area: 'Khulshi', district: 'Chattogram' },
-  { area: 'Zindabazar', district: 'Sylhet' },
-  { area: 'Ambarkhana', district: 'Sylhet' },
-  { area: 'Shahjalal Upashahar', district: 'Sylhet' },
-  { area: 'Shaheb Bazar', district: 'Rajshahi' },
-  { area: 'Uposhohor', district: 'Rajshahi' },
-  { area: 'Sonadanga', district: 'Khulna' },
-  { area: 'Khulna Sadar', district: 'Khulna' },
-  { area: 'Gazipur Bypass', district: 'Gazipur' },
-  { area: 'Tongi', district: 'Gazipur' },
-];
-
-function locationFor(index: number): { area: string; district: string } {
-  if (index % 3 === 2) {
-    return otherAreas[index % otherAreas.length];
-  }
-  return { area: dhakaAreas[index % dhakaAreas.length], district: 'Dhaka' };
+function locationFor(index: number): SeedLocation {
+  return index % 3 === 2
+    ? otherThanas[index % otherThanas.length]
+    : dhakaThanas[index % dhakaThanas.length];
 }
 
 const landPropertyTypes = ['Residential', 'Commercial', 'Agricultural'] as const;
@@ -118,7 +120,7 @@ const landSizes = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20];
 function generateLandAds(count: number, startIndex: number): SeedAd[] {
   return Array.from({ length: count }, (_, i) => {
     const index = startIndex + i;
-    const { area, district } = locationFor(index);
+    const { division, district, area } = locationFor(index);
     const size = landSizes[index % landSizes.length];
     const propertyType = landPropertyTypes[index % landPropertyTypes.length];
     const pricePerKatha =
@@ -130,8 +132,9 @@ function generateLandAds(count: number, startIndex: number): SeedAd[] {
       title: `${size} Katha ${propertyType} Land in ${area}`,
       description: `${propertyType} plot in ${area}, ${district} — ${size} katha, ready for registration.`,
       price,
-      locationArea: area,
+      locationDivision: division,
       locationDistrict: district,
+      locationArea: area,
       photos: landPhotos(index),
       attributes: { sizeKatha: size, propertyType },
       status: 'LIVE',
@@ -144,7 +147,7 @@ const houseTypes = ['Flat', 'House', 'Room', 'Sublet'] as const;
 function generateHouseAds(count: number, startIndex: number): SeedAd[] {
   return Array.from({ length: count }, (_, i) => {
     const index = startIndex + i;
-    const { area, district } = locationFor(index + 3);
+    const { division, district, area } = locationFor(index + 3);
     const bedrooms = (index % 4) + 1;
     const propertyType = houseTypes[index % houseTypes.length];
     const basePrice = propertyType === 'Room' || propertyType === 'Sublet' ? 8000 : 15000;
@@ -160,8 +163,9 @@ function generateHouseAds(count: number, startIndex: number): SeedAd[] {
       title,
       description: `${furnished ? 'Furnished' : 'Unfurnished'} ${propertyType.toLowerCase()} in ${area}, ${district}.`,
       price,
-      locationArea: area,
+      locationDivision: division,
       locationDistrict: district,
+      locationArea: area,
       photos: rentPhotos(index),
       attributes: { bedrooms, bathrooms: Math.max(1, bedrooms - 1), furnished, propertyType },
       status: 'LIVE',
@@ -185,14 +189,14 @@ type SeedUser = {
   name: string;
   email: string;
   phone: string;
-  isAdvertiser: boolean;
+  posts: boolean;
   isVerified: boolean;
   isSuspended: boolean;
   createdAt: Date;
 };
 
 /**
- * A realistic user base: mostly customers, a minority of advertisers, a few
+ * A realistic user base: a minority who post listings, a few
  * suspended/unverified accounts, joined over the past ~2 years — enough rows
  * and variety for the admin table's filters, sorting and paging to matter.
  */
@@ -207,7 +211,7 @@ function generateUsers(count: number): SeedUser[] {
       name: `${given} ${family}`,
       email: `${given.toLowerCase()}.${family.toLowerCase()}${index}@example.com`,
       phone: `+8801${String(700000000 + index * 137).slice(0, 9)}`,
-      isAdvertiser: index % 4 === 0,
+      posts: index % 4 === 0,
       isVerified: index % 5 !== 0,
       isSuspended: index % 17 === 0,
       createdAt: daysAgo(700 - index * 15),
@@ -345,7 +349,6 @@ async function main() {
       name: 'Rahim Uddin',
       email: 'advertiser@jaygalagbe.com',
       passwordHash,
-      isAdvertiser: true,
       isVerified: true,
     },
   });
@@ -363,7 +366,7 @@ async function main() {
 
   const extraUsers = generateUsers(44);
   for (const user of extraUsers) {
-    const { id, ...data } = user;
+    const { id, posts: _posts, ...data } = user;
     await prisma.user.upsert({
       where: { id },
       update: data,
@@ -373,11 +376,11 @@ async function main() {
 
   const advertiserIds = [
     advertiser.id,
-    ...extraUsers.filter((user) => user.isAdvertiser).map((user) => user.id),
+    ...extraUsers.filter((user) => user.posts).map((user) => user.id),
   ];
   const customerIds = [
     customer.id,
-    ...extraUsers.filter((user) => !user.isAdvertiser).map((user) => user.id),
+    ...extraUsers.filter((user) => !user.posts).map((user) => user.id),
   ];
 
   const landAds: SeedAd[] = [
@@ -387,8 +390,9 @@ async function main() {
       description:
         'Prime residential plot, ready for construction, clear title.',
       price: 8500000,
-      locationArea: 'Bashundhara R/A',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Bhatara',
       photos: landPhotos(100),
       attributes: { sizeKatha: 5, propertyType: 'Residential' },
       status: 'LIVE' as const,
@@ -399,8 +403,9 @@ async function main() {
       description:
         'South-facing corner plot on a paved 20ft road, walking distance to the main bazar.',
       price: 4200000,
-      locationArea: 'Bosila',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Mohammadpur',
       photos: landPhotos(101),
       attributes: { sizeKatha: 3, propertyType: 'Residential' },
       status: 'LIVE' as const,
@@ -411,8 +416,9 @@ async function main() {
       description:
         'High-visibility commercial frontage, ideal for a showroom or office complex.',
       price: 25000000,
-      locationArea: 'Mirpur Road',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Dhanmondi',
       photos: landPhotos(102),
       attributes: { sizeKatha: 10, propertyType: 'Commercial' },
       status: 'LIVE' as const,
@@ -423,8 +429,9 @@ async function main() {
       description:
         'Plot allotment in a planned sector with underground utilities already laid.',
       price: 6000000,
-      locationArea: 'Purbachal Sector 12',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Bhatara',
       photos: landPhotos(103),
       attributes: { sizeKatha: 6, propertyType: 'Residential' },
       status: 'LIVE' as const,
@@ -435,8 +442,9 @@ async function main() {
       description:
         'Fertile farmland with an irrigation canal along the eastern border.',
       price: 1800000,
-      locationArea: 'Gazipur Bypass',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Gazipur',
+      locationArea: 'Joydebpur',
       photos: landPhotos(104),
       attributes: { sizeKatha: 4, propertyType: 'Agricultural' },
       status: 'LIVE' as const,
@@ -447,8 +455,9 @@ async function main() {
       description:
         'Close to Savar EPZ, suitable for warehousing or staff housing development.',
       price: 3500000,
-      locationArea: 'Savar EPZ',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Savar',
       photos: landPhotos(105),
       attributes: { sizeKatha: 8, propertyType: 'Commercial' },
       status: 'LIVE' as const,
@@ -459,8 +468,9 @@ async function main() {
       description:
         'Quiet residential plot near Halishahar Housing Estate, ready to build.',
       price: 7200000,
-      locationArea: 'Halishahar',
+      locationDivision: 'Chattogram',
       locationDistrict: 'Chattogram',
+      locationArea: 'Halishahar',
       photos: landPhotos(106),
       attributes: { sizeKatha: 5, propertyType: 'Residential' },
       status: 'LIVE' as const,
@@ -471,8 +481,9 @@ async function main() {
       description:
         'Compact residential plot in a well-established Sylhet neighborhood.',
       price: 2000000,
-      locationArea: 'Ambarkhana',
+      locationDivision: 'Sylhet',
       locationDistrict: 'Sylhet',
+      locationArea: 'Sylhet Kotwali',
       photos: landPhotos(107),
       attributes: { sizeKatha: 2, propertyType: 'Residential' },
       status: 'LIVE' as const,
@@ -483,8 +494,9 @@ async function main() {
       description:
         'Large plot near the city center, previously used for agriculture.',
       price: 4500000,
-      locationArea: 'Rajshahi City',
+      locationDivision: 'Rajshahi',
       locationDistrict: 'Rajshahi',
+      locationArea: 'Boalia',
       photos: landPhotos(108),
       attributes: { sizeKatha: 15, propertyType: 'Agricultural' },
       status: 'REJECTED' as const,
@@ -499,8 +511,9 @@ async function main() {
       description:
         'Family-friendly apartment near main road, gas + water included.',
       price: 25000,
-      locationArea: 'Sector 7',
-      locationDistrict: 'Uttara',
+      locationDivision: 'Dhaka',
+      locationDistrict: 'Dhaka',
+      locationArea: 'Uttara West',
       photos: rentPhotos(100),
       attributes: { bedrooms: 2, bathrooms: 2, furnished: false, propertyType: 'Flat' },
       status: 'PENDING' as const,
@@ -511,8 +524,9 @@ async function main() {
       description:
         'Spacious flat with a balcony overlooking the lake, close to Road 8.',
       price: 45000,
-      locationArea: 'Dhanmondi',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Dhanmondi',
       photos: rentPhotos(101),
       attributes: { bedrooms: 3, bathrooms: 2, furnished: false, propertyType: 'Flat' },
       status: 'LIVE' as const,
@@ -523,8 +537,9 @@ async function main() {
       description:
         'Modern studio in a serviced building, ideal for a single professional.',
       price: 30000,
-      locationArea: 'Gulshan 2',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Gulshan',
       photos: rentPhotos(102),
       attributes: { bedrooms: 1, bathrooms: 1, furnished: true, propertyType: 'Flat' },
       status: 'LIVE' as const,
@@ -535,8 +550,9 @@ async function main() {
       description:
         'Bright corner unit on the 4th floor, two minutes from Banani Road 11.',
       price: 38000,
-      locationArea: 'Banani',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Banani',
       photos: rentPhotos(103),
       attributes: { bedrooms: 2, bathrooms: 2, furnished: false, propertyType: 'Flat' },
       status: 'LIVE' as const,
@@ -547,8 +563,9 @@ async function main() {
       description:
         'Full-floor house with rooftop access, generator backup, and parking.',
       price: 60000,
-      locationArea: 'Bashundhara R/A',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Bhatara',
       photos: rentPhotos(104),
       attributes: { bedrooms: 4, bathrooms: 3, furnished: false, propertyType: 'House' },
       status: 'LIVE' as const,
@@ -559,8 +576,9 @@ async function main() {
       description:
         'Furnished room with attached bath, shared kitchen, bills included.',
       price: 12000,
-      locationArea: 'Mohammadpur',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Mohammadpur',
       photos: rentPhotos(105),
       attributes: { bedrooms: 1, bathrooms: 1, furnished: true, propertyType: 'Sublet' },
       status: 'LIVE' as const,
@@ -571,8 +589,9 @@ async function main() {
       description:
         'Well-maintained flat close to Agrabad commercial area, ready to move in.',
       price: 28000,
-      locationArea: 'Agrabad',
+      locationDivision: 'Chattogram',
       locationDistrict: 'Chattogram',
+      locationArea: 'Double Mooring',
       photos: rentPhotos(106),
       attributes: { bedrooms: 3, bathrooms: 2, furnished: false, propertyType: 'Flat' },
       status: 'LIVE' as const,
@@ -582,8 +601,9 @@ async function main() {
       title: '2 Bedroom Flat in Zindabazar',
       description: 'Central location, walking distance to shops and restaurants.',
       price: 18000,
-      locationArea: 'Zindabazar',
+      locationDivision: 'Sylhet',
       locationDistrict: 'Sylhet',
+      locationArea: 'Sylhet Kotwali',
       photos: rentPhotos(107),
       attributes: { bedrooms: 2, bathrooms: 1, furnished: false, propertyType: 'Flat' },
       status: 'LIVE' as const,
@@ -593,8 +613,9 @@ async function main() {
       title: 'Furnished Studio in Baridhara',
       description: 'Fully furnished studio in a diplomatic-zone-adjacent building.',
       price: 35000,
-      locationArea: 'Baridhara',
+      locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
+      locationArea: 'Bhatara',
       photos: rentPhotos(108),
       attributes: { bedrooms: 1, bathrooms: 1, furnished: true, propertyType: 'Flat' },
       status: 'SOLD' as const,

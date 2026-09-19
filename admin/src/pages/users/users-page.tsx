@@ -21,10 +21,11 @@ const FILTER_KEYS = ['role', 'suspended', 'verified', 'from', 'to'] as const;
 
 type UserFilterKey = (typeof FILTER_KEYS)[number];
 
-function roleOf(user: UserListItem): { label: string; tone: 'brand' | 'info' | 'neutral' } {
-  if (user.isAdmin) return { label: 'Admin', tone: 'brand' };
-  if (user.isAdvertiser) return { label: 'Advertiser', tone: 'info' };
-  return { label: 'Customer', tone: 'neutral' };
+/** Customers and advertisers are one role now; only admin is distinct. */
+function roleOf(user: UserListItem): { label: string; tone: 'brand' | 'neutral' } {
+  return user.isAdmin
+    ? { label: 'Admin', tone: 'brand' }
+    : { label: 'Member', tone: 'neutral' };
 }
 
 export function UsersPage() {
@@ -202,8 +203,7 @@ export function UsersPage() {
                 value={filters.role}
                 onChange={(value) => query.setFilter('role', value)}
                 options={[
-                  { value: 'customer', label: 'Customer' },
-                  { value: 'advertiser', label: 'Advertiser' },
+                  { value: 'user', label: 'Member' },
                   { value: 'admin', label: 'Admin' },
                 ]}
                 allLabel="All roles"

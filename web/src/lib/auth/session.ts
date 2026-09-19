@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { API_URL } from "@/lib/api/config";
+import { apiUrl } from "@/lib/api/config";
 import type { AuthUser } from "./types";
 
 export const SESSION_COOKIE = "jl_token";
@@ -14,7 +14,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   if (!token) return null;
 
   try {
-    const response = await fetch(`${API_URL}/auth/me`, {
+    const response = await fetch(apiUrl`/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
