@@ -8,6 +8,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
 import { fetchMyConversations } from "@/lib/messaging/fetch-conversations";
 import type { Conversation } from "@/lib/messaging/types";
+import { resolveDashboardView } from "@/lib/dashboard/resolve-view";
 import { cn, firstSearchParam } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -47,9 +48,14 @@ export default async function MessagesPage({
 
   const resolved = await searchParams;
   const requested = firstSearchParam(resolved?.view) as View | undefined;
+  // The inbox holds both sides; which one opens first follows the dashboard
+  // view, and the tabs below still reach the other.
+  const dashboardView = await resolveDashboardView();
   const view: View = VIEWS.some((candidate) => candidate.value === requested)
     ? requested!
-    : "all";
+    : dashboardView === "advertiser"
+      ? "received"
+      : "sent";
 
   // One inbox, two sides of the same marketplace: threads about listings you
   // posted, and threads about listings you enquired about.
@@ -125,11 +131,7 @@ export default async function MessagesPage({
             {VIEWS.map((candidate) => (
               <Link
                 key={candidate.value}
-                href={
-                  candidate.value === "all"
-                    ? "/dashboard/messages"
-                    : `/dashboard/messages?view=${candidate.value}`
-                }
+                href={`/dashboard/messages?view=${candidate.value}`}
                 aria-current={view === candidate.value ? "page" : undefined}
                 className={cn(
                   "shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors duration-150",

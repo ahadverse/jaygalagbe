@@ -5,13 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
-const sectors = [
-  { value: "jayga-jomi", label: "Jayga Jomi" },
-  { value: "basha-bhara", label: "Basha Bhara" },
-] as const;
-
-type SectorValue = (typeof sectors)[number]["value"];
+import { homeSectors, useHomeSector } from "./home-sector-context";
 
 const popularAreas = ["Dhanmondi", "Bashundhara", "Uttara", "Chattogram", "Sylhet"];
 
@@ -31,7 +25,7 @@ const scrimLayers = [
 
 export function Hero() {
   const router = useRouter();
-  const [sector, setSector] = useState<SectorValue>(sectors[0].value);
+  const { sector, setSector } = useHomeSector();
   const [location, setLocation] = useState("");
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
@@ -89,7 +83,7 @@ export function Hero() {
               aria-label="What are you looking for?"
               className="mb-2.5 flex gap-1 rounded-full bg-muted p-1"
             >
-              {sectors.map((option) => {
+              {homeSectors.map((option) => {
                 const active = sector === option.value;
                 return (
                   <button

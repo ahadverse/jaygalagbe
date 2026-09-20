@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { API_URL, apiUrl, isValidId } from "@/lib/api/config";
 import { getToken } from "@/lib/auth/session";
+import { setDashboardView } from "@/lib/dashboard/actions";
 import type { Sector } from "./types";
 
 export type AdFormState = { error?: string };
@@ -88,6 +89,10 @@ export async function createAdAction(
   } catch {
     return { error: "Couldn't reach the server. Please try again." };
   }
+
+  // Posting is the moment someone becomes an advertiser, and the page we are
+  // about to redirect to only exists in that view's nav.
+  await setDashboardView("advertiser");
 
   revalidatePath(ADS_PATH);
   redirect(ADS_PATH);

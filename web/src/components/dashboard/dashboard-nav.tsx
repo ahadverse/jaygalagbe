@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { DASHBOARD_NAV } from "./nav-items";
+import type { DashboardNavItem } from "./nav-items";
 
 function isActive(pathname: string, href: string): boolean {
   return href === "/dashboard"
@@ -12,7 +12,7 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 /** Rail on large screens; the mobile version is `DashboardTabs` below. */
-export function DashboardSidebar() {
+export function DashboardSidebar({ items }: { items: DashboardNavItem[] }) {
   const pathname = usePathname();
 
   return (
@@ -20,7 +20,7 @@ export function DashboardSidebar() {
       aria-label="Dashboard"
       className="sticky top-24 hidden w-56 shrink-0 flex-col gap-1 lg:flex"
     >
-      {DASHBOARD_NAV.map((item) => {
+      {items.map((item) => {
         const active = isActive(pathname, item.href);
         return (
           <Link
@@ -43,7 +43,7 @@ export function DashboardSidebar() {
   );
 }
 
-export function DashboardTabs() {
+export function DashboardTabs({ items }: { items: DashboardNavItem[] }) {
   const pathname = usePathname();
 
   return (
@@ -51,7 +51,7 @@ export function DashboardTabs() {
       aria-label="Dashboard"
       className="bleed-shell no-scrollbar flex gap-1 overflow-x-auto pb-px lg:hidden"
     >
-      {DASHBOARD_NAV.map((item) => {
+      {items.map((item) => {
         const active = isActive(pathname, item.href);
         return (
           <Link

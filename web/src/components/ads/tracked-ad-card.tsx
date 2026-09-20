@@ -1,5 +1,7 @@
+"use client";
+
 import { AdCard } from "./ad-card";
-import { ImpressionPing } from "@/components/analytics/impression-ping";
+import { useImpressionOnView } from "@/components/analytics/use-impression-on-view";
 import type { ImpressionContext } from "@/lib/analytics/track";
 import type { Ad } from "@/lib/ads/types";
 
@@ -17,13 +19,15 @@ export function TrackedAdCard({
   context: ImpressionContext;
   index?: number;
 }) {
+  const ref = useImpressionOnView<HTMLDivElement>(ad.id, context);
+
   return (
     <div
+      ref={ref}
       className="h-full animate-rise"
       style={{ animationDelay: `${Math.min(index * STAGGER_MS, MAX_STAGGER_MS)}ms` }}
     >
       <AdCard ad={ad} />
-      <ImpressionPing adId={ad.id} context={context} />
     </div>
   );
 }

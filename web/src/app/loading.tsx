@@ -63,7 +63,7 @@ export default function HomeLoading() {
               <Skeleton className="h-8 w-48" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, index) => (
+              {Array.from({ length: 9 }).map((_, index) => (
                 <AdCardSkeleton key={index} />
               ))}
             </div>

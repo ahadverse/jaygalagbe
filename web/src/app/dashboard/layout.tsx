@@ -4,14 +4,29 @@ import {
   DashboardSidebar,
   DashboardTabs,
 } from "@/components/dashboard/dashboard-nav";
+import { DASHBOARD_NAV } from "@/components/dashboard/nav-items";
+import { DashboardViewSwitcher } from "@/components/dashboard/view-switcher";
 import { requireUser } from "@/lib/auth/require-user";
+import { resolveDashboardView } from "@/lib/dashboard/resolve-view";
 import { cn } from "@/lib/utils";
 
 export default async function DashboardLayout({
   children,
 }: LayoutProps<"/dashboard">) {
   const user = await requireUser();
+  const view = await resolveDashboardView();
   const firstName = user.name.trim().split(" ")[0];
+
+  // Whichever side you are on, the other one's entry point stays reachable —
+  // just demoted to the quieter button.
+  const primary =
+    view === "advertiser"
+      ? { href: "/dashboard/ads/new", label: "Post an ad" }
+      : { href: "/jayga-jomi", label: "Browse listings" };
+  const secondary =
+    view === "advertiser"
+      ? { href: "/jayga-jomi", label: "Browse listings" }
+      : { href: "/dashboard/ads/new", label: "Post an ad" };
 
   return (
     <div className="shell flex w-full flex-col gap-6 py-6 sm:py-8 lg:flex-row lg:gap-10 lg:py-10">
@@ -33,28 +48,30 @@ export default async function DashboardLayout({
           </div>
           <div className="ml-auto flex shrink-0 gap-2 lg:ml-0 lg:mt-1 lg:w-full lg:flex-col">
             <Link
-              href="/jayga-jomi"
+              href={secondary.href}
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
                 "hidden lg:inline-flex lg:w-full",
               )}
             >
-              Browse listings
+              {secondary.label}
             </Link>
             <Link
-              href="/dashboard/ads/new"
+              href={primary.href}
               className={cn(
                 buttonVariants({ variant: "primary", size: "sm" }),
                 "lg:w-full",
               )}
             >
-              Post an ad
+              {primary.label}
             </Link>
           </div>
         </div>
 
-        <DashboardSidebar />
-        <DashboardTabs />
+        <DashboardViewSwitcher view={view} />
+
+        <DashboardSidebar items={DASHBOARD_NAV[view]} />
+        <DashboardTabs items={DASHBOARD_NAV[view]} />
       </div>
 
       <div className="min-w-0 flex-1">{children}</div>

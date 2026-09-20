@@ -18,9 +18,12 @@ import { fetchMyAds } from "@/lib/ads/fetch-my-ads";
 import { fetchMyConversations } from "@/lib/messaging/fetch-conversations";
 import { fetchAnalyticsOverview } from "@/lib/analytics/fetch-overview";
 import { resolveStatsRange } from "@/lib/analytics/date-range";
+import { resolveDashboardView } from "@/lib/dashboard/resolve-view";
 import { formatAmount, formatRelativeTime } from "@/lib/format";
 import { firstSearchParam } from "@/lib/utils";
 import { AD_STATUS_BADGE } from "@/lib/ads/status";
+import type { AuthUser } from "@/lib/auth/types";
+import type { Conversation } from "@/lib/messaging/types";
 
 export const metadata: Metadata = {
   title: "Overview | Jayga Lagbe",
@@ -32,48 +35,52 @@ export default async function DashboardOverviewPage({
   searchParams,
 }: PageProps<"/dashboard">) {
   const user = await requireUser();
+  const view = await resolveDashboardView();
   const token = (await getToken())!;
 
   const resolved = await searchParams;
-  const { range, from, to } = resolveStatsRange(
-    firstSearchParam(resolved?.range),
+  const firstName = user.name.trim().split(" ")[0];
+
+  return (
+    <div className="flex flex-col gap-8">
+      <PageTitle
+        title={`Welcome back, ${firstName}`}
+        description={
+          view === "advertiser"
+            ? "How the properties you posted are doing, and who is asking about them."
+            : "The listings you are following, and the owners you have talked to."
+        }
+      />
+
+      {view === "advertiser" ? (
+        <AdvertiserOverview
+          user={user}
+          token={token}
+          range={firstSearchParam(resolved?.range)}
+          adId={firstSearchParam(resolved?.adId) || undefined}
+        />
+      ) : (
+        <CustomerOverview user={user} token={token} />
+      )}
+    </div>
   );
-  const adId = firstSearchParam(resolved?.adId) || undefined;
+}
 
-  const [ads, conversations] = await Promise.all([
-    fetchMyAds(token),
-    fetchMyConversations(token),
-  ]);
-  const overview =
-    ads.length > 0
-      ? await fetchAnalyticsOverview(token, { from, to, adId })
-      : null;
-
-  const liveCount = ads.filter((ad) => ad.status === "LIVE").length;
-  const pendingCount = ads.filter((ad) => ad.status === "PENDING").length;
-
+async function CustomerOverview({
+  user,
+  token,
+}: {
+  user: AuthUser;
+  token: string;
+}) {
+  const conversations = await fetchMyConversations(token);
   const enquiries = conversations.filter(
     (conversation) => conversation.customerId === user.id,
   );
-  const enquiriesReceived = conversations.filter(
-    (conversation) => conversation.advertiserId === user.id,
-  );
-  const unread = conversations.filter((conversation) => {
-    const last = conversation.messages?.[0];
-    return last && last.senderId !== user.id && !last.readAt;
-  }).length;
+  const owners = new Set(enquiries.map((conversation) => conversation.advertiserId)).size;
+  const unread = unreadCount(enquiries, user.id);
 
-  const totals = overview?.totals;
-  const seriesHasData = overview?.series.some(
-    (point) =>
-      point.impressions > 0 || point.visits > 0 || point.conversions > 0,
-  );
-  const breakdown = overview?.ads.filter((ad) => ad.visits > 0) ?? [];
-
-  // Someone who has never posted is here to browse, so browsing comes first.
-  const sellsToo = ads.length > 0;
-
-  const buyingSection = (
+  return (
     <div className="flex flex-col gap-4">
       <SectionHeading
         title="Your search"
@@ -85,9 +92,7 @@ export default async function DashboardOverviewPage({
         <StatCard
           label="Enquiries sent"
           value={enquiries.length.toLocaleString()}
-          hint={`${new Set(enquiries.map((c) => c.advertiserId)).size} owner${
-            new Set(enquiries.map((c) => c.advertiserId)).size === 1 ? "" : "s"
-          } contacted`}
+          hint={`${owners} owner${owners === 1 ? "" : "s"} contacted`}
           tone="accent"
           icon={<DashboardIcon name="chat" />}
         />
@@ -137,8 +142,8 @@ export default async function DashboardOverviewPage({
       >
         {enquiries.length === 0 ? (
           <PanelNote>
-            You have not contacted an owner yet. Open a listing and hit
-            “Message the advertiser” to start.
+            You have not contacted an owner yet. Open a listing and hit “Message
+            the advertiser” to start.
           </PanelNote>
         ) : (
           enquiries.slice(0, RECENT_LIMIT).map((conversation) => (
@@ -152,10 +157,65 @@ export default async function DashboardOverviewPage({
           ))
         )}
       </Panel>
+
+      <Panel bodyClassName="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div className="flex flex-col gap-1">
+          <p className="font-heading text-base font-bold text-foreground">
+            Have a property to list?
+          </p>
+          <p className="measure text-sm text-muted-foreground">
+            Posting is free. Switch to the advertiser view any time to see visit
+            and lead charts for everything you post.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/ads/new"
+          className={buttonVariants({ variant: "primary" })}
+        >
+          Post an ad
+        </Link>
+      </Panel>
     </div>
   );
+}
 
-  const sellingSection = (
+async function AdvertiserOverview({
+  user,
+  token,
+  range: requestedRange,
+  adId,
+}: {
+  user: AuthUser;
+  token: string;
+  range?: string;
+  adId?: string;
+}) {
+  const { range, from, to } = resolveStatsRange(requestedRange);
+
+  const [ads, conversations] = await Promise.all([
+    fetchMyAds(token),
+    fetchMyConversations(token),
+  ]);
+  const overview =
+    ads.length > 0
+      ? await fetchAnalyticsOverview(token, { from, to, adId })
+      : null;
+
+  const liveCount = ads.filter((ad) => ad.status === "LIVE").length;
+  const pendingCount = ads.filter((ad) => ad.status === "PENDING").length;
+  const received = conversations.filter(
+    (conversation) => conversation.advertiserId === user.id,
+  );
+  const unread = unreadCount(received, user.id);
+
+  const totals = overview?.totals;
+  const seriesHasData = overview?.series.some(
+    (point) =>
+      point.impressions > 0 || point.visits > 0 || point.conversions > 0,
+  );
+  const breakdown = overview?.ads.filter((ad) => ad.visits > 0) ?? [];
+
+  return (
     <div className="flex flex-col gap-4">
       <SectionHeading
         title="Your listings"
@@ -170,11 +230,11 @@ export default async function DashboardOverviewPage({
         }
       />
 
-      {!sellsToo ? (
+      {ads.length === 0 ? (
         <Panel bodyClassName="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div className="flex flex-col gap-1">
             <p className="font-heading text-base font-bold text-foreground">
-              Have a property to list?
+              Nothing posted yet
             </p>
             <p className="measure text-sm text-muted-foreground">
               Posting is free. Your listing is checked and published, usually
@@ -206,8 +266,8 @@ export default async function DashboardOverviewPage({
             />
             <StatCard
               label="Enquiries received"
-              value={enquiriesReceived.length.toLocaleString()}
-              hint="People who messaged you"
+              value={received.length.toLocaleString()}
+              hint={unread > 0 ? `${unread} unread` : "People who messaged you"}
               tone="accent"
               icon={<DashboardIcon name="chat" />}
             />
@@ -317,6 +377,36 @@ export default async function DashboardOverviewPage({
           </div>
 
           <Panel
+            title="Enquiries about your listings"
+            description="People who contacted you about something you posted."
+            action={
+              <Link
+                href="/dashboard/messages"
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                View all
+              </Link>
+            }
+            bodyClassName="flex flex-col gap-2 p-3 sm:p-3"
+          >
+            {received.length === 0 ? (
+              <PanelNote>
+                Nobody has messaged you about a listing yet.
+              </PanelNote>
+            ) : (
+              received.slice(0, RECENT_LIMIT).map((conversation) => (
+                <ConversationCard
+                  key={conversation.id}
+                  href={`/dashboard/messages/${conversation.id}`}
+                  name={conversation.customer.name}
+                  adTitle={conversation.ad.title}
+                  preview={conversation.messages?.[0]?.body}
+                />
+              ))
+            )}
+          </Panel>
+
+          <Panel
             title="Recent listings"
             action={
               <Link
@@ -361,27 +451,13 @@ export default async function DashboardOverviewPage({
       )}
     </div>
   );
+}
 
-  return (
-    <div className="flex flex-col gap-8">
-      <PageTitle
-        title={`Welcome back, ${user.name.trim().split(" ")[0]}`}
-        description="Everything you are following, and everything you have listed — in one place."
-      />
-
-      {sellsToo ? (
-        <>
-          {sellingSection}
-          {buyingSection}
-        </>
-      ) : (
-        <>
-          {buyingSection}
-          {sellingSection}
-        </>
-      )}
-    </div>
-  );
+function unreadCount(conversations: Conversation[], userId: string): number {
+  return conversations.filter((conversation) => {
+    const last = conversation.messages?.[0];
+    return last && last.senderId !== userId && !last.readAt;
+  }).length;
 }
 
 function SectionHeading({

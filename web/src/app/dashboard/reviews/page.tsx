@@ -10,7 +10,9 @@ import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
 import { fetchMyConversations } from "@/lib/messaging/fetch-conversations";
 import { fetchAdvertiserReviewsBatch } from "@/lib/reviews/fetch-advertiser-reviews-batch";
+import { resolveDashboardView } from "@/lib/dashboard/resolve-view";
 import { formatRelativeTime } from "@/lib/format";
+import type { AuthUser } from "@/lib/auth/types";
 
 export const metadata: Metadata = {
   title: "Reviews | Jayga Lagbe",
@@ -18,51 +20,41 @@ export const metadata: Metadata = {
 
 export default async function ReviewsPage() {
   const user = await requireUser();
-  const token = (await getToken())!;
-  const conversations = await fetchMyConversations(token);
-
-  // You can review anyone whose listing you enquired about.
-  const reviewable = [
-    ...new Map(
-      conversations
-        .filter((conversation) => conversation.customerId === user.id)
-        .map((conversation) => [
-          conversation.advertiserId,
-          conversation.advertiser,
-        ]),
-    ).values(),
-  ];
-
-  const reviewsById = await fetchAdvertiserReviewsBatch([
-    ...reviewable.map((party) => party.id),
-    user.id,
-  ]);
-
-  const received = reviewsById[user.id];
-  const receivedCount = received?.reviewCount ?? 0;
-  const averageRating = received?.averageRating ?? 0;
-  const writtenCount = reviewable.filter((party) =>
-    reviewsById[party.id]?.reviews.some(
-      (review) => review.customerId === user.id,
-    ),
-  ).length;
+  const view = await resolveDashboardView();
 
   return (
     <div className="flex flex-col gap-6">
       <PageTitle
         title="Reviews"
-        description="What people said about you, and the owners you can rate."
+        description={
+          view === "advertiser"
+            ? "What the people you have dealt with said about you."
+            : "Rate the owners whose listings you enquired about."
+        }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+      {view === "advertiser" ? (
+        <ReviewsReceived user={user} />
+      ) : (
+        <ReviewsToWrite user={user} />
+      )}
+    </div>
+  );
+}
+
+async function ReviewsReceived({ user }: { user: AuthUser }) {
+  const reviewsById = await fetchAdvertiserReviewsBatch([user.id]);
+  const received = reviewsById[user.id];
+  const receivedCount = received?.reviewCount ?? 0;
+  const averageRating = received?.averageRating ?? 0;
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <StatCard
           label="Your rating"
           value={receivedCount > 0 ? averageRating.toFixed(1) : "—"}
-          hint={
-            receivedCount > 0
-              ? `From ${receivedCount} review${receivedCount === 1 ? "" : "s"}`
-              : "No reviews yet"
-          }
+          hint={receivedCount > 0 ? "Average across reviews" : "No reviews yet"}
           tone="success"
           icon={<DashboardIcon name="star" />}
         />
@@ -70,13 +62,6 @@ export default async function ReviewsPage() {
           label="Reviews received"
           value={receivedCount.toLocaleString()}
           hint="Across all your listings"
-        />
-        <StatCard
-          label="Reviews written"
-          value={writtenCount.toLocaleString()}
-          hint={`${reviewable.length} owner${reviewable.length === 1 ? "" : "s"} you can rate`}
-          tone="accent"
-          className="col-span-2 lg:col-span-1"
         />
       </div>
 
@@ -114,6 +99,51 @@ export default async function ReviewsPage() {
           ))
         )}
       </Panel>
+    </>
+  );
+}
+
+async function ReviewsToWrite({ user }: { user: AuthUser }) {
+  const token = (await getToken())!;
+  const conversations = await fetchMyConversations(token);
+
+  // You can review anyone whose listing you enquired about.
+  const reviewable = [
+    ...new Map(
+      conversations
+        .filter((conversation) => conversation.customerId === user.id)
+        .map((conversation) => [
+          conversation.advertiserId,
+          conversation.advertiser,
+        ]),
+    ).values(),
+  ];
+
+  const reviewsById = await fetchAdvertiserReviewsBatch(
+    reviewable.map((party) => party.id),
+  );
+  const writtenCount = reviewable.filter((party) =>
+    reviewsById[party.id]?.reviews.some(
+      (review) => review.customerId === user.id,
+    ),
+  ).length;
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <StatCard
+          label="Reviews written"
+          value={writtenCount.toLocaleString()}
+          hint="Owners you have rated"
+          tone="accent"
+          icon={<DashboardIcon name="star" />}
+        />
+        <StatCard
+          label="Waiting on you"
+          value={(reviewable.length - writtenCount).toLocaleString()}
+          hint={`${reviewable.length} owner${reviewable.length === 1 ? "" : "s"} you can rate`}
+        />
+      </div>
 
       <Panel
         title="Rate an owner"
@@ -157,6 +187,6 @@ export default async function ReviewsPage() {
           })
         )}
       </Panel>
-    </div>
+    </>
   );
 }
