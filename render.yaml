@@ -28,10 +28,16 @@ services:
     plan: free
     region: singapore # closest region Render offers to Bangladesh
     rootDir: backend
+    # `--include=dev` is required, not tidiness: NODE_ENV=production below
+    # applies to the build too, and npm honours it by skipping
+    # devDependencies — which is where the compiler lives. Without it the
+    # build dies on `nest: not found`. Only the running server should behave
+    # as production; the build still needs its tools.
+    #
     # Migrations run here rather than as a pre-deploy step because pre-deploy
     # commands need a paid instance type. Prisma's client is generated into
     # src/generated, which is gitignored, so it has to be built every time.
-    buildCommand: npm ci && npm run build:deploy && npm run migrate:deploy
+    buildCommand: npm ci --include=dev && npm run build:deploy && npm run migrate:deploy
     startCommand: npm run start:prod
     healthCheckPath: /health
     envVars:
