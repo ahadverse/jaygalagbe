@@ -159,8 +159,12 @@ export function DataTable<T>({
         })}
       </ul>
 
-      {/* Desktop: a real table, still scrollable if the viewport is narrow. */}
-      <div className="hidden overflow-x-auto md:block">
+      {/* Desktop: a real table, still scrollable if the viewport is narrow.
+       * `relative` is load-bearing: the sr-only labels inside the header are
+       * absolutely positioned, and without a positioned ancestor their
+       * containing block is the page, so they escape this scroll container and
+       * stretch the whole document sideways instead of scrolling in here. */}
+      <div className="relative hidden overflow-x-auto md:block">
         <table className="w-full min-w-[48rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-border bg-ink-50">
