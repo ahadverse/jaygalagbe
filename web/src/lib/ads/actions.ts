@@ -57,6 +57,9 @@ function buildAdPayload(formData: FormData, sector: Sector) {
     locationDistrict: String(formData.get("locationDistrict") ?? ""),
     locationArea: String(formData.get("locationArea") ?? ""),
     address: String(formData.get("address") ?? "") || undefined,
+    // The uploader emits one hidden input per stored photo, in cover-first
+    // order; the API re-checks that each one is an absolute http(s) URL.
+    photos: formData.getAll("photos").map(String),
     attributes: buildAttributes(sector, formData),
   };
 }

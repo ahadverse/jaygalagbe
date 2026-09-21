@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const isProduction = process.env.NODE_ENV === "production";
 const wsUrl = process.env.NEXT_PUBLIC_WS_URL ?? "http://localhost:5000";
 
+// Ad photos are posted to our own API, which stores them in S3, so the
+// browser never opens a connection to the bucket and `connect-src` does not
+// need to allow it. Photos are only ever *displayed* from the CDN, which
+// `img-src https:` already covers.
+
 // Next injects inline bootstrap scripts and Tailwind emits inline styles, so
 // those two directives stay permissive; everything else is locked to self.
 const contentSecurityPolicy = [

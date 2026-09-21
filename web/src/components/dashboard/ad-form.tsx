@@ -1,18 +1,35 @@
 "use client";
 
-import { type ReactNode, useActionState, useState } from "react";
+import {
+  type ReactNode,
+  startTransition,
+  useActionState,
+  useRef,
+  useState,
+} from "react";
 import { useFormStatus } from "react-dom";
 import { Alert, Button, Input, Select, Textarea } from "@/components/ui";
 import { createAdAction, updateAdAction, type AdFormState } from "@/lib/ads/actions";
 import { LocationPicker } from "@/components/dashboard/location-picker";
+import {
+  PhotoUploader,
+  type PhotoUploaderHandle,
+} from "@/components/dashboard/photo-uploader";
 import { sectorConfigs } from "@/lib/ads/sectors";
 import type { Ad, HouseRentAttributes, LandAttributes, Sector } from "@/lib/ads/types";
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, busy }: { label: string; busy: boolean }) {
   const { pending } = useFormStatus();
+  const working = pending || busy;
   return (
-    <Button type="submit" size="lg" loading={pending} className="w-full sm:w-auto">
-      {pending ? "Saving…" : label}
+    <Button
+      type="submit"
+      size="lg"
+      loading={working}
+      disabled={working}
+      className="w-full sm:w-auto"
+    >
+      {working ? "Saving…" : label}
     </Button>
   );
 }
@@ -50,13 +67,47 @@ export function AdForm({ ad }: { ad?: Ad }) {
     {},
   );
   const [sector, setSector] = useState<Sector>(ad?.sector ?? "LAND");
+  const uploader = useRef<PhotoUploaderHandle>(null);
+  // Covers the upload leg only: `useFormStatus` does not know about it,
+  // because it happens before the action is ever called.
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  /**
+   * Photos are uploaded here rather than when they are picked, so a draft that
+   * is never submitted costs nothing and an abandoned form leaves no orphaned
+   * objects in the bucket. The action only runs once every URL is in hand — if
+   * an upload fails the listing is not saved at all, which is what keeps a
+   * half-photographed ad from reaching review.
+   */
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (uploading) return;
+
+    const formData = new FormData(event.currentTarget);
+    setUploadError(null);
+    setUploading(true);
+
+    try {
+      for (const url of (await uploader.current?.collect()) ?? []) {
+        formData.append("photos", url);
+      }
+    } catch (error) {
+      setUploadError((error as Error).message);
+      return;
+    } finally {
+      setUploading(false);
+    }
+
+    startTransition(() => formAction(formData));
+  }
   const landAttrs = ad?.attributes as LandAttributes | undefined;
   const houseAttrs = ad?.attributes as HouseRentAttributes | undefined;
   const sectorName =
     sectorConfigs[sector === "LAND" ? "jayga-jomi" : "basha-bhara"].name;
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {isEdit && <input type="hidden" name="id" value={ad!.id} />}
       <input type="hidden" name="sector" value={sector} />
 
@@ -156,6 +207,13 @@ export function AdForm({ ad }: { ad?: Ad }) {
       </FormSection>
 
       <FormSection
+        title="Photos"
+        description="Listings with photos get far more replies. The first one is the cover — use the arrows to reorder."
+      >
+        <PhotoUploader photos={ad?.photos} ref={uploader} />
+      </FormSection>
+
+      <FormSection
         title="Property details"
         description="These feed the filters on the listing page, so fill them in accurately."
       >
@@ -241,16 +299,22 @@ export function AdForm({ ad }: { ad?: Ad }) {
         )}
       </FormSection>
 
+      {uploadError && <Alert>{uploadError}</Alert>}
       {state.error && <Alert>{state.error}</Alert>}
 
       {/* Actions stay reachable without scrolling back down a long form. */}
       <div className="sticky bottom-0 z-10 -mx-1 flex flex-col gap-3 rounded-t-2xl border-t border-border bg-background/90 px-1 py-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs leading-relaxed text-muted-foreground">
-          {isEdit
-            ? "Edited ads are re-checked before they return to the listings."
-            : "Your ad goes to review first — usually approved within a day."}
+          {uploading
+            ? "Uploading photos…"
+            : isEdit
+              ? "Edited ads are re-checked before they return to the listings."
+              : "Your ad goes to review first — usually approved within a day."}
         </p>
-        <SubmitButton label={isEdit ? "Save changes" : "Submit for review"} />
+        <SubmitButton
+          label={isEdit ? "Save changes" : "Submit for review"}
+          busy={uploading}
+        />
       </div>
     </form>
   );
