@@ -16,6 +16,7 @@ export const USER_SORT_FIELDS = [
   'name',
   'email',
   'ads',
+  'payments',
 ] as const;
 
 export type UserSortField = (typeof USER_SORT_FIELDS)[number];
@@ -42,6 +43,12 @@ export class ListUsersDto extends PaginationQueryDto {
   @ToBoolean()
   @IsBoolean()
   verified?: boolean;
+
+  @ApiPropertyOptional({ description: 'Only accounts that have posted an ad' })
+  @IsOptional()
+  @ToBoolean()
+  @IsBoolean()
+  hasAds?: boolean;
 
   @ApiPropertyOptional({ description: 'ISO date — joined on or after' })
   @IsOptional()

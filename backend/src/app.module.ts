@@ -6,6 +6,7 @@ import { AppController } from './app.controller.js';
 import { HttpThrottlerGuard } from './common/http-throttler.guard.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { AdsModule } from './ads/ads.module.js';
@@ -16,6 +17,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
+import { UploadsModule } from './uploads/uploads.module.js';
 import { AdminModule } from './admin/admin.module.js';
 
 @Module({
@@ -28,6 +30,7 @@ import { AdminModule } from './admin/admin.module.js';
       ],
     }),
     PrismaModule,
+    AuditModule,
     AuthModule,
     UsersModule,
     AdsModule,
@@ -38,6 +41,7 @@ import { AdminModule } from './admin/admin.module.js';
     ReviewsModule,
     ReportsModule,
     AnalyticsModule,
+    UploadsModule,
     AdminModule,
   ],
   controllers: [AppController],

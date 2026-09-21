@@ -6,8 +6,11 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AuditService } from '../audit/audit.service.js';
 import {
   AdStatus,
+  AuditAction,
+  AuditTargetType,
   Sector,
   type Ad,
   type Prisma,
@@ -92,6 +95,7 @@ export class AdsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly audit: AuditService,
   ) {}
 
   create(ownerId: string, dto: CreateAdDto) {
@@ -207,7 +211,8 @@ export class AdsService {
     if (!ad) {
       throw new NotFoundException('Ad not found');
     }
-    if (ad.ownerId !== requester.id && !requester.isAdmin) {
+    const isOwner = ad.ownerId === requester.id;
+    if (!isOwner && !requester.isAdmin) {
       throw new ForbiddenException('You do not own this ad');
     }
     assertTransition(ad.status, AdStatus.REMOVED);
@@ -216,6 +221,18 @@ export class AdsService {
       where: { id },
       data: { status: AdStatus.REMOVED },
     });
+
+    // An owner deleting their own listing is ordinary use, not moderation.
+    if (!isOwner) {
+      await this.audit.record({
+        actorId: requester.id,
+        action: AuditAction.AD_REMOVE,
+        targetType: AuditTargetType.AD,
+        targetId: ad.id,
+        summary: `Took down "${ad.title}"`,
+        metadata: { previousStatus: ad.status, ownerId: ad.ownerId },
+      });
+    }
   }
 
   async markSold(id: string, ownerId: string) {
@@ -250,7 +267,7 @@ export class AdsService {
     });
   }
 
-  async approve(id: string) {
+  async approve(id: string, actorId: string, batchId?: string) {
     const ad = await this.prisma.ad.findUnique({ where: { id } });
     if (!ad) {
       throw new NotFoundException('Ad not found');
@@ -268,10 +285,19 @@ export class AdsService {
       adTitle: updated.title,
     } satisfies AdApprovedPayload);
 
+    await this.audit.record({
+      actorId,
+      action: AuditAction.AD_APPROVE,
+      targetType: AuditTargetType.AD,
+      targetId: updated.id,
+      summary: `Approved "${updated.title}"`,
+      metadata: { previousStatus: ad.status, ownerId: ad.ownerId, batchId },
+    });
+
     return updated;
   }
 
-  async reject(id: string, dto: RejectAdDto) {
+  async reject(id: string, dto: RejectAdDto, actorId: string, batchId?: string) {
     const ad = await this.prisma.ad.findUnique({ where: { id } });
     if (!ad) {
       throw new NotFoundException('Ad not found');
@@ -293,6 +319,21 @@ export class AdsService {
       adTitle: updated.title,
       reason: rejectionReason,
     } satisfies AdRejectedPayload);
+
+    await this.audit.record({
+      actorId,
+      action: AuditAction.AD_REJECT,
+      targetType: AuditTargetType.AD,
+      targetId: updated.id,
+      summary: `Rejected "${updated.title}" — ${dto.reasonCode}`,
+      metadata: {
+        previousStatus: ad.status,
+        ownerId: ad.ownerId,
+        reasonCode: dto.reasonCode,
+        note: dto.note,
+        batchId,
+      },
+    });
 
     return updated;
   }

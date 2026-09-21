@@ -4,13 +4,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { ReportStatus, type Prisma } from '../generated/prisma/client.js';
+import { AuditService } from '../audit/audit.service.js';
+import {
+  AuditAction,
+  AuditTargetType,
+  ReportStatus,
+  type Prisma,
+} from '../generated/prisma/client.js';
 import {
   paginate,
   resolvePage,
   resolveSort,
   type SortOrder,
 } from '../common/pagination.js';
+import { MAX_EXPORT_ROWS, toCsv, type CsvColumn } from '../common/csv.js';
+import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import {
   REPORT_SORT_FIELDS,
   type ListReportsDto,
@@ -90,9 +98,32 @@ function buildOrderBy(
   }
 }
 
+type ReportRow = Prisma.ReportGetPayload<{ include: typeof LIST_INCLUDE }>;
+
+const EXPORT_COLUMNS: CsvColumn<ReportRow>[] = [
+  { header: 'ID', value: (report) => report.id },
+  { header: 'Status', value: (report) => report.status },
+  { header: 'Reason', value: (report) => report.reason },
+  { header: 'Reported at', value: (report) => report.createdAt },
+  { header: 'Reporter', value: (report) => report.reporter.name },
+  { header: 'Reporter email', value: (report) => report.reporter.email },
+  { header: 'Ad ID', value: (report) => report.ad.id },
+  { header: 'Ad title', value: (report) => report.ad.title },
+  { header: 'Ad status', value: (report) => report.ad.status },
+  { header: 'Sector', value: (report) => report.ad.sector },
+  { header: 'Advertiser', value: (report) => report.ad.owner.name },
+  {
+    header: 'Total reports on ad',
+    value: (report) => report.ad._count.reports,
+  },
+];
+
 @Injectable()
 export class AdminReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async findAll(query: ListReportsDto) {
     const page = resolvePage(query);
@@ -124,8 +155,34 @@ export class AdminReportsService {
     };
   }
 
-  async resolve(id: string, dto: ResolveReportDto) {
-    const report = await this.prisma.report.findUnique({ where: { id } });
+  async exportCsv(query: ListReportsDto): Promise<string> {
+    const sort = resolveSort(
+      REPORT_SORT_FIELDS,
+      'createdAt',
+      query.sort,
+      query.order,
+    );
+
+    const rows = await this.prisma.report.findMany({
+      where: buildWhere(query),
+      include: LIST_INCLUDE,
+      orderBy: buildOrderBy(sort.field, sort.direction),
+      take: MAX_EXPORT_ROWS,
+    });
+
+    return toCsv(rows, EXPORT_COLUMNS);
+  }
+
+  async resolve(
+    id: string,
+    dto: ResolveReportDto,
+    actor: AuthenticatedUser,
+    batchId?: string,
+  ) {
+    const report = await this.prisma.report.findUnique({
+      where: { id },
+      include: { ad: { select: { id: true, title: true } } },
+    });
     if (!report) {
       throw new NotFoundException('Report not found');
     }
@@ -133,10 +190,63 @@ export class AdminReportsService {
       throw new ConflictException('This report has already been triaged');
     }
 
-    return this.prisma.report.update({
+    const updated = await this.prisma.report.update({
       where: { id },
       data: { status: dto.status },
       include: LIST_INCLUDE,
+    });
+
+    await this.audit.record({
+      actorId: actor.id,
+      action: AuditAction.REPORT_RESOLVE,
+      targetType: AuditTargetType.REPORT,
+      targetId: id,
+      summary: `Marked report on "${report.ad.title}" as ${dto.status.toLowerCase()}`,
+      metadata: {
+        resolution: dto.status,
+        adId: report.adId,
+        reason: report.reason,
+        batchId,
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Deletes a flag outright — for a duplicate or a malicious report, where
+   * leaving it triaged would still inflate the listing's report count and
+   * make an innocent advertiser look suspect.
+   */
+  async remove(id: string, actor: AuthenticatedUser, batchId?: string) {
+    const report = await this.prisma.report.findUnique({
+      where: { id },
+      include: {
+        ad: { select: { id: true, title: true } },
+        reporter: { select: { id: true, name: true } },
+      },
+    });
+    if (!report) {
+      throw new NotFoundException('Report not found');
+    }
+
+    await this.prisma.report.delete({ where: { id } });
+
+    await this.audit.record({
+      actorId: actor.id,
+      action: AuditAction.REPORT_DELETE,
+      targetType: AuditTargetType.REPORT,
+      targetId: id,
+      summary: `Deleted a report on "${report.ad.title}"`,
+      metadata: {
+        adId: report.adId,
+        reason: report.reason,
+        status: report.status,
+        reporterId: report.reporterId,
+        reporterName: report.reporter.name,
+        reportedAt: report.createdAt,
+        batchId,
+      },
     });
   }
 }

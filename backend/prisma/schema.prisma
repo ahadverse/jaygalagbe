@@ -36,6 +36,7 @@ model User {
   adImpressions           AdImpression[]
   adVisits                AdVisit[]
   adConversions           AdConversion[]
+  auditEntries            AdminAuditLog[] @relation("AuditActor")
 
   @@map("users")
 }
@@ -185,10 +186,14 @@ model Review {
   customer     User     @relation("CustomerReviews", fields: [customerId], references: [id])
   rating       Int
   comment      String?
+  // Moderation is a soft hide, not a delete: the rating stays out of the
+  // advertiser's public average but the record survives for dispute handling.
+  isHidden     Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@unique([advertiserId, customerId])
+  @@index([isHidden])
   @@map("reviews")
 }
 
@@ -254,4 +259,62 @@ model AdConversion {
   convertedAt DateTime @default(now())
 
   @@map("ad_conversions")
+}
+
+enum AuditAction {
+  AD_APPROVE
+  AD_REJECT
+  AD_REMOVE
+  AD_EDIT
+  AD_DELETE
+  REPORT_RESOLVE
+  REPORT_DELETE
+  USER_EDIT
+  USER_DELETE
+  REVIEW_DELETE
+  USER_SUSPEND
+  USER_UNSUSPEND
+  USER_GRANT_ADMIN
+  USER_REVOKE_ADMIN
+  BOOST_CANCEL
+  BOOST_EXTEND
+  PAYMENT_MARK_FAILED
+  PAYMENT_MARK_PAID
+  PAYMENT_GATEWAY_RECHECK
+  REVIEW_HIDE
+  REVIEW_UNHIDE
+}
+
+enum AuditTargetType {
+  AD
+  USER
+  REPORT
+  BOOST
+  PAYMENT
+  REVIEW
+}
+
+/**
+ * Append-only record of every state change an admin made. Nothing in the app
+ * updates or deletes a row here — a console that can suspend accounts and take
+ * listings down has to be able to answer "who did this, and when".
+ */
+model AdminAuditLog {
+  id         String          @id @default(cuid())
+  actorId    String
+  actor      User            @relation("AuditActor", fields: [actorId], references: [id])
+  action     AuditAction
+  targetType AuditTargetType
+  targetId   String
+  /** Human-readable one-liner, rendered as-is in the audit table. */
+  summary    String
+  /** Action-specific detail: reason codes, before/after values, bulk batch id. */
+  metadata   Json?
+  createdAt  DateTime        @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+  @@index([action, createdAt])
+  @@map("admin_audit_logs")
 }

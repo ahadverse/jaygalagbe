@@ -95,13 +95,17 @@ export class AdsController {
 
   @Patch(':id/approve')
   @Auth(Role.ADMIN)
-  approve(@Param('id') id: string) {
-    return this.adsService.approve(id);
+  approve(@Param('id') id: string, @CurrentUser() admin: AuthenticatedUser) {
+    return this.adsService.approve(id, admin.id);
   }
 
   @Patch(':id/reject')
   @Auth(Role.ADMIN)
-  reject(@Param('id') id: string, @Body() dto: RejectAdDto) {
-    return this.adsService.reject(id, dto);
+  reject(
+    @Param('id') id: string,
+    @Body() dto: RejectAdDto,
+    @CurrentUser() admin: AuthenticatedUser,
+  ) {
+    return this.adsService.reject(id, dto, admin.id);
   }
 }

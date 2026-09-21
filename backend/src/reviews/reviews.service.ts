@@ -55,15 +55,17 @@ export class ReviewsService {
   }
 
   async findByAdvertiser(advertiserId: string) {
+    // `isHidden` is a moderation decision: a hidden review is gone from the
+    // public view and from the average, but the row stays for dispute handling.
     const [reviews, aggregate] = await this.prisma.$transaction([
       this.prisma.review.findMany({
-        where: { advertiserId },
+        where: { advertiserId, isHidden: false },
         orderBy: { createdAt: 'desc' },
         take: MAX_REVIEWS_PER_ADVERTISER,
         include: { customer: { select: { id: true, name: true } } },
       }),
       this.prisma.review.aggregate({
-        where: { advertiserId },
+        where: { advertiserId, isHidden: false },
         _avg: { rating: true },
         _count: true,
       }),
@@ -98,14 +100,14 @@ export class ReviewsService {
 
     const [reviews, aggregates] = await this.prisma.$transaction([
       this.prisma.review.findMany({
-        where: { advertiserId: { in: uniqueIds } },
+        where: { advertiserId: { in: uniqueIds }, isHidden: false },
         orderBy: { createdAt: 'desc' },
         take: MAX_REVIEWS_PER_ADVERTISER * uniqueIds.length,
         include: { customer: { select: { id: true, name: true } } },
       }),
       this.prisma.review.groupBy({
         by: ['advertiserId'],
-        where: { advertiserId: { in: uniqueIds } },
+        where: { advertiserId: { in: uniqueIds }, isHidden: false },
         _avg: { rating: true },
         _count: true,
       }),
