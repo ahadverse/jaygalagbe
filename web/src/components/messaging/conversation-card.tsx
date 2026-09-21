@@ -15,14 +15,16 @@ export function ConversationCard({
   unread?: boolean;
 }) {
   return (
-    <Link
-      href={href}
-      className={cn(
-        "group flex items-center gap-3.5 rounded-xl bg-card p-3.5 shadow-sm ring-1 ring-neutral-900/5 transition-[transform,box-shadow] duration-200 ease-soft hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 sm:p-4",
-        unread && "ring-brand-200 bg-brand-50/40",
-      )}
-    >
-      <span
+    /* The link stays put and the sheet inside lifts — moving the element that
+     * tracks `:hover` makes it flicker along its bottom edge. */
+    <Link href={href} className="group block">
+      <div
+        className={cn(
+          "flex items-center gap-3.5 rounded-xl bg-card p-3.5 shadow-sm ring-1 ring-neutral-900/5 transition-[transform,box-shadow] duration-200 ease-soft group-hover:-translate-y-0.5 group-hover:shadow-md group-active:translate-y-0 sm:p-4",
+          unread && "ring-brand-200 bg-brand-50/40",
+        )}
+      >
+        <span
         aria-hidden="true"
         className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-100 font-heading text-sm font-bold text-brand-800"
       >
@@ -61,8 +63,9 @@ export function ConversationCard({
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="m9 6 6 6-6 6" />
-      </svg>
+          <path d="m9 6 6 6-6 6" />
+        </svg>
+      </div>
     </Link>
   );
 }

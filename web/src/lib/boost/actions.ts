@@ -9,8 +9,8 @@ export type BoostFormState = { error?: string };
 
 /** The only hosts a checkout may hand us back. */
 const GATEWAY_HOSTS = new Set([
-  "securepay.sslcommerz.com",
-  "sandbox.sslcommerz.com",
+  "api.paystation.com.bd",
+  "sandbox.paystation.com.bd",
 ]);
 
 function isGatewayUrl(value: string): boolean {

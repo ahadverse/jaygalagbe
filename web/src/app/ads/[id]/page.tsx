@@ -7,6 +7,7 @@ import { AdGallery } from "@/components/ads/ad-gallery";
 import { NearbyListings } from "@/components/ads/nearby-listings";
 import { ContactGate } from "@/components/ads/contact-gate";
 import { SaveAdButton } from "@/components/ads/save-ad-button";
+import { ReportAdButton } from "@/components/ads/report-ad-button";
 import { ViewRecorder } from "@/components/ads/view-recorder";
 import { fetchAd } from "@/lib/ads/fetch-ad";
 import { fetchLiveAds } from "@/lib/ads/fetch-live-ads";
@@ -275,6 +276,14 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
                 </DetailRow>
               </dl>
             </section>
+
+            <ReportAdButton
+              adId={ad.id}
+              adTitle={ad.title}
+              ownerId={ad.ownerId}
+              status={ad.status}
+              currentUser={currentUser}
+            />
           </div>
         </div>
       </div>

@@ -42,27 +42,27 @@ export function SectorSidebar({ counts }: { counts: Record<string, number> }) {
 
         <nav className="flex flex-col gap-2.5">
           {sectors.map((sector) => (
-            <Link
-              key={sector.href}
-              href={sector.href}
-              className="group flex items-center gap-3.5 rounded-xl bg-card p-3.5 shadow-sm ring-1 ring-neutral-900/5 transition-[transform,box-shadow] duration-200 ease-soft hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
-            >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 ring-1 ring-brand-100 transition-colors duration-200 group-hover:bg-brand-100">
-                <svg viewBox="0 0 32 32" className="size-5" aria-hidden="true">
-                  {sector.icon}
-                </svg>
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="font-heading text-sm font-bold text-foreground transition-colors duration-200 group-hover:text-primary">
-                  {sector.label}
+            /* The link stays put and the sheet inside lifts — moving the
+             * element that tracks `:hover` makes it flicker at its edge. */
+            <Link key={sector.href} href={sector.href} className="group block">
+              <div className="flex items-center gap-3.5 rounded-xl bg-card p-3.5 shadow-sm ring-1 ring-neutral-900/5 transition-[transform,box-shadow] duration-200 ease-soft group-hover:-translate-y-0.5 group-hover:shadow-md group-active:translate-y-0">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 ring-1 ring-brand-100 transition-colors duration-200 group-hover:bg-brand-100">
+                  <svg viewBox="0 0 32 32" className="size-5" aria-hidden="true">
+                    {sector.icon}
+                  </svg>
                 </span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {sector.tagline}
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="font-heading text-sm font-bold text-foreground transition-colors duration-200 group-hover:text-primary">
+                    {sector.label}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {sector.tagline}
+                  </span>
                 </span>
-              </span>
-              <span className="numeric shrink-0 rounded-full bg-muted px-2 py-1 text-2xs font-semibold text-neutral-700">
-                {counts[sector.href] ?? 0}
-              </span>
+                <span className="numeric shrink-0 rounded-full bg-muted px-2 py-1 text-2xs font-semibold text-neutral-700">
+                  {counts[sector.href] ?? 0}
+                </span>
+              </div>
             </Link>
           ))}
         </nav>
