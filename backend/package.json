@@ -6,6 +6,9 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "nest build",
     "deploy": "nest deploy",
@@ -13,7 +16,9 @@
     "start": "nest start",
     "dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/main.js",
+    "build:deploy": "prisma generate && nest build",
+    "migrate:deploy": "prisma migrate deploy",
     "lint": "oxlint src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -22,9 +27,14 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "prod:status": "dotenv -e .env.prod -- prisma migrate status",
+    "prod:migrate": "dotenv -e .env.prod -- prisma migrate deploy",
+    "prod:seed": "dotenv -e .env.prod -- prisma db seed",
+    "prod:start": "dotenv -e .env.prod -- node dist/main.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1136.0",
     "@nestjs/common": "^12.0.1",
     "@nestjs/core": "^12.0.1",
     "@nestjs/event-emitter": "^12.0.0",
@@ -63,6 +73,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^7.0.0",
     "@vitest/coverage-v8": "^4.1.2",
+    "dotenv-cli": "^11.0.0",
     "oxlint": "^1.58.0",
     "prettier": "^3.4.2",
     "prisma": "^7.10.0",

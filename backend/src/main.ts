@@ -46,6 +46,9 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, config));
   }
 
-  await app.listen(process.env.PORT ?? 5000);
+  // Bound to every interface, not just loopback: a managed host routes to the
+  // container's address, and a server listening only on localhost looks dead
+  // to it. The platform hands the port over in PORT.
+  await app.listen(process.env.PORT ?? 5000, '0.0.0.0');
 }
 await bootstrap();

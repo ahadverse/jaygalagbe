@@ -1,0 +1,107 @@
+# Render blueprint for the Jayga Lagbe API.
+#
+# Apply it from the Render dashboard with New > Blueprint, pointed at this
+# repository. Everything marked `sync: false` is a secret Render will prompt
+# for on the first apply and never reads from this file — none of them belong
+# in the repo.
+#
+# `sync: false` does not withhold the value from the build. Render prompts for
+# every one of them before the service is first created, and then injects them
+# into both the build and the runtime environment — so `migrate:deploy` in the
+# build command below has DATABASE_URL like any other step. Switching these to
+# `sync: true` would mean writing the live database password and the JWT
+# signing key into this file, which is committed and pushed.
+#
+# The web and admin front ends are not described here: they are deployed
+# separately and only need this service's URL (see backend/README.md).
+
+# No `databases:` block: Postgres is hosted on Neon, outside Render, so the
+# connection string is supplied as a secret rather than wired from a database
+# Render manages. Neon's pooled connection string is the right one to use here
+# — a web service opens far more connections than a single Postgres instance
+# is happy with.
+
+services:
+  - type: web
+    name: jaygalagbe-api
+    runtime: node
+    plan: free
+    region: singapore # closest region Render offers to Bangladesh
+    rootDir: backend
+    # Migrations run here rather than as a pre-deploy step because pre-deploy
+    # commands need a paid instance type. Prisma's client is generated into
+    # src/generated, which is gitignored, so it has to be built every time.
+    buildCommand: npm ci && npm run build:deploy && npm run migrate:deploy
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Neon pooled connection string, same value as backend/.env.prod.
+      - key: DATABASE_URL
+        sync: false
+      # Must match backend/.env.prod, or tokens minted locally and in the
+      # deployed service will not validate against each other. Keep it stable:
+      # rotating it signs every existing session out.
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      # Comma-separated browser origins. The admin panel calls this API from
+      # the browser and will fail CORS until its deployed URL is listed here.
+      #
+      # Order matters: the FIRST entry is where a buyer is redirected after
+      # paying, so the public web app must come first and the admin panel
+      # after it.
+      - key: CORS_ORIGINS
+        sync: false
+      # Swagger documents the admin routes too, so it stays off in production
+      # unless deliberately turned on.
+      - key: ENABLE_SWAGGER
+        value: "false"
+
+      # Photo storage
+      - key: AWS_BUCKET_NAME
+        sync: false
+      - key: AWS_BUCKET_REGION
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_CLOUDFRONT_DOMAIN
+        sync: false
+
+      # PayStation. The callback URL must point at this service's public URL,
+      # e.g. https://jaygalagbe-api.onrender.com/payments/callback
+      # The IPN URL configured in the PayStation dashboard is /payments/ipn on
+      # the same host.
+      - key: PAYSTATION_BASE_URL
+        sync: false
+      - key: PAYSTATION_MERCHANT_ID
+        sync: false
+      - key: PAYSTATION_PASSWORD
+        sync: false
+      - key: PAYSTATION_CALLBACK_URL
+        sync: false
+
+      # Email. Optional — ad-decision and alert mail is skipped when unset.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+      # Firebase push. Optional — push is skipped when unset. The private key
+      # contains newlines; paste it with the literal \n escapes intact.
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
