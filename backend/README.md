@@ -56,9 +56,6 @@ of these values belong in the repository.
 | `SMTP_USER`                 | no       | Mail username                                                      |
 | `SMTP_PASSWORD`             | no       | Mail password                                                      |
 | `EMAIL_FROM`                | no       | From address on notification emails                                |
-| `FIREBASE_PROJECT_ID`       | no       | FCM push — all three Firebase values are needed together           |
-| `FIREBASE_CLIENT_EMAIL`     | no       | FCM service-account email                                          |
-| `FIREBASE_PRIVATE_KEY`      | no       | FCM service-account private key                                    |
 
 ## Deploying to Render
 
