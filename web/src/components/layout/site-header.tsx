@@ -3,6 +3,7 @@ import { Button, buttonVariants } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/lib/auth/actions";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { MessageButton } from "@/components/layout/message-button";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import type { AuthUser } from "@/lib/auth/types";
 
@@ -55,6 +56,7 @@ export function SiteHeader({ user }: { user: AuthUser | null }) {
         <div className="flex items-center gap-1.5 sm:gap-2">
           {user ? (
             <>
+              <MessageButton />
               <NotificationBell />
               <Link
                 href="/dashboard"

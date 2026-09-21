@@ -1,10 +1,19 @@
 "use client";
 
-import { useEffect, useRef, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { Alert, Button } from "@/components/ui";
 import { useConversationSocket } from "@/lib/socket/use-conversation-socket";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/messaging/types";
+
+/** Roughly six lines; past that the composer scrolls instead of growing. */
+const MAX_COMPOSER_HEIGHT = 128;
 
 function ConnectionDot({ connected }: { connected: boolean }) {
   return (
@@ -45,13 +54,22 @@ export function ChatThread({
     if (node) node.scrollTop = node.scrollHeight;
   }, [messages.length]);
 
+  /** Grows the box with its content instead of showing a drag handle. */
+  const resize = useCallback(() => {
+    const node = textareaRef.current;
+    if (!node) return;
+    node.style.height = "auto";
+    node.style.height = `${Math.min(node.scrollHeight, MAX_COMPOSER_HEIGHT)}px`;
+  }, []);
+
   useEffect(() => {
     if (!error || lastSentBodyRef.current === null) return;
     if (textareaRef.current) {
       textareaRef.current.value = lastSentBodyRef.current;
+      resize();
     }
     lastSentBodyRef.current = null;
-  }, [error]);
+  }, [error, resize]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,6 +78,23 @@ export function ChatThread({
     lastSentBodyRef.current = body;
     sendMessage(body);
     formRef.current?.reset();
+    resize();
+    textareaRef.current?.focus();
+  }
+
+  /**
+   * Enter sends, Shift+Enter breaks the line — what every chat app does.
+   *
+   * `isComposing` is the important guard: while an IME candidate window is
+   * open (Bangla phonetic, and every CJK keyboard), Enter picks the candidate.
+   * Sending on that keystroke would fire off a half-typed word.
+   */
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) return;
+    if (event.nativeEvent.isComposing) return;
+
+    event.preventDefault();
+    formRef.current?.requestSubmit();
   }
 
   return (
@@ -146,7 +181,10 @@ export function ChatThread({
             rows={1}
             disabled={!connected}
             aria-label="Message"
-            className="max-h-32 min-h-11 flex-1 resize-y bg-transparent px-2.5 py-2.5 text-sm text-foreground placeholder:text-subtle-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            onKeyDown={handleKeyDown}
+            onInput={resize}
+            className="min-h-11 flex-1 resize-none overflow-y-auto bg-transparent px-2.5 py-2.5 text-sm text-foreground placeholder:text-subtle-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ maxHeight: MAX_COMPOSER_HEIGHT }}
           />
           <Button
             type="submit"

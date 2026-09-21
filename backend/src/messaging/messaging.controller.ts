@@ -36,6 +36,12 @@ export class MessagingController {
     return this.messagingService.findMine(user.id);
   }
 
+  /** Declared before `:id` so "unread-count" is not read as a conversation id. */
+  @Get('unread-count')
+  countUnread(@CurrentUser() user: AuthenticatedUser) {
+    return this.messagingService.countUnread(user.id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.messagingService.findOne(id, user.id);

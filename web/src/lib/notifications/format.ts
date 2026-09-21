@@ -26,7 +26,10 @@ export function formatNotification(notification: AppNotification): FormattedNoti
       };
     case "message.received":
       return {
-        title: "New message",
+        // The sender's name is the useful part — "New message" told you
+        // nothing you could not already see from the badge. Older clients
+        // may still be on a payload without it.
+        title: notification.senderName?.trim() || "New message",
         description: notification.body,
         href: `/dashboard/messages/${notification.conversationId}`,
         variant: "info",

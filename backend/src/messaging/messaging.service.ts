@@ -71,6 +71,38 @@ export class MessagingService {
     });
   }
 
+  /**
+   * Unread messages addressed to this user, for the header's message badge.
+   * Counted as messages rather than threads because the badge reads as
+   * "how many messages are waiting", the same as every other chat app.
+   */
+  async countUnread(userId: string) {
+    const [messages, conversationIds] = await Promise.all([
+      this.prisma.message.count({
+        where: {
+          readAt: null,
+          senderId: { not: userId },
+          conversation: {
+            OR: [{ customerId: userId }, { advertiserId: userId }],
+          },
+        },
+      }),
+      this.prisma.message.findMany({
+        where: {
+          readAt: null,
+          senderId: { not: userId },
+          conversation: {
+            OR: [{ customerId: userId }, { advertiserId: userId }],
+          },
+        },
+        distinct: ['conversationId'],
+        select: { conversationId: true },
+      }),
+    ]);
+
+    return { messages, conversations: conversationIds.length };
+  }
+
   async findOne(id: string, userId: string) {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id },
@@ -127,6 +159,7 @@ export class MessagingService {
       userId: recipientId,
       conversationId: conversation.id,
       senderId,
+      senderName: sender.name,
       body: message.body,
     } satisfies MessageReceivedPayload);
 

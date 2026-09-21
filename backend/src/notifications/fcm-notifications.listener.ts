@@ -35,7 +35,7 @@ export class FcmNotificationsListener {
   @OnEvent(NotificationEvent.MessageReceived)
   handleMessageReceived(payload: MessageReceivedPayload) {
     return this.notify(payload.userId, {
-      title: 'New message',
+      title: payload.senderName,
       body: payload.body,
     });
   }

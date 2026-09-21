@@ -12,5 +12,6 @@ export type AppNotification =
       userId: string;
       conversationId: string;
       senderId: string;
+      senderName: string;
       body: string;
     };

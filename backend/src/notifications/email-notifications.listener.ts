@@ -46,8 +46,8 @@ export class EmailNotificationsListener {
     }
 
     return this.notify(payload.userId, {
-      subject: 'You have a new message',
-      text: `You received a new message: "${payload.body}"`,
+      subject: `New message from ${payload.senderName}`,
+      text: `${payload.senderName} sent you a message on Jayga Lagbe:\n\n"${payload.body}"`,
     });
   }
 

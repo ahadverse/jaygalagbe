@@ -21,5 +21,7 @@ export interface MessageReceivedPayload {
   userId: string;
   conversationId: string;
   senderId: string;
+  /** Who it is from — the recipient sees this, not the raw id. */
+  senderName: string;
   body: string;
 }
