@@ -2,13 +2,25 @@ import { Link } from 'react-router';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronRightIcon } from '@/components/ui/icons';
+import { Badge } from '@/components/ui/badge';
+import { KpiTile } from '@/components/charts/kpi-tile';
+import { SERIES } from '@/components/charts/chart-tokens';
+import { TimeSeriesChart } from '@/components/charts/time-series-chart';
+import { FunnelChart } from '@/components/charts/funnel-chart';
 import { BarList, type BarDatum } from '@/components/charts/bar-list';
-import { RevenueColumns } from '@/components/charts/revenue-columns';
-import { useDashboardQuery, useTransactionsQuery } from '@/lib/api/queries';
+import { RangePicker } from '@/components/charts/range-picker';
+import { bucketLabel, useRangeState } from '@/lib/charts/use-range-state';
+import { useDashboardQuery } from '@/lib/api/queries';
 import { AD_STATUS_LABEL, SECTOR_LABEL } from '@/lib/ads/labels';
-import { formatCount, formatTaka } from '@/lib/format';
-import type { AdStatus } from '@/lib/api/types';
+import {
+  formatCompactTaka,
+  formatCount,
+  formatRelative,
+  formatTaka,
+} from '@/lib/format';
+import { AttentionStrip } from './attention-strip';
+import { ActivityFeed } from './activity-feed';
+import type { AdStatus, SeriesPoint } from '@/lib/api/types';
 
 /** Lifecycle order, not size order. */
 const STATUS_ORDER: AdStatus[] = [
@@ -19,98 +31,23 @@ const STATUS_ORDER: AdStatus[] = [
   'REMOVED',
 ];
 
+/**
+ * Status is state, not identity, so these are the reserved status colours the
+ * badges already use — never a categorical series slot.
+ */
 const STATUS_COLOR: Record<AdStatus, string> = {
-  PENDING: 'bg-warning-600',
-  LIVE: 'bg-success-600',
-  SOLD: 'bg-info-600',
-  REJECTED: 'bg-danger-600',
-  REMOVED: 'bg-ink-500',
+  PENDING: 'bg-warning-500',
+  LIVE: 'bg-success-500',
+  SOLD: 'bg-info-500',
+  REJECTED: 'bg-danger-500',
+  REMOVED: 'bg-ink-400',
 };
 
-function StatTile({
-  label,
-  value,
-  hint,
-  to,
-  loading,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  to?: string;
-  loading: boolean;
-}) {
-  const body = (
-    <>
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      {loading ? (
-        <Skeleton className="mt-1.5 h-7 w-20" />
-      ) : (
-        <p className="mt-1 text-2xl font-semibold tracking-tight tnum">{value}</p>
-      )}
-      {hint && (
-        <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
-      )}
-    </>
-  );
-
-  if (!to) {
-    return (
-      <div className="rounded-lg border border-border bg-card p-3.5 shadow-xs">
-        {body}
-      </div>
-    );
-  }
-
-  return (
-    <Link
-      to={to}
-      className="group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-colors hover:border-brand-300 hover:bg-brand-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-    >
-      {body}
-      <span className="mt-1.5 inline-flex items-center gap-0.5 text-xs font-medium text-brand-600">
-        Open
-        <ChevronRightIcon className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-      </span>
-    </Link>
-  );
-}
-
 export function DashboardPage() {
-  const { data, isLoading, error } = useDashboardQuery();
-  // The dashboard endpoint has no revenue total, so borrow the transaction
-  // log's reconciliation figure with an empty filter set.
-  const { data: transactions } = useTransactionsQuery({ limit: 1 });
-
-  const statusCounts = new Map(
-    data?.adsByStatus.map((entry) => [entry.status, entry.count]),
+  const range = useRangeState();
+  const { data, isLoading, isFetching, error } = useDashboardQuery(
+    range.params as Record<string, string | undefined>,
   );
-  const totalAds = data?.adsByStatus.reduce((sum, e) => sum + e.count, 0) ?? 0;
-
-  const statusBars: BarDatum[] = STATUS_ORDER.filter((status) =>
-    statusCounts.has(status),
-  ).map((status) => ({
-    key: status,
-    label: AD_STATUS_LABEL[status],
-    value: statusCounts.get(status) ?? 0,
-    color: STATUS_COLOR[status],
-  }));
-
-  const sectorBars: BarDatum[] =
-    data?.adsBySector.map((entry) => ({
-      key: entry.sector,
-      label: SECTOR_LABEL[entry.sector],
-      value: entry.count,
-      color: 'bg-brand-500',
-    })) ?? [];
-
-  const reportedBars: BarDatum[] =
-    data?.mostReportedAdvertisers.map((advertiser) => ({
-      key: advertiser.id,
-      label: advertiser.name,
-      value: advertiser.reportCount,
-      color: 'bg-danger-600',
-    })) ?? [];
 
   if (error) {
     return (
@@ -127,109 +64,327 @@ export function DashboardPage() {
     );
   }
 
+  const granularity = data?.range.granularity ?? 'day';
+  const series = data?.series ?? [];
+  const label = (point: SeriesPoint) => bucketLabel(point.bucket, granularity);
+
+  const statusBars: BarDatum[] = STATUS_ORDER.flatMap((status) => {
+    const entry = data?.moderation.statusMix.find((m) => m.status === status);
+    return entry
+      ? [
+          {
+            key: status,
+            label: AD_STATUS_LABEL[status],
+            value: entry.count,
+            color: STATUS_COLOR[status],
+          },
+        ]
+      : [];
+  });
+
+  const sectorBars: BarDatum[] =
+    data?.moderation.sectorMix.map((entry, index) => ({
+      key: entry.sector,
+      label: SECTOR_LABEL[entry.sector],
+      value: entry.count,
+      color: '',
+      style: { background: SERIES[index % SERIES.length] },
+    })) ?? [];
+
+  const reportedBars: BarDatum[] =
+    data?.mostReported.map((advertiser) => ({
+      key: advertiser.id,
+      label: advertiser.name,
+      value: advertiser.reportCount,
+      color: 'bg-danger-500',
+    })) ?? [];
+
   return (
     <>
       <PageHeader
         title="Dashboard"
-        description="Platform health at a glance — moderation backlog, listing mix and boost revenue."
+        description="Platform health for the selected period, plus everything waiting on a decision right now."
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile
-          label="Awaiting review"
-          value={formatCount(statusCounts.get('PENDING') ?? 0)}
-          hint="Listings blocked from going live"
-          to="/review-queue"
-          loading={isLoading}
-        />
-        <StatTile
-          label="Live listings"
-          value={formatCount(statusCounts.get('LIVE') ?? 0)}
-          hint={`of ${formatCount(totalAds)} total`}
-          to="/ads?status=LIVE"
-          loading={isLoading}
-        />
-        <StatTile
-          label="Settled boost revenue"
-          value={formatTaka(transactions?.totals.successAmount ?? 0)}
-          hint={`${formatCount(transactions?.totals.successCount ?? 0)} payments`}
-          to="/transactions"
-          loading={isLoading}
-        />
-        <StatTile
-          label="Rejected"
-          value={formatCount(statusCounts.get('REJECTED') ?? 0)}
-          hint="Sent back to the advertiser"
-          to="/ads?status=REJECTED"
-          loading={isLoading}
-        />
+      {/* One range control above everything it scopes — no per-card filters. */}
+      <div className="mb-4">
+        <RangePicker state={range} />
       </div>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Boost revenue by month</CardTitle>
-            <span className="text-xs text-muted-foreground">
-              Settled payments, last 6 months
-            </span>
-          </CardHeader>
-          <CardBody>
-            {isLoading ? (
-              <Skeleton className="h-44 w-full" />
-            ) : (
-              <RevenueColumns data={data?.boostRevenueByMonth ?? []} />
-            )}
-          </CardBody>
-        </Card>
+      <AttentionStrip attention={data?.attention} loading={isLoading} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Ads by status</CardTitle>
-          </CardHeader>
-          <CardBody>
-            {isLoading ? (
-              <Skeleton className="h-36 w-full" />
-            ) : (
-              <BarList data={statusBars} />
-            )}
-          </CardBody>
-        </Card>
+      <div
+        className={
+          isFetching && !isLoading ? 'opacity-60 transition-opacity' : ''
+        }
+      >
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <KpiTile
+            label="Boost revenue"
+            value={formatTaka(data?.kpis.revenue.current ?? 0)}
+            kpi={data?.kpis.revenue}
+            hint="settled, this period"
+            to="/transactions"
+            loading={isLoading}
+          />
+          <KpiTile
+            label="New listings"
+            value={formatCount(data?.kpis.newAds.current ?? 0)}
+            kpi={data?.kpis.newAds}
+            hint={`${formatCount(data?.kpis.liveAds.current ?? 0)} live now`}
+            to="/ads"
+            loading={isLoading}
+          />
+          <KpiTile
+            label="New accounts"
+            value={formatCount(data?.kpis.newUsers.current ?? 0)}
+            kpi={data?.kpis.newUsers}
+            to="/users"
+            loading={isLoading}
+          />
+          <KpiTile
+            label="Listing visits"
+            value={formatCount(data?.kpis.visits.current ?? 0)}
+            kpi={data?.kpis.visits}
+            hint={`${formatCount(data?.kpis.conversions.current ?? 0)} contacts`}
+            loading={isLoading}
+          />
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Ads by sector</CardTitle>
-          </CardHeader>
-          <CardBody>
-            {isLoading ? (
-              <Skeleton className="h-36 w-full" />
-            ) : (
-              <BarList data={sectorBars} />
-            )}
-          </CardBody>
-        </Card>
+        <div className="mt-3 grid gap-3 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Boost revenue</CardTitle>
+              <span className="text-xs text-muted-foreground">
+                Settled payments
+              </span>
+            </CardHeader>
+            <CardBody>
+              {isLoading ? (
+                <Skeleton className="h-52 w-full" />
+              ) : (
+                <TimeSeriesChart
+                  data={series}
+                  label={label}
+                  area
+                  emptyLabel="No settled boost payments in this period."
+                  series={[
+                    {
+                      key: 'revenue',
+                      label: 'Revenue',
+                      color: SERIES[0],
+                      value: (point) => point.revenue,
+                      format: formatCompactTaka,
+                    },
+                  ]}
+                />
+              )}
+            </CardBody>
+          </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Most reported advertisers</CardTitle>
-            <Link
-              to="/reports"
-              className="text-xs font-medium text-brand-600 hover:underline"
-            >
-              Open report queue
-            </Link>
-          </CardHeader>
-          <CardBody>
-            {isLoading ? (
-              <Skeleton className="h-24 w-full" />
-            ) : (
-              <BarList
-                data={reportedBars}
-                emptyLabel="No advertiser has been reported yet."
+          <Card>
+            <CardHeader>
+              <CardTitle>Traffic funnel</CardTitle>
+            </CardHeader>
+            <CardBody>
+              {isLoading ? (
+                <Skeleton className="h-40 w-full" />
+              ) : (
+                <FunnelChart stages={data?.funnel ?? []} />
+              )}
+            </CardBody>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Supply and demand</CardTitle>
+              <span className="text-xs text-muted-foreground">
+                New listings against new accounts
+              </span>
+            </CardHeader>
+            <CardBody>
+              {isLoading ? (
+                <Skeleton className="h-52 w-full" />
+              ) : (
+                <TimeSeriesChart
+                  data={series}
+                  label={label}
+                  emptyLabel="Nothing was created in this period."
+                  series={[
+                    {
+                      key: 'ads',
+                      label: 'New listings',
+                      color: SERIES[0],
+                      value: (point) => point.ads,
+                      format: formatCount,
+                    },
+                    {
+                      key: 'users',
+                      label: 'New accounts',
+                      color: SERIES[1],
+                      value: (point) => point.users,
+                      format: formatCount,
+                    },
+                  ]}
+                />
+              )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent admin activity</CardTitle>
+              <Link
+                to="/audit-log"
+                className="text-xs font-medium text-brand-600 hover:underline"
+              >
+                Full log
+              </Link>
+            </CardHeader>
+            <CardBody className="p-0">
+              <ActivityFeed
+                entries={data?.recentActivity ?? []}
+                loading={isLoading}
               />
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Listings by status</CardTitle>
+              <span className="text-xs text-muted-foreground">All time</span>
+            </CardHeader>
+            <CardBody>
+              {isLoading ? (
+                <Skeleton className="h-36 w-full" />
+              ) : (
+                <BarList data={statusBars} />
+              )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>New listings by sector</CardTitle>
+            </CardHeader>
+            <CardBody>
+              {isLoading ? (
+                <Skeleton className="h-36 w-full" />
+              ) : (
+                <BarList
+                  data={sectorBars}
+                  emptyLabel="No listings created in this period."
+                />
+              )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Most reported advertisers</CardTitle>
+              <Link
+                to="/reports"
+                className="text-xs font-medium text-brand-600 hover:underline"
+              >
+                Report queue
+              </Link>
+            </CardHeader>
+            <CardBody>
+              {isLoading ? (
+                <Skeleton className="h-36 w-full" />
+              ) : (
+                <BarList
+                  data={reportedBars}
+                  emptyLabel="No advertiser has been reported yet."
+                />
+              )}
+            </CardBody>
+          </Card>
+        </div>
+
+        <Card className="mt-3">
+          <CardHeader>
+            <CardTitle>Moderation this period</CardTitle>
+            {data?.attention.oldestPendingAt && (
+              <span className="text-xs text-muted-foreground">
+                Oldest submission waiting{' '}
+                {formatRelative(data.attention.oldestPendingAt)}
+              </span>
+            )}
+          </CardHeader>
+          <CardBody>
+            {isLoading ? (
+              <Skeleton className="h-16 w-full" />
+            ) : (
+              <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Figure
+                  label="Decisions made"
+                  value={formatCount(data?.moderation.decided ?? 0)}
+                />
+                <Figure
+                  label="Approval rate"
+                  value={
+                    data?.moderation.approvalRate === null ||
+                    data?.moderation.approvalRate === undefined
+                      ? '—'
+                      : `${Math.round(data.moderation.approvalRate * 100)}%`
+                  }
+                  detail={`${formatCount(data?.moderation.approved ?? 0)} approved · ${formatCount(
+                    data?.moderation.rejected ?? 0,
+                  )} rejected`}
+                />
+                <Figure
+                  label="Median time to decide"
+                  value={
+                    data?.moderation.medianDecisionHours === null ||
+                    data?.moderation.medianDecisionHours === undefined
+                      ? '—'
+                      : `${data.moderation.medianDecisionHours} h`
+                  }
+                />
+                <Figure
+                  label="Waiting now"
+                  value={formatCount(data?.moderation.pendingNow ?? 0)}
+                  badge={
+                    (data?.attention.overdueAds ?? 0) > 0 ? (
+                      <Badge tone="danger">
+                        {formatCount(data?.attention.overdueAds ?? 0)} overdue
+                      </Badge>
+                    ) : undefined
+                  }
+                />
+              </dl>
             )}
           </CardBody>
         </Card>
       </div>
     </>
+  );
+}
+
+function Figure({
+  label,
+  value,
+  detail,
+  badge,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  badge?: React.ReactNode;
+}) {
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 flex flex-wrap items-center gap-2">
+        <span className="text-xl font-semibold tracking-tight">{value}</span>
+        {badge}
+      </dd>
+      {detail && (
+        <p className="mt-0.5 text-[0.6875rem] text-muted-foreground">
+          {detail}
+        </p>
+      )}
+    </div>
   );
 }

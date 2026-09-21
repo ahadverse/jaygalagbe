@@ -80,8 +80,7 @@ export function LoginPage() {
         </div>
 
         <p className="hidden text-xs text-ink-600 lg:block">
-          Internal tool · authorised staff only
-        </p>
+Developed by Ahad Hossain        </p>
       </div>
 
       <div className="flex flex-1 items-start justify-center bg-background px-4 py-8 lg:items-center lg:rounded-l-2xl lg:py-14">

@@ -1,8 +1,9 @@
-import { type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { SortOrder } from '@/lib/api/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowDownIcon, ArrowUpIcon, SortIcon } from '@/components/ui/icons';
+import type { RowSelection } from '@/lib/table/use-row-selection';
 
 export interface Column<T> {
   id: string;
@@ -38,6 +39,42 @@ interface DataTableProps<T> {
   /** Small screens get cards instead of a squeezed table. */
   renderCard: (row: T) => ReactNode;
   onRowClick?: (row: T) => void;
+  /** Pass to add the checkbox column and bulk-selection behaviour. */
+  selection?: RowSelection;
+}
+
+/**
+ * A checkbox that can also show "some of these are selected". The indeterminate
+ * state only exists as a DOM property, so it has to be set imperatively.
+ */
+function SelectCheckbox({
+  checked,
+  indeterminate = false,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      onClick={(event) => event.stopPropagation()}
+      aria-label={label}
+      className="h-4 w-4 cursor-pointer rounded border-border-strong accent-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+    />
+  );
 }
 
 function SortAffordance({
@@ -72,6 +109,7 @@ export function DataTable<T>({
   empty,
   renderCard,
   onRowClick,
+  selection,
 }: DataTableProps<T>) {
   if (error) {
     return (
@@ -102,11 +140,23 @@ export function DataTable<T>({
     >
       {/* Mobile: one card per record. */}
       <ul className="divide-y divide-border md:hidden">
-        {rows.map((row) => (
-          <li key={rowKey(row)} className="p-3">
-            {renderCard(row)}
-          </li>
-        ))}
+        {rows.map((row) => {
+          const id = rowKey(row);
+          return (
+            <li key={id} className="flex items-start gap-2.5 p-3">
+              {selection && (
+                <span className="pt-0.5">
+                  <SelectCheckbox
+                    checked={selection.isSelected(id)}
+                    onChange={() => selection.toggle(id)}
+                    label="Select row"
+                  />
+                </span>
+              )}
+              <div className="min-w-0 flex-1">{renderCard(row)}</div>
+            </li>
+          );
+        })}
       </ul>
 
       {/* Desktop: a real table, still scrollable if the viewport is narrow. */}
@@ -114,6 +164,16 @@ export function DataTable<T>({
         <table className="w-full min-w-[48rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-border bg-ink-50">
+              {selection && (
+                <th scope="col" className="w-10 px-3 py-2">
+                  <SelectCheckbox
+                    checked={selection.allSelected}
+                    indeterminate={selection.someSelected}
+                    onChange={selection.toggleAll}
+                    label="Select all rows on this page"
+                  />
+                </th>
+              )}
               {columns.map((column) => {
                 const isActive = column.sortKey === sort;
                 return (
@@ -156,32 +216,51 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {rows.map((row) => (
-              <tr
-                key={rowKey(row)}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={cn(
-                  'transition-colors',
-                  onRowClick
-                    ? 'cursor-pointer hover:bg-brand-50/60'
-                    : 'hover:bg-ink-50',
-                )}
-              >
-                {columns.map((column) => (
-                  <td
-                    key={column.id}
-                    className={cn(
-                      'px-3 py-2.5 align-middle',
-                      column.align === 'right' && 'text-right',
-                      column.hideBelow && HIDE_BELOW_CLASS[column.hideBelow],
-                      column.className,
-                    )}
-                  >
-                    {column.cell(row)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const id = rowKey(row);
+              const isSelected = selection?.isSelected(id) ?? false;
+
+              return (
+                <tr
+                  key={id}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={cn(
+                    'transition-colors duration-100',
+                    // Selection is a state, so it keeps the brand tint. Hover
+                    // is only an affordance, so it stays neutral — otherwise
+                    // a moved cursor looks like a selected row.
+                    isSelected
+                      ? 'bg-brand-50/70 hover:bg-brand-50'
+                      : 'hover:bg-ink-50',
+                    onRowClick && 'cursor-pointer',
+                  )}
+                >
+                  {selection && (
+                    <td className="row-density w-10 align-middle">
+                      <SelectCheckbox
+                        checked={isSelected}
+                        onChange={() => selection.toggle(id)}
+                        label="Select row"
+                      />
+                    </td>
+                  )}
+                  {columns.map((column) => (
+                    <td
+                      key={column.id}
+                      className={cn(
+                        // `row-density` reads the density tokens set on <html>.
+                        'row-density align-middle',
+                        column.align === 'right' && 'text-right',
+                        column.hideBelow && HIDE_BELOW_CLASS[column.hideBelow],
+                        column.className,
+                      )}
+                    >
+                      {column.cell(row)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

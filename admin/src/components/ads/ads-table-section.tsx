@@ -4,8 +4,17 @@ import { Button } from '@/components/ui/button';
 import { AdStatusBadge, Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { BoltIcon, CheckIcon, FlagIcon, InboxIcon, XIcon } from '@/components/ui/icons';
+import {
+  ConfirmDialog,
+  type ConfirmRequest,
+} from '@/components/ui/confirm-dialog';
 import { DataTable, type Column } from '@/components/table/data-table';
 import { PaginationBar } from '@/components/table/pagination-bar';
+import { BulkActionBar } from '@/components/table/bulk-action-bar';
+import {
+  ExportButton,
+  SaveViewButton,
+} from '@/components/table/table-actions';
 import {
   FilterInput,
   FilterSelect,
@@ -14,16 +23,23 @@ import {
 import { AdThumb } from '@/components/ads/ad-thumb';
 import { AdDetailPanel } from '@/components/ads/ad-detail-panel';
 import { RejectDialog } from '@/components/ads/reject-dialog';
+import { EditAdDialog } from '@/components/ads/edit-ad-dialog';
 import { useAdDistrictsQuery, useAdsQuery } from '@/lib/api/queries';
 import { useTableQuery } from '@/lib/table/use-table-query';
-import { useApproveAd, useRemoveAd } from '@/lib/ads/mutations';
+import { useRowSelection } from '@/lib/table/use-row-selection';
+import {
+  useApproveAd,
+  useBulkAdAction,
+  useDeleteAd,
+  useRemoveAd,
+} from '@/lib/ads/mutations';
 import {
   AD_STATUS_LABEL,
   SECTOR_LABEL,
   toOptions,
 } from '@/lib/ads/labels';
 import { formatAge, formatDate, formatTaka } from '@/lib/format';
-import type { AdListItem, AdStatus } from '@/lib/api/types';
+import type { AdDetail, AdListItem, AdStatus } from '@/lib/api/types';
 
 const FILTER_KEYS = [
   'status',
@@ -95,13 +111,18 @@ export function AdsTableSection({
   const [rejecting, setRejecting] = useState<{ id: string; title: string } | null>(
     null,
   );
+  const [bulkRejecting, setBulkRejecting] = useState(false);
+  const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
+  const [editing, setEditing] = useState<AdDetail | null>(null);
 
   const approve = useApproveAd();
   const remove = useRemoveAd();
+  const bulk = useBulkAdAction();
+  const deleteAd = useDeleteAd();
   const { data: districts } = useAdDistrictsQuery();
 
   const { filters } = query;
-  const { data, isLoading, isFetching, error } = useAdsQuery({
+  const params = {
     page: query.page,
     limit: query.limit,
     sort: query.sort,
@@ -116,7 +137,10 @@ export function AdsTableSection({
     maxPrice: filters.maxPrice || undefined,
     from: filters.from || undefined,
     to: filters.to || undefined,
-  });
+  };
+
+  const { data, isLoading, isFetching, error } = useAdsQuery(params);
+  const selection = useRowSelection((data?.data ?? []).map((ad) => ad.id));
 
   const rowActions = (ad: AdListItem): ReactNode =>
     mode === 'review' ? (
@@ -275,6 +299,12 @@ export function AdsTableSection({
           activeFilterCount={query.activeFilterCount}
           isDirty={query.isDirty}
           onReset={query.resetFilters}
+          actions={
+            <>
+              <SaveViewButton />
+              <ExportButton resource="ads" params={params} />
+            </>
+          }
           filters={
             <>
               {!lockedStatus && (
@@ -372,6 +402,7 @@ export function AdsTableSection({
           isLoading={isLoading}
           isFetching={isFetching}
           error={error}
+          selection={selection}
           onRowClick={(ad) => setDetailId(ad.id)}
           empty={
             <EmptyState
@@ -434,6 +465,87 @@ export function AdsTableSection({
         />
       </Card>
 
+      <BulkActionBar selection={selection} noun="listing">
+        {mode === 'review' && (
+          <>
+            <Button
+              variant="success"
+              size="xs"
+              loading={bulk.isPending && bulk.variables?.action === 'APPROVE'}
+              onClick={() =>
+                setConfirm({
+                  title: `Approve ${selection.count} listing${selection.count === 1 ? '' : 's'}?`,
+                  description:
+                    'They go live immediately and each advertiser is notified. Anything that has already moved on is skipped and reported back.',
+                  confirmLabel: 'Approve all',
+                  onConfirm: () =>
+                    bulk
+                      .mutateAsync({ action: 'APPROVE', ids: selection.ids })
+                      .then(selection.clear),
+                })
+              }
+            >
+              <CheckIcon className="h-3.5 w-3.5" />
+              Approve
+            </Button>
+            <Button
+              variant="subtleDanger"
+              size="xs"
+              onClick={() => setBulkRejecting(true)}
+            >
+              <XIcon className="h-3.5 w-3.5" />
+              Reject
+            </Button>
+          </>
+        )}
+
+        {mode === 'manage' && (
+          <Button
+            variant="subtleDanger"
+            size="xs"
+            loading={bulk.isPending && bulk.variables?.action === 'REMOVE'}
+            onClick={() =>
+              setConfirm({
+                title: `Take down ${selection.count} listing${selection.count === 1 ? '' : 's'}?`,
+                description:
+                  'They stop appearing on the marketplace at once. Each take-down is recorded in the audit log against your account.',
+                confirmLabel: 'Take down all',
+                danger: true,
+                onConfirm: () =>
+                  bulk
+                    .mutateAsync({ action: 'REMOVE', ids: selection.ids })
+                    .then(selection.clear),
+              })
+            }
+          >
+            Take down
+          </Button>
+        )}
+
+        {/* Offered everywhere a selection is: the review queue accumulates
+         * junk submissions that are not worth keeping a record of either. */}
+        <Button
+          variant="danger"
+          size="xs"
+          loading={bulk.isPending && bulk.variables?.action === 'DELETE'}
+          onClick={() =>
+            setConfirm({
+              title: `Permanently delete ${selection.count} listing${selection.count === 1 ? '' : 's'}?`,
+              description:
+                'Each one and everything attached to it — reports, conversations and view history — is erased for good. Any listing with settled payments against it is refused and reported back. This cannot be undone; taking them down instead keeps the record.',
+              confirmLabel: 'Delete for ever',
+              danger: true,
+              onConfirm: () =>
+                bulk
+                  .mutateAsync({ action: 'DELETE', ids: selection.ids })
+                  .then(selection.clear),
+            })
+          }
+        >
+          Delete
+        </Button>
+      </BulkActionBar>
+
       <AdDetailPanel
         adId={detailId}
         onClose={() => setDetailId(null)}
@@ -441,13 +553,46 @@ export function AdsTableSection({
           setDetailId(null);
           setRejecting({ id, title });
         }}
+        onEdit={(ad) => {
+          setDetailId(null);
+          setEditing(ad);
+        }}
+        onDelete={(ad) =>
+          setConfirm({
+            title: 'Permanently delete this listing?',
+            description: `"${ad.title}" and everything attached to it — reports, conversations and view history — are erased for good. This cannot be undone. Taking it down instead keeps the record and only hides it from the marketplace.`,
+            confirmLabel: 'Delete for ever',
+            danger: true,
+            onConfirm: () => deleteAd.mutateAsync(ad.id),
+          })
+        }
       />
+
+      <EditAdDialog ad={editing} onClose={() => setEditing(null)} />
 
       <RejectDialog
         adId={rejecting?.id ?? null}
         adTitle={rejecting?.title ?? ''}
         onClose={() => setRejecting(null)}
       />
+
+      {/* One reason code applies to the whole batch — that is the point of it. */}
+      <RejectDialog
+        adId={bulkRejecting ? '__bulk__' : null}
+        adTitle={`${selection.count} selected listing${selection.count === 1 ? '' : 's'}`}
+        onClose={() => setBulkRejecting(false)}
+        onSubmit={async (reasonCode, note) => {
+          await bulk.mutateAsync({
+            action: 'REJECT',
+            ids: selection.ids,
+            reasonCode,
+            note,
+          });
+          selection.clear();
+        }}
+      />
+
+      <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
     </>
   );
 }

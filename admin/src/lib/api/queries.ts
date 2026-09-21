@@ -4,11 +4,17 @@ import type {
   AdCounts,
   AdDetail,
   AdListItem,
+  AnalyticsOverview,
+  AuditActor,
+  AuditPage,
+  BoostPage,
   DashboardOverview,
   Paginated,
   ReportPage,
+  ReviewPage,
   TransactionPage,
-  UserListItem,
+  UserDetail,
+  UserPage,
 } from './types';
 
 export const queryKeys = {
@@ -17,10 +23,16 @@ export const queryKeys = {
   ads: (params: QueryParams) => ['admin', 'ads', 'list', params] as const,
   ad: (id: string) => ['admin', 'ads', 'detail', id] as const,
   users: (params: QueryParams) => ['admin', 'users', params] as const,
+  user: (id: string) => ['admin', 'users', 'detail', id] as const,
   transactions: (params: QueryParams) =>
     ['admin', 'transactions', params] as const,
   reports: (params: QueryParams) => ['admin', 'reports', params] as const,
-  dashboard: ['admin', 'dashboard'] as const,
+  boosts: (params: QueryParams) => ['admin', 'boosts', params] as const,
+  reviews: (params: QueryParams) => ['admin', 'reviews', params] as const,
+  audit: (params: QueryParams) => ['admin', 'audit', params] as const,
+  auditActors: ['admin', 'audit', 'actors'] as const,
+  dashboard: (params: QueryParams) => ['admin', 'dashboard', params] as const,
+  analytics: (params: QueryParams) => ['admin', 'analytics', params] as const,
 };
 
 export function useAdsQuery(params: QueryParams) {
@@ -63,10 +75,17 @@ export function useUsersQuery(params: QueryParams) {
   return useQuery({
     queryKey: queryKeys.users(params),
     queryFn: ({ signal }) =>
-      apiRequest<Paginated<UserListItem>>(`/admin/users${buildQuery(params)}`, {
-        signal,
-      }),
+      apiRequest<UserPage>(`/admin/users${buildQuery(params)}`, { signal }),
     placeholderData: (previous) => previous,
+  });
+}
+
+export function useUserQuery(id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.user(id ?? ''),
+    queryFn: ({ signal }) =>
+      apiRequest<UserDetail>(`/admin/users/${id}`, { signal }),
+    enabled: id !== null,
   });
 }
 
@@ -90,10 +109,60 @@ export function useReportsQuery(params: QueryParams) {
   });
 }
 
-export function useDashboardQuery() {
+export function useBoostsQuery(params: QueryParams) {
   return useQuery({
-    queryKey: queryKeys.dashboard,
+    queryKey: queryKeys.boosts(params),
     queryFn: ({ signal }) =>
-      apiRequest<DashboardOverview>('/admin/dashboard', { signal }),
+      apiRequest<BoostPage>(`/admin/boosts${buildQuery(params)}`, { signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useReviewsQuery(params: QueryParams) {
+  return useQuery({
+    queryKey: queryKeys.reviews(params),
+    queryFn: ({ signal }) =>
+      apiRequest<ReviewPage>(`/admin/reviews${buildQuery(params)}`, { signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useAuditQuery(params: QueryParams) {
+  return useQuery({
+    queryKey: queryKeys.audit(params),
+    queryFn: ({ signal }) =>
+      apiRequest<AuditPage>(`/admin/audit${buildQuery(params)}`, { signal }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useAuditActorsQuery() {
+  return useQuery({
+    queryKey: queryKeys.auditActors,
+    queryFn: ({ signal }) =>
+      apiRequest<AuditActor[]>('/admin/audit/actors', { signal }),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useDashboardQuery(params: QueryParams) {
+  return useQuery({
+    queryKey: queryKeys.dashboard(params),
+    queryFn: ({ signal }) =>
+      apiRequest<DashboardOverview>(`/admin/dashboard${buildQuery(params)}`, {
+        signal,
+      }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useAnalyticsQuery(params: QueryParams) {
+  return useQuery({
+    queryKey: queryKeys.analytics(params),
+    queryFn: ({ signal }) =>
+      apiRequest<AnalyticsOverview>(`/admin/analytics${buildQuery(params)}`, {
+        signal,
+      }),
+    placeholderData: (previous) => previous,
   });
 }

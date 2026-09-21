@@ -18,6 +18,7 @@ import {
 } from '@/lib/format';
 import { BOOST_TIER_LABEL, SECTOR_LABEL } from '@/lib/ads/labels';
 import { useApproveAd, useRemoveAd } from '@/lib/ads/mutations';
+import type { AdDetail } from '@/lib/api/types';
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -52,10 +53,14 @@ export function AdDetailPanel({
   adId,
   onClose,
   onReject,
+  onEdit,
+  onDelete,
 }: {
   adId: string | null;
   onClose: () => void;
   onReject: (adId: string, title: string) => void;
+  onEdit?: (ad: AdDetail) => void;
+  onDelete?: (ad: AdDetail) => void;
 }) {
   const { data: ad, isLoading, error } = useAdQuery(adId);
   const approve = useApproveAd();
@@ -74,6 +79,22 @@ export function AdDetailPanel({
       footer={
         ad && (
           <>
+            {onDelete && (
+              <Button
+                variant="subtleDanger"
+                onClick={() => {
+                  onDelete(ad);
+                  onClose();
+                }}
+              >
+                Delete
+              </Button>
+            )}
+            {onEdit && (
+              <Button variant="secondary" onClick={() => onEdit(ad)}>
+                Edit
+              </Button>
+            )}
             {canRemove && (
               <Button
                 variant="subtleDanger"

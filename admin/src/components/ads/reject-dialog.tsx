@@ -5,53 +5,72 @@ import { Select, Textarea } from '@/components/ui/field';
 import { REJECTION_REASONS, type RejectionReasonCode } from '@/lib/ads/labels';
 import { useRejectAd } from '@/lib/ads/mutations';
 
+type Submit = (
+  reasonCode: RejectionReasonCode,
+  note: string | undefined,
+) => Promise<unknown>;
+
 function RejectForm({
-  adId,
   adTitle,
+  bulk,
+  onSubmit,
   onClose,
 }: {
-  adId: string;
   adTitle: string;
+  bulk: boolean;
+  onSubmit: Submit;
   onClose: () => void;
 }) {
-  const reject = useRejectAd();
   const [reasonCode, setReasonCode] = useState<RejectionReasonCode>(
     REJECTION_REASONS[0].code,
   );
   const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const noteRequired = reasonCode === 'OTHER';
   const canSubmit = !noteRequired || note.trim().length > 0;
 
   async function submit() {
     if (!canSubmit) return;
-    await reject.mutateAsync({ adId, reasonCode, note });
-    onClose();
+    setBusy(true);
+    try {
+      await onSubmit(reasonCode, note.trim() || undefined);
+      onClose();
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <Modal
       open
       onClose={onClose}
-      title="Reject this ad"
+      title={bulk ? 'Reject these ads' : 'Reject this ad'}
       description={adTitle}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={reject.isPending}>
+          <Button variant="ghost" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
           <Button
             variant="danger"
-            onClick={submit}
-            loading={reject.isPending}
+            onClick={() => void submit()}
+            loading={busy}
             disabled={!canSubmit}
           >
-            Reject ad
+            {bulk ? 'Reject all' : 'Reject ad'}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
+        {bulk && (
+          <p className="rounded-md border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-700">
+            The same reason and note go to every selected advertiser. Anything
+            that has already been decided is skipped and reported back.
+          </p>
+        )}
+
         <Select
           label="Reason code"
           value={reasonCode}
@@ -79,18 +98,35 @@ function RejectForm({
   );
 }
 
+/**
+ * Rejecting one ad or a whole selection. `onSubmit` switches it to bulk mode;
+ * without it the dialog rejects the single `adId` itself.
+ */
 export function RejectDialog({
   adId,
   adTitle,
   onClose,
+  onSubmit,
 }: {
   adId: string | null;
   adTitle: string;
   onClose: () => void;
+  onSubmit?: Submit;
 }) {
+  const reject = useRejectAd();
   if (adId === null) return null;
 
   return (
-    <RejectForm key={adId} adId={adId} adTitle={adTitle} onClose={onClose} />
+    <RejectForm
+      // Remount per target so the reason resets between ads.
+      key={adId}
+      adTitle={adTitle}
+      bulk={onSubmit !== undefined}
+      onSubmit={
+        onSubmit ??
+        ((reasonCode, note) => reject.mutateAsync({ adId, reasonCode, note }))
+      }
+      onClose={onClose}
+    />
   );
 }

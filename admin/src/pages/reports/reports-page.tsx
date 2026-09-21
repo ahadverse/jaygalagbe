@@ -9,6 +9,10 @@ import {
 } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CheckIcon, FlagIcon, XIcon } from '@/components/ui/icons';
+import {
+  ConfirmDialog,
+  type ConfirmRequest,
+} from '@/components/ui/confirm-dialog';
 import { DataTable, type Column } from '@/components/table/data-table';
 import { PaginationBar } from '@/components/table/pagination-bar';
 import {
@@ -18,10 +22,18 @@ import {
 } from '@/components/table/table-toolbar';
 import { AdThumb } from '@/components/ads/ad-thumb';
 import { AdDetailPanel } from '@/components/ads/ad-detail-panel';
+import { ReportDetailPanel } from '@/components/reports/report-detail-panel';
 import { RejectDialog } from '@/components/ads/reject-dialog';
+import { BulkActionBar } from '@/components/table/bulk-action-bar';
+import { ExportButton, SaveViewButton } from '@/components/table/table-actions';
 import { useReportsQuery } from '@/lib/api/queries';
 import { useTableQuery } from '@/lib/table/use-table-query';
-import { useResolveReport } from '@/lib/ads/mutations';
+import { useRowSelection } from '@/lib/table/use-row-selection';
+import {
+  useBulkReportAction,
+  useDeleteReport,
+  useResolveReport,
+} from '@/lib/ads/mutations';
 import {
   AD_STATUS_LABEL,
   REPORT_STATUS_LABEL,
@@ -68,14 +80,31 @@ export function ReportsPage() {
   });
 
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [reportDetail, setReportDetail] = useState<ReportListItem | null>(null);
   const [rejecting, setRejecting] = useState<{ id: string; title: string } | null>(
     null,
   );
+  const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
 
   const resolve = useResolveReport();
+  const bulk = useBulkReportAction();
+  const deleteReport = useDeleteReport();
   const { filters } = query;
 
-  const { data, isLoading, isFetching, error } = useReportsQuery({
+  /**
+   * Dismissing a report keeps it against the listing; deleting drops the flag
+   * from the record entirely, which is what a bad-faith report deserves.
+   */
+  const askDelete = (report: ReportListItem) =>
+    setConfirm({
+      title: 'Delete this report?',
+      description: `The flag on "${report.ad.title}" is erased and stops counting towards the listing's report total. This cannot be undone — only the audit log keeps a copy. The listing itself is untouched.`,
+      confirmLabel: 'Delete report',
+      danger: true,
+      onConfirm: () => deleteReport.mutateAsync(report.id),
+    });
+
+  const params = {
     page: query.page,
     limit: query.limit,
     sort: query.sort,
@@ -86,7 +115,12 @@ export function ReportsPage() {
     sector: filters.sector || undefined,
     from: filters.from || undefined,
     to: filters.to || undefined,
-  });
+  };
+
+  const { data, isLoading, isFetching, error } = useReportsQuery(params);
+  const selection = useRowSelection(
+    (data?.data ?? []).map((report) => report.id),
+  );
 
   const rowActions = (report: ReportListItem) => {
     if (report.status !== 'PENDING') {
@@ -225,6 +259,12 @@ export function ReportsPage() {
           activeFilterCount={query.activeFilterCount}
           isDirty={query.isDirty}
           onReset={query.resetFilters}
+          actions={
+            <>
+              <SaveViewButton />
+              <ExportButton resource="reports" params={params} />
+            </>
+          }
           filters={
             <>
               <FilterSelect
@@ -279,7 +319,8 @@ export function ReportsPage() {
           isLoading={isLoading}
           isFetching={isFetching}
           error={error}
-          onRowClick={(report) => setDetailId(report.adId)}
+          selection={selection}
+          onRowClick={setReportDetail}
           empty={
             <EmptyState
               icon={<FlagIcon className="h-5 w-5" />}
@@ -337,6 +378,68 @@ export function ReportsPage() {
         />
       </Card>
 
+      <BulkActionBar selection={selection} noun="report">
+        <Button
+          variant="success"
+          size="xs"
+          loading={bulk.isPending && bulk.variables?.action === 'REVIEWED'}
+          onClick={() =>
+            void bulk
+              .mutateAsync({ action: 'REVIEWED', ids: selection.ids })
+              .then(selection.clear)
+          }
+        >
+          <CheckIcon className="h-3.5 w-3.5" />
+          Actioned
+        </Button>
+        <Button
+          variant="secondary"
+          size="xs"
+          loading={bulk.isPending && bulk.variables?.action === 'DISMISSED'}
+          onClick={() =>
+            void bulk
+              .mutateAsync({ action: 'DISMISSED', ids: selection.ids })
+              .then(selection.clear)
+          }
+        >
+          <XIcon className="h-3.5 w-3.5" />
+          Dismiss
+        </Button>
+        <Button
+          variant="danger"
+          size="xs"
+          loading={bulk.isPending && bulk.variables?.action === 'DELETE'}
+          onClick={() =>
+            setConfirm({
+              title: `Delete ${selection.count} report${selection.count === 1 ? '' : 's'}?`,
+              description:
+                'The flags are erased and stop counting towards their listings’ report totals. The listings themselves are untouched. This cannot be undone — only the audit log keeps a copy.',
+              confirmLabel: 'Delete reports',
+              danger: true,
+              onConfirm: () =>
+                bulk
+                  .mutateAsync({ action: 'DELETE', ids: selection.ids })
+                  .then(selection.clear),
+            })
+          }
+        >
+          Delete
+        </Button>
+      </BulkActionBar>
+
+      <ReportDetailPanel
+        report={reportDetail}
+        onClose={() => setReportDetail(null)}
+        onResolve={(report, status) =>
+          resolve.mutate({ reportId: report.id, status })
+        }
+        onOpenAd={(adId) => {
+          setReportDetail(null);
+          setDetailId(adId);
+        }}
+        onDelete={askDelete}
+      />
+
       <AdDetailPanel
         adId={detailId}
         onClose={() => setDetailId(null)}
@@ -351,6 +454,8 @@ export function ReportsPage() {
         adTitle={rejecting?.title ?? ''}
         onClose={() => setRejecting(null)}
       />
+
+      <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />
     </>
   );
 }

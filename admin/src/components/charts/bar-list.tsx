@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { formatCount } from '@/lib/format';
 
@@ -5,8 +6,10 @@ export interface BarDatum {
   key: string;
   label: string;
   value: number;
-  /** Tailwind background class for the fill. */
+  /** Tailwind background class for the fill — status tones use this. */
   color: string;
+  /** Used instead when the fill is a chart token rather than a class. */
+  style?: CSSProperties;
 }
 
 /** Every row is direct-labelled, so colour is never the only carrier of meaning. */
@@ -49,7 +52,10 @@ export function BarList({
             >
               <div
                 className={cn('h-full rounded-full transition-[width] duration-500', datum.color)}
-                style={{ width: `${Math.max((datum.value / max) * 100, 2)}%` }}
+                style={{
+                  width: `${Math.max((datum.value / max) * 100, 2)}%`,
+                  ...datum.style,
+                }}
               />
             </div>
           </li>
