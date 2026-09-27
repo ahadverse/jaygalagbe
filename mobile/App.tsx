@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { queryClient } from './src/api/query-client';
 import { AuthProvider, useAuth } from './src/features/auth/auth-context';
+import { NotificationsProvider } from './src/features/notifications/notifications-context';
 import { RootTabs } from './src/navigation/root-tabs';
 import {
   combinedDarkTheme,
@@ -28,7 +29,9 @@ export default function App() {
       >
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <AppContent theme={theme} isDark={isDark} />
+            <NotificationsProvider>
+              <AppContent theme={theme} isDark={isDark} />
+            </NotificationsProvider>
           </AuthProvider>
         </QueryClientProvider>
       </PaperProvider>

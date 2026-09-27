@@ -14,22 +14,25 @@ export type HouseRentAttributes = {
   propertyType?: string;
 };
 
-// Covers both GET /ads (list) and GET /ads/:id (detail) - the backend
-// returns the same full row from both, trimmed here to the fields a mobile
-// screen actually reads (see web/src/lib/ads/types.ts for the rest, e.g.
-// ownerId/rejectionReason/boosts, none of which are used yet).
+// Covers GET /ads, GET /ads/:id and GET /ads/mine - the backend returns the
+// same full row from all three, trimmed here to the fields a mobile screen
+// actually reads (see web/src/lib/ads/types.ts for the rest, e.g. `boosts`,
+// which no endpoint mobile calls actually populates today).
 export type Ad = {
   id: string;
+  ownerId: string;
   sector: Sector;
   title: string;
   description: string;
   price: string | number;
+  locationDivision?: string | null;
   locationArea: string;
   locationDistrict: string;
   address?: string | null;
   photos: string[];
   attributes: LandAttributes | HouseRentAttributes | null;
   status: AdStatus;
+  rejectionReason?: string | null;
   createdAt: string;
   updatedAt: string;
 };

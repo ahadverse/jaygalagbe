@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '../../api/client';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../../api/client';
 import type { AuthResponse, User } from './types';
 
 export type LoginInput = {
@@ -44,4 +44,22 @@ export function register(input: RegisterInput): Promise<AuthResponse> {
 
 export function getCurrentUser(): Promise<User> {
   return apiGet<User>('/users/me');
+}
+
+export type UpdateProfileInput = {
+  name?: string;
+  email?: string;
+  phone?: string;
+};
+
+export function updateProfile(input: UpdateProfileInput): Promise<User> {
+  return apiPatch<User>('/users/me', input);
+}
+
+export function registerFcmToken(token: string): Promise<void> {
+  return apiPost<void>('/users/me/fcm-token', { token });
+}
+
+export function unregisterFcmToken(): Promise<void> {
+  return apiDelete<void>('/users/me/fcm-token');
 }

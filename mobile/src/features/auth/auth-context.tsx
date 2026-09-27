@@ -14,6 +14,7 @@ import {
   secureTokenStore,
 } from '../../api/secure-token-store';
 import { setToken, setTokenStore } from '../../api/token-store';
+import { clearPushToken, registerPushToken } from '../notifications/push';
 import {
   getCurrentUser,
   login as loginRequest,
@@ -33,6 +34,8 @@ type AuthContextValue = {
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => void;
+  /** Updates the in-memory user after a profile edit, without a re-fetch. */
+  setUser: (user: User) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -42,6 +45,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isRestoring, setIsRestoring] = useState(true);
 
   const logout = useCallback(() => {
+    // Must fire before the token is cleared - the endpoint requires auth.
+    void clearPushToken();
     setToken(null);
     setUser(null);
   }, []);
@@ -61,7 +66,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
       try {
         const restoredUser = await getCurrentUser();
-        if (!cancelled) setUser(restoredUser);
+        if (!cancelled) {
+          setUser(restoredUser);
+          void registerPushToken();
+        }
       } catch {
         // api/client's onUnauthorized (below) already clears an expired
         // token on a 401; any other failure just leaves the app logged out.
@@ -83,17 +91,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const response = await loginRequest(input);
     setToken(response.accessToken);
     setUser(response.user);
+    void registerPushToken();
   }, []);
 
   const register = useCallback(async (input: RegisterInput) => {
     const response = await registerRequest(input);
     setToken(response.accessToken);
     setUser(response.user);
+    void registerPushToken();
   }, []);
 
   const value = useMemo(
-    () => ({ user, isRestoring, login, register, logout }),
-    [user, isRestoring, login, register, logout],
+    () => ({ user, isRestoring, login, register, logout, setUser }),
+    [user, isRestoring, login, register, logout, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -3,7 +3,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../features/auth/auth-context';
 import { LoginScreen } from '../screens/auth/login-screen';
 import { RegisterScreen } from '../screens/auth/register-screen';
+import { AdDetailScreen } from '../screens/home/ad-detail-screen';
+import { NotificationsScreen } from '../screens/profile/notifications-screen';
 import { ProfileScreen } from '../screens/profile/profile-screen';
+import { ReviewsScreen } from '../screens/profile/reviews-screen';
+import { SavedScreen } from '../screens/profile/saved-screen';
+import { SettingsScreen } from '../screens/profile/settings-screen';
 import type { ProfileStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -16,11 +21,38 @@ export function ProfileStack() {
   return (
     <Stack.Navigator>
       {user ? (
-        <Stack.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{ title: 'Profile' }}
-        />
+        <>
+          <Stack.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{ title: 'Profile' }}
+          />
+          <Stack.Screen
+            name="Saved"
+            component={SavedScreen}
+            options={{ title: 'Saved & viewed' }}
+          />
+          <Stack.Screen
+            name="Reviews"
+            component={ReviewsScreen}
+            options={{ title: 'Reviews' }}
+          />
+          <Stack.Screen
+            name="Notifications"
+            component={NotificationsScreen}
+            options={{ title: 'Notifications' }}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{ title: 'Settings' }}
+          />
+          <Stack.Screen
+            name="AdDetail"
+            component={AdDetailScreen}
+            options={{ title: 'Listing' }}
+          />
+        </>
       ) : (
         <>
           <Stack.Screen

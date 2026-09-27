@@ -1,3 +1,10 @@
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import {
@@ -9,13 +16,27 @@ import {
 } from 'react-native';
 import { ActivityIndicator, Chip, Text, useTheme } from 'react-native-paper';
 
+import { ContactGate } from '../../components/ads/contact-gate';
 import { NearbyListings } from '../../components/ads/nearby-listings';
+import { ReportAdButton } from '../../components/ads/report-ad-button';
+import { SaveAdButton } from '../../components/ads/save-ad-button';
 import { logVisit } from '../../features/analytics/api';
 import { getAd, getLiveAds } from '../../features/ads/api';
 import { describeAdAttributes } from '../../features/ads/describe-attributes';
+import { recordAdView } from '../../features/ads/local-lists';
 import type { Ad } from '../../features/ads/types';
 import { formatPrice, formatRelativeTime } from '../../lib/format';
-import type { HomeStackScreenProps } from '../../navigation/types';
+import type { RootTabParamList } from '../../navigation/types';
+
+// This screen is registered under both HomeStack and ProfileStack (the
+// Saved screen also needs to reach it), so it can't be typed against either
+// stack's own ParamList specifically - the shared shape below is all it
+// actually needs from whichever stack rendered it.
+type AdDetailParamList = { AdDetail: { adId: string } };
+type AdDetailNavigation = NativeStackNavigationProp<
+  AdDetailParamList,
+  'AdDetail'
+>;
 
 const SECTOR_LABEL: Record<Ad['sector'], string> = {
   LAND: 'Land for sale',
@@ -43,12 +64,11 @@ function relatedAds(pool: Ad[], current: Ad): { ads: Ad[]; sameArea: boolean } {
   return { ads: others.slice(0, RELATED_LIMIT), sameArea: false };
 }
 
-export function AdDetailScreen({
-  route,
-  navigation,
-}: HomeStackScreenProps<'AdDetail'>) {
+export function AdDetailScreen() {
   const theme = useTheme();
   const { width } = useWindowDimensions();
+  const navigation = useNavigation<AdDetailNavigation>();
+  const route = useRoute<RouteProp<AdDetailParamList, 'AdDetail'>>();
   const { adId } = route.params;
   const visited = useRef<string | null>(null);
 
@@ -71,11 +91,21 @@ export function AdDetailScreen({
     if (!ad || visited.current === ad.id) return;
     visited.current = ad.id;
     void logVisit(ad.id);
+    void recordAdView(ad.id);
   }, [ad]);
 
   useEffect(() => {
     if (ad) navigation.setOptions({ title: ad.title });
   }, [ad, navigation]);
+
+  // Login/Register live under the Profile tab, not this stack - reach them
+  // through the parent tab navigator (see navigation/types.ts's note on why
+  // there's no dedicated top-level auth stack).
+  function requireAuth(screen: 'Login' | 'Register') {
+    navigation
+      .getParent<BottomTabNavigationProp<RootTabParamList>>()
+      ?.navigate('ProfileTab', { screen });
+  }
 
   if (isPending) {
     return (
@@ -168,6 +198,13 @@ export function AdDetailScreen({
           </Text>
         </View>
 
+        <ContactGate
+          adId={ad.id}
+          ownerId={ad.ownerId}
+          onRequireAuth={requireAuth}
+        />
+        <SaveAdButton adId={ad.id} />
+
         {facts.length > 0 ? (
           <View style={styles.factsRow}>
             {facts.map((fact) => (
@@ -213,6 +250,13 @@ export function AdDetailScreen({
             an advertiser.
           </Text>
         </View>
+
+        <ReportAdButton
+          adId={ad.id}
+          ownerId={ad.ownerId}
+          status={ad.status}
+          onRequireAuth={() => requireAuth('Login')}
+        />
 
         <NearbyListings
           ads={related.ads}

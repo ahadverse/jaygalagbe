@@ -33,3 +33,11 @@ export function getSectorOption(slug: SectorSlug): SectorOption {
   }
   return option;
 }
+
+export function getSectorOptionBySector(sector: Sector): SectorOption {
+  const option = sectors.find((candidate) => candidate.sector === sector);
+  if (!option) {
+    throw new Error(`Unknown sector: ${sector}`);
+  }
+  return option;
+}

@@ -14,19 +14,36 @@ export type HomeStackScreenProps<T extends keyof HomeStackParamList> =
 
 export type MyAdsStackParamList = {
   MyAds: undefined;
+  // adId absent = create, present = edit.
+  AdForm: { adId?: string } | undefined;
+  Boost: { adId: string };
+  AdStats: { adId: string };
 };
+
+export type MyAdsStackScreenProps<T extends keyof MyAdsStackParamList> =
+  NativeStackScreenProps<MyAdsStackParamList, T>;
 
 export type MessagesStackParamList = {
   Messages: undefined;
+  ChatThread: { conversationId: string };
 };
 
+export type MessagesStackScreenProps<T extends keyof MessagesStackParamList> =
+  NativeStackScreenProps<MessagesStackParamList, T>;
+
 // Login/Register live inside the Profile stack rather than a separate
-// top-level auth stack, since there's no login wall - they're one of
-// possibly several places (see commits 76-78) that will present them.
+// top-level auth stack, since there's no login wall - guest actions
+// elsewhere (contact-gate, report-ad) reach these through the parent tab
+// navigator (see ad-detail-screen.tsx's requireAuth()).
 export type ProfileStackParamList = {
   Profile: undefined;
   Login: undefined;
   Register: undefined;
+  Saved: undefined;
+  Reviews: undefined;
+  Notifications: undefined;
+  Settings: undefined;
+  AdDetail: { adId: string };
 };
 
 export type ProfileStackScreenProps<T extends keyof ProfileStackParamList> =
