@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
 
 type PlaceholderScreenProps = {
   title: string;
@@ -7,10 +8,21 @@ type PlaceholderScreenProps = {
 
 // Stands in for screens that get their real content in a later, dedicated commit.
 export function PlaceholderScreen({ title, note }: PlaceholderScreenProps) {
+  const theme = useTheme();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      {note ? <Text style={styles.note}>{note}</Text> : null}
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <Text variant="headlineSmall">{title}</Text>
+      {note ? (
+        <Text
+          variant="bodyMedium"
+          style={[styles.note, { color: theme.colors.onSurfaceVariant }]}
+        >
+          {note}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -23,13 +35,7 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 8,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
   note: {
-    fontSize: 14,
-    color: '#666',
     textAlign: 'center',
   },
 });
