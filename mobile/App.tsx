@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AuthProvider } from './src/features/auth/auth-context';
 import { RootTabs } from './src/navigation/root-tabs';
 import {
   combinedDarkTheme,
@@ -21,10 +22,12 @@ export default function App() {
         theme={theme}
         settings={{ icon: (props) => <MaterialCommunityIcons {...props} /> }}
       >
-        <NavigationContainer theme={theme}>
-          <RootTabs />
-          <StatusBar style={isDark ? 'light' : 'dark'} />
-        </NavigationContainer>
+        <AuthProvider>
+          <NavigationContainer theme={theme}>
+            <RootTabs />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+          </NavigationContainer>
+        </AuthProvider>
       </PaperProvider>
     </SafeAreaProvider>
   );
