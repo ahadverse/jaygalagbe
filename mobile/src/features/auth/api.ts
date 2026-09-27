@@ -1,5 +1,5 @@
-import { apiPost } from '../../api/client';
-import type { AuthResponse } from './types';
+import { apiGet, apiPost } from '../../api/client';
+import type { AuthResponse, User } from './types';
 
 export type LoginInput = {
   identifier: string;
@@ -40,4 +40,8 @@ export function register(input: RegisterInput): Promise<AuthResponse> {
     },
     { auth: false },
   );
+}
+
+export function getCurrentUser(): Promise<User> {
+  return apiGet<User>('/users/me');
 }

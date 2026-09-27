@@ -2,18 +2,34 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type PropsWithChildren,
 } from 'react';
 
-import { setToken } from '../../api/token-store';
-import { login as loginRequest, register as registerRequest } from './api';
+import { onUnauthorized } from '../../api/client';
+import {
+  hydrateTokenStore,
+  secureTokenStore,
+} from '../../api/secure-token-store';
+import { setToken, setTokenStore } from '../../api/token-store';
+import {
+  getCurrentUser,
+  login as loginRequest,
+  register as registerRequest,
+} from './api';
 import type { LoginInput, RegisterInput } from './api';
 import type { User } from './types';
 
+// Swap in the Keystore/Keychain-backed store once, at module load, in place
+// of api/token-store's in-memory default.
+setTokenStore(secureTokenStore);
+
 type AuthContextValue = {
   user: User | null;
+  /** True until the app-boot session restore below has finished. */
+  isRestoring: boolean;
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => void;
@@ -21,12 +37,47 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// In-memory only for now, so the session doesn't survive an app restart -
-// commit 70 adds expo-secure-store persistence and an app-boot restore
-// effect on top of this same context, plus wires api/client's
-// onUnauthorized into logout().
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
+  const [isRestoring, setIsRestoring] = useState(true);
+
+  const logout = useCallback(() => {
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  // Restore a persisted session once at app boot: if a token was saved from
+  // a previous launch, re-fetch the profile to confirm it's still valid
+  // (the JWT has no refresh mechanism, so this can fail if it's expired -
+  // that's fine, the user just ends up logged out for this run).
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const token = await hydrateTokenStore();
+      if (!token) {
+        if (!cancelled) setIsRestoring(false);
+        return;
+      }
+      try {
+        const restoredUser = await getCurrentUser();
+        if (!cancelled) setUser(restoredUser);
+      } catch {
+        // api/client's onUnauthorized (below) already clears an expired
+        // token on a 401; any other failure just leaves the app logged out.
+      } finally {
+        if (!cancelled) setIsRestoring(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // A 401 on any request (not just login) means the session is dead -
+  // whoever is signed in gets logged out reactively, wherever they are.
+  useEffect(() => onUnauthorized(logout), [logout]);
 
   const login = useCallback(async (input: LoginInput) => {
     const response = await loginRequest(input);
@@ -40,14 +91,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setUser(response.user);
   }, []);
 
-  const logout = useCallback(() => {
-    setToken(null);
-    setUser(null);
-  }, []);
-
   const value = useMemo(
-    () => ({ user, login, register, logout }),
-    [user, login, register, logout],
+    () => ({ user, isRestoring, login, register, logout }),
+    [user, isRestoring, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
