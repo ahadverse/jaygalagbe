@@ -1,4 +1,4 @@
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 import { registerFcmToken, unregisterFcmToken } from '../auth/api';
 
@@ -9,27 +9,40 @@ import { registerFcmToken, unregisterFcmToken } from '../auth/api';
 // expo-dev-client build still supports push fine, so the import itself has
 // to be conditional, not just the calls inside it.
 //
-// `appOwnership` is deprecated in favor of `executionEnvironment`, but it's
-// the only field that identifies classic Expo Go specifically -
-// `executionEnvironment` lumps Expo Go and a dev-client build together under
-// `storeClient`, which would wrongly disable push in a real dev-client too.
-const isExpoGo = Constants.appOwnership === 'expo';
+// `Constants.appOwnership === 'expo'` looked like the more precise check
+// (executionEnvironment lumps Expo Go and a dev-client build together under
+// `storeClient`), but appOwnership is deprecated and evidently isn't
+// populated reliably in current Expo Go builds - using it here still let the
+// crash through. `executionEnvironment` is the actively-maintained field, so
+// it's the one to trust even though it's coarser: a real dev-client build
+// will also skip push registration for now, which is a no-op today (there's
+// no dev-client build of this app yet) and easy to split out later once one
+// exists.
+const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 if (!isExpoGo) {
-  void import('expo-notifications').then((Notifications) => {
-    // Account-activity and message alerts are delivered live over the
-    // sockets in notifications-context.tsx while the app is open - this
-    // handler only governs how a system push (once task 34f ships a real
-    // sender) shows up.
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: false,
-        shouldSetBadge: false,
-      }),
+  // A nice-to-have registration step must never be able to take the whole
+  // app down - .catch() here is a deliberate second line of defense in case
+  // the environment check above is ever wrong again.
+  void import('expo-notifications')
+    .then((Notifications) => {
+      // Account-activity and message alerts are delivered live over the
+      // sockets in notifications-context.tsx while the app is open - this
+      // handler only governs how a system push (once task 34f ships a real
+      // sender) shows up.
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+        }),
+      });
+    })
+    .catch(() => {
+      // Best-effort - see module comment above.
     });
-  });
 }
 
 // Registers this device's native FCM token against the backend's fcmToken
