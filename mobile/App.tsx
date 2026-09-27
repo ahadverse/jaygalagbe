@@ -7,6 +7,8 @@ import { ActivityIndicator, PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { queryClient } from './src/api/query-client';
+import { ErrorBoundary } from './src/components/error-boundary';
+import { OfflineBanner } from './src/components/offline-banner';
 import { AuthProvider, useAuth } from './src/features/auth/auth-context';
 import { NotificationsProvider } from './src/features/notifications/notifications-context';
 import { RootTabs } from './src/navigation/root-tabs';
@@ -27,13 +29,18 @@ export default function App() {
         theme={theme}
         settings={{ icon: (props) => <MaterialCommunityIcons {...props} /> }}
       >
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <NotificationsProvider>
-              <AppContent theme={theme} isDark={isDark} />
-            </NotificationsProvider>
-          </AuthProvider>
-        </QueryClientProvider>
+        <View style={styles.flex}>
+          <OfflineBanner />
+          <ErrorBoundary>
+            <QueryClientProvider client={queryClient}>
+              <AuthProvider>
+                <NotificationsProvider>
+                  <AppContent theme={theme} isDark={isDark} />
+                </NotificationsProvider>
+              </AuthProvider>
+            </QueryClientProvider>
+          </ErrorBoundary>
+        </View>
       </PaperProvider>
     </SafeAreaProvider>
   );
@@ -67,6 +74,9 @@ function AppContent({ theme, isDark }: { theme: Theme; isDark: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
