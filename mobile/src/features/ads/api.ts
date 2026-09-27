@@ -10,3 +10,7 @@ export function getLiveAds(
   if (options?.take) params.set('take', String(options.take));
   return apiGet<Ad[]>(`/ads?${params.toString()}`);
 }
+
+export function getAd(id: string): Promise<Ad> {
+  return apiGet<Ad>(`/ads/${id}`);
+}

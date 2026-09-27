@@ -5,11 +5,8 @@ import type { SectorSlug } from '../features/ads/sectors';
 
 export type HomeStackParamList = {
   Home: undefined;
-  // Destination screen for the home screen's search bar / popular-location
-  // chips - a PlaceholderScreen until the real search & filters UI lands
-  // (commit 72), same forward-reference pattern as ProfileStack's Login
-  // screen was before commit 69.
   SectorListing: { sector: SectorSlug; location?: string };
+  AdDetail: { adId: string };
 };
 
 export type HomeStackScreenProps<T extends keyof HomeStackParamList> =

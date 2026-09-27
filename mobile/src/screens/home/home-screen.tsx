@@ -14,6 +14,10 @@ import { AdCard } from '../../components/ads/ad-card';
 import { getLiveAds } from '../../features/ads/api';
 import { sectors, type SectorSlug } from '../../features/ads/sectors';
 import type { Ad } from '../../features/ads/types';
+import {
+  AD_IMPRESSION_VIEWABILITY_CONFIG,
+  useAdImpressions,
+} from '../../features/analytics/use-ad-impressions';
 import type { HomeStackScreenProps } from '../../navigation/types';
 
 // Mirrors web/src/components/home/hero.tsx's hardcoded shortlist - same
@@ -34,6 +38,7 @@ export function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>) {
   const theme = useTheme();
   const [sector, setSector] = useState<SectorSlug>(sectors[0].slug);
   const [location, setLocation] = useState('');
+  const onViewableItemsChanged = useAdImpressions('HOMEPAGE');
 
   const {
     data: ads,
@@ -58,7 +63,14 @@ export function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>) {
     <FlatList<Ad>
       data={ads ?? []}
       keyExtractor={(ad) => ad.id}
-      renderItem={({ item }) => <AdCard ad={item} />}
+      renderItem={({ item }) => (
+        <AdCard
+          ad={item}
+          onPress={() => navigation.push('AdDetail', { adId: item.id })}
+        />
+      )}
+      onViewableItemsChanged={onViewableItemsChanged}
+      viewabilityConfig={AD_IMPRESSION_VIEWABILITY_CONFIG}
       contentContainerStyle={styles.listContent}
       ListHeaderComponent={
         <View style={styles.header}>

@@ -9,14 +9,14 @@ const SECTOR_LABEL: Record<Ad['sector'], string> = {
   HOUSE_RENT: 'For rent',
 };
 
-// Reused as-is by the sector listing screen once it lands (commit 72) -
-// no ad-detail navigation yet since that screen doesn't exist until commit 73.
-export function AdCard({ ad }: { ad: Ad }) {
+// Shared by the home screen's latest listings, the sector listing screen,
+// and nearby-listings on the ad detail screen.
+export function AdCard({ ad, onPress }: { ad: Ad; onPress?: () => void }) {
   const theme = useTheme();
   const posted = formatRelativeTime(ad.createdAt);
 
   return (
-    <Card style={styles.card} mode="elevated">
+    <Card style={styles.card} mode="elevated" onPress={onPress}>
       {ad.photos[0] ? <Card.Cover source={{ uri: ad.photos[0] }} /> : null}
       <Card.Content style={styles.content}>
         <Text

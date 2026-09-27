@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { getSectorOption } from '../features/ads/sectors';
+import { AdDetailScreen } from '../screens/home/ad-detail-screen';
 import { HomeScreen } from '../screens/home/home-screen';
 import { SectorListingScreen } from '../screens/home/sector-listing-screen';
 import type { HomeStackParamList } from './types';
@@ -21,6 +22,11 @@ export function HomeStack() {
         options={({ route }) => ({
           title: getSectorOption(route.params.sector).label,
         })}
+      />
+      <Stack.Screen
+        name="AdDetail"
+        component={AdDetailScreen}
+        options={{ title: 'Listing' }}
       />
     </Stack.Navigator>
   );
