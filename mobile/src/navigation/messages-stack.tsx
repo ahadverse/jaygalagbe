@@ -2,13 +2,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { ChatThreadScreen } from '../screens/messages/chat-thread-screen';
 import { MessagesScreen } from '../screens/messages/messages-screen';
+import { defaultStackScreenOptions } from './screen-options';
 import type { MessagesStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<MessagesStackParamList>();
 
 export function MessagesStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={defaultStackScreenOptions}>
       <Stack.Screen
         name="Messages"
         component={MessagesScreen}

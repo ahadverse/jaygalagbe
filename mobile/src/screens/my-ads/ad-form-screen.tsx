@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
@@ -12,7 +12,11 @@ import {
 } from 'react-native-paper';
 
 import { PhotoPicker } from '../../components/ads/photo-picker';
+import { BrandCard } from '../../components/brand/brand-card';
+import { Eyebrow } from '../../components/brand/eyebrow';
 import { SelectField } from '../../components/forms/select-field';
+import { PlaceholderScreen } from '../../components/placeholder-screen';
+import { useAuth } from '../../features/auth/auth-context';
 import { ApiError } from '../../api/errors';
 import {
   createAd,
@@ -37,6 +41,7 @@ import {
   thanasOf,
 } from '../../data/bd-geo';
 import type { MyAdsStackScreenProps } from '../../navigation/types';
+import { colors, radius } from '../../theme/tokens';
 
 // Fetches the ad (edit only) and gates on it loading, then mounts the form
 // body fresh - AdFormBody's fields are seeded via lazy useState initializers
@@ -46,14 +51,26 @@ export function AdFormScreen({
   route,
   navigation,
 }: MyAdsStackScreenProps<'AdForm'>) {
+  const { user } = useAuth();
   const adId = route.params?.adId;
   const isEdit = !!adId;
 
   const { data: existingAd, isPending: loadingAd } = useQuery({
     queryKey: ['ads', 'detail', adId],
     queryFn: () => getAd(adId!),
-    enabled: isEdit,
+    enabled: isEdit && !!user,
   });
+
+  // The header's "Post an ad" button reaches this screen from anywhere, so the
+  // gate lives here rather than only on the My Ads list.
+  if (!user) {
+    return (
+      <PlaceholderScreen
+        title="Log in to post an ad"
+        note="Go to the Profile tab to log in or create an account."
+      />
+    );
+  }
 
   if (isEdit && loadingAd) {
     return <ActivityIndicator style={styles.loading} />;
@@ -61,6 +78,17 @@ export function AdFormScreen({
 
   return (
     <AdFormBody adId={adId} existingAd={existingAd} navigation={navigation} />
+  );
+}
+
+// Web's dashboard forms are broken into labelled panels rather than one long
+// column of inputs (see web/src/components/dashboard/ad-form.tsx).
+function Section({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <BrandCard variant="card" radius="lg" style={styles.section}>
+      <Eyebrow>{label}</Eyebrow>
+      {children}
+    </BrandCard>
   );
 }
 
@@ -210,122 +238,135 @@ function AdFormBody({
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {!isEdit ? (
-        <SegmentedButtons
-          value={sector}
-          onValueChange={(value) => setSector(value as Sector)}
-          buttons={sectors.map((option) => ({
-            value: option.sector,
-            label: option.label,
-          }))}
+      <Section label="Listing type">
+        {!isEdit ? (
+          <SegmentedButtons
+            value={sector}
+            onValueChange={(value) => setSector(value as Sector)}
+            buttons={sectors.map((option) => ({
+              value: option.sector,
+              label: option.label,
+            }))}
+          />
+        ) : (
+          <Text variant="titleMedium">{sectorOption.label}</Text>
+        )}
+      </Section>
+
+      <Section label="Basics">
+        <TextInput
+          mode="outlined"
+          label="Title"
+          value={title}
+          onChangeText={setTitle}
         />
-      ) : (
-        <Text variant="titleMedium">{sectorOption.label}</Text>
-      )}
+        <TextInput
+          mode="outlined"
+          label="Description"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          numberOfLines={4}
+        />
+      </Section>
 
-      <TextInput
-        mode="outlined"
-        label="Title"
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        mode="outlined"
-        label="Description"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={4}
-      />
-      <TextInput
-        mode="outlined"
-        label={sector === 'LAND' ? 'Asking price' : 'Monthly rent'}
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
-        left={<TextInput.Affix text={'৳'} />}
-      />
+      <Section label="Price">
+        <TextInput
+          mode="outlined"
+          label={sector === 'LAND' ? 'Asking price' : 'Monthly rent'}
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="numeric"
+          left={<TextInput.Affix text={'৳'} />}
+        />
+      </Section>
 
-      <SelectField
-        label="Division"
-        value={division}
-        options={DIVISION_NAMES}
-        onChange={onDivisionChange}
-      />
-      <SelectField
-        label="District"
-        value={district}
-        options={districts}
-        onChange={onDistrictChange}
-        disabled={districts.length === 0}
-        placeholder={division ? 'Select district' : 'Pick a division first'}
-      />
-      <SelectField
-        label="Thana"
-        value={thana}
-        options={thanas}
-        onChange={setThana}
-        disabled={thanas.length === 0}
-        placeholder={district ? 'Select thana' : 'Pick a district first'}
-      />
-      <TextInput
-        mode="outlined"
-        label="Address (optional)"
-        value={address}
-        onChangeText={setAddress}
-      />
+      <Section label="Location">
+        <SelectField
+          label="Division"
+          value={division}
+          options={DIVISION_NAMES}
+          onChange={onDivisionChange}
+        />
+        <SelectField
+          label="District"
+          value={district}
+          options={districts}
+          onChange={onDistrictChange}
+          disabled={districts.length === 0}
+          placeholder={division ? 'Select district' : 'Pick a division first'}
+        />
+        <SelectField
+          label="Thana"
+          value={thana}
+          options={thanas}
+          onChange={setThana}
+          disabled={thanas.length === 0}
+          placeholder={district ? 'Select thana' : 'Pick a district first'}
+        />
+        <TextInput
+          mode="outlined"
+          label="Address (optional)"
+          value={address}
+          onChangeText={setAddress}
+        />
+      </Section>
 
-      <PhotoPicker photos={photos} onChange={setPhotos} />
+      <Section label="Photos">
+        <PhotoPicker photos={photos} onChange={setPhotos} />
+      </Section>
 
-      {sector === 'LAND' ? (
-        <>
-          <TextInput
-            mode="outlined"
-            label="Size (katha)"
-            value={sizeKatha}
-            onChangeText={setSizeKatha}
-            keyboardType="numeric"
-          />
-          <SelectField
-            label="Property type (optional)"
-            value={propertyType}
-            options={sectorOption.propertyTypes}
-            onChange={setPropertyType}
-          />
-        </>
-      ) : (
-        <>
-          <TextInput
-            mode="outlined"
-            label="Bedrooms"
-            value={bedrooms}
-            onChangeText={setBedrooms}
-            keyboardType="numeric"
-          />
-          <TextInput
-            mode="outlined"
-            label="Bathrooms (optional)"
-            value={bathrooms}
-            onChangeText={setBathrooms}
-            keyboardType="numeric"
-          />
-          <SelectField
-            label="Property type (optional)"
-            value={propertyType}
-            options={sectorOption.propertyTypes}
-            onChange={setPropertyType}
-          />
-          <View style={styles.checkboxRow}>
-            <Checkbox
-              status={furnished ? 'checked' : 'unchecked'}
-              onPress={() => setFurnished((value) => !value)}
+      <Section label={sector === 'LAND' ? 'Plot details' : 'Home details'}>
+        {sector === 'LAND' ? (
+          <>
+            <TextInput
+              mode="outlined"
+              label="Size (katha)"
+              value={sizeKatha}
+              onChangeText={setSizeKatha}
+              keyboardType="numeric"
             />
-            <Text onPress={() => setFurnished((value) => !value)}>
-              Furnished
-            </Text>
-          </View>
-        </>
-      )}
+            <SelectField
+              label="Property type (optional)"
+              value={propertyType}
+              options={sectorOption.propertyTypes}
+              onChange={setPropertyType}
+            />
+          </>
+        ) : (
+          <>
+            <TextInput
+              mode="outlined"
+              label="Bedrooms"
+              value={bedrooms}
+              onChangeText={setBedrooms}
+              keyboardType="numeric"
+            />
+            <TextInput
+              mode="outlined"
+              label="Bathrooms (optional)"
+              value={bathrooms}
+              onChangeText={setBathrooms}
+              keyboardType="numeric"
+            />
+            <SelectField
+              label="Property type (optional)"
+              value={propertyType}
+              options={sectorOption.propertyTypes}
+              onChange={setPropertyType}
+            />
+            <View style={styles.checkboxRow}>
+              <Checkbox
+                status={furnished ? 'checked' : 'unchecked'}
+                onPress={() => setFurnished((value) => !value)}
+              />
+              <Text onPress={() => setFurnished((value) => !value)}>
+                Furnished
+              </Text>
+            </View>
+          </>
+        )}
+      </Section>
 
       {error ? (
         <HelperText type="error" visible>
@@ -338,10 +379,12 @@ function AdFormBody({
         onPress={submit}
         loading={submitting}
         disabled={submitting}
+        style={styles.submit}
+        contentStyle={styles.submitContent}
       >
         {isEdit ? 'Save changes' : 'Post ad'}
       </Button>
-      <Text variant="bodySmall">
+      <Text variant="bodySmall" style={styles.note}>
         {isEdit
           ? 'Edited ads are re-checked before they return to the listings.'
           : 'Your ad goes to review first - usually approved within a day.'}
@@ -356,10 +399,24 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 16,
-    gap: 16,
+    gap: 14,
+  },
+  section: {
+    gap: 12,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  submit: {
+    borderRadius: radius.full,
+    marginTop: 2,
+  },
+  submitContent: {
+    height: 50,
+  },
+  note: {
+    textAlign: 'center',
+    color: colors.neutral[500],
   },
 });

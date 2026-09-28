@@ -12,14 +12,15 @@ import {
   IconButton,
   Text,
   TextInput,
-  useTheme,
 } from 'react-native-paper';
 
+import { Eyebrow } from '../../components/brand/eyebrow';
 import { useAuth } from '../../features/auth/auth-context';
 import { getConversation, getMessages } from '../../features/messaging/api';
 import type { Message } from '../../features/messaging/types';
 import { useConversationSocket } from '../../features/messaging/use-conversation-socket';
 import type { MessagesStackScreenProps } from '../../navigation/types';
+import { colors, radius, shadow } from '../../theme/tokens';
 
 // Mirrors web/src/components/messaging/chat-thread.tsx: messages arrive only
 // through the socket's `message:new` echo (no local-optimistic append), a
@@ -31,7 +32,6 @@ export function ChatThreadScreen({
 }: MessagesStackScreenProps<'ChatThread'>) {
   const { conversationId } = route.params;
   const { user } = useAuth();
-  const theme = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
@@ -113,13 +113,9 @@ export function ChatThreadScreen({
       keyboardVerticalOffset={80}
     >
       {conversation ? (
-        <View
-          style={[
-            styles.adBanner,
-            { borderBottomColor: theme.colors.outlineVariant },
-          ]}
-        >
-          <Text variant="bodySmall" numberOfLines={1}>
+        <View style={styles.adBanner}>
+          <Eyebrow>About this listing</Eyebrow>
+          <Text variant="titleSmall" numberOfLines={1}>
             {conversation.ad.title}
           </Text>
         </View>
@@ -131,26 +127,42 @@ export function ChatThreadScreen({
         <FlatList<Message>
           data={messages}
           keyExtractor={(message) => message.id}
-          contentContainerStyle={styles.messageList}
+          contentContainerStyle={[
+            styles.messageList,
+            messages.length === 0 ? styles.messageListEmpty : null,
+          ]}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text variant="titleSmall" style={styles.emptyTitle}>
+                No messages yet
+              </Text>
+              <Text variant="bodySmall" style={styles.emptyNote}>
+                Say hello and ask whatever you need to know about the property.
+              </Text>
+            </View>
+          }
           renderItem={({ item: message }) => {
             const mine = message.senderId === user?.id;
             return (
               <View
                 style={[
                   styles.bubble,
-                  mine
-                    ? [
-                        styles.bubbleMine,
-                        { backgroundColor: theme.colors.primaryContainer },
-                      ]
-                    : [
-                        styles.bubbleTheirs,
-                        { backgroundColor: theme.colors.surfaceVariant },
-                      ],
+                  mine ? styles.bubbleMine : styles.bubbleTheirs,
                 ]}
               >
-                <Text>{message.body}</Text>
-                <Text variant="labelSmall" style={styles.timestamp}>
+                <Text
+                  variant="bodyMedium"
+                  style={mine ? styles.bodyMine : styles.bodyTheirs}
+                >
+                  {message.body}
+                </Text>
+                <Text
+                  variant="labelSmall"
+                  style={[
+                    styles.timestamp,
+                    mine ? styles.timestampMine : styles.timestampTheirs,
+                  ]}
+                >
                   {new Date(message.createdAt).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -163,15 +175,13 @@ export function ChatThreadScreen({
         />
       )}
 
-      <View
-        style={[
-          styles.composer,
-          { borderTopColor: theme.colors.outlineVariant },
-        ]}
-      >
+      <View style={styles.composer}>
         <TextInput
           mode="outlined"
           style={styles.input}
+          // The fill rides on the outline view so it follows the pill's
+          // corners; on the container it would square off behind them.
+          outlineStyle={styles.inputOutline}
           value={body}
           onChangeText={setBody}
           placeholder="Type a message"
@@ -180,6 +190,11 @@ export function ChatThreadScreen({
         />
         <IconButton
           icon="send"
+          mode="contained"
+          size={20}
+          containerColor={colors.brand[700]}
+          iconColor={colors.surfaceCard}
+          style={styles.send}
           onPress={send}
           disabled={sending || !body.trim()}
         />
@@ -191,41 +206,93 @@ export function ChatThreadScreen({
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+    backgroundColor: colors.surface,
   },
   adBanner: {
-    padding: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 2,
+    backgroundColor: colors.surfaceCard,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   loading: {
     flex: 1,
   },
   messageList: {
     padding: 16,
-    gap: 8,
+    gap: 10,
+  },
+  messageListEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  empty: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    gap: 6,
+  },
+  emptyTitle: {
+    color: colors.neutral[800],
+  },
+  emptyNote: {
+    color: colors.neutral[500],
+    textAlign: 'center',
   },
   bubble: {
-    maxWidth: '80%',
-    borderRadius: 12,
-    padding: 10,
+    maxWidth: '82%',
+    borderRadius: radius.lg,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   bubbleMine: {
     alignSelf: 'flex-end',
+    backgroundColor: colors.brand[700],
+    // The corner nearest the sender is tightened into a tail.
+    borderBottomRightRadius: radius.xs,
   },
   bubbleTheirs: {
     alignSelf: 'flex-start',
+    backgroundColor: colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: 'rgba(22,18,15,0.05)',
+    borderBottomLeftRadius: radius.xs,
+    ...shadow('sm'),
+  },
+  bodyMine: {
+    color: colors.surfaceCard,
+  },
+  bodyTheirs: {
+    color: colors.neutral[900],
   },
   timestamp: {
     marginTop: 4,
-    opacity: 0.7,
+    alignSelf: 'flex-end',
+  },
+  timestampMine: {
+    color: colors.brand[200],
+  },
+  timestampTheirs: {
+    color: colors.neutral[500],
   },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    padding: 10,
+    backgroundColor: colors.surfaceCard,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
   input: {
     flex: 1,
     maxHeight: 120,
+  },
+  inputOutline: {
+    borderRadius: radius.full,
+    backgroundColor: colors.neutral[100],
+  },
+  send: {
+    margin: 0,
   },
 });

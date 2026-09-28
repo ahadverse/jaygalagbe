@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 
 import type { Ad } from '../../features/ads/types';
+import { Eyebrow } from '../brand/eyebrow';
 import { AdCard } from './ad-card';
 
 // Plain AdCards, not impression-tracked: a related-listing render isn't a
@@ -22,9 +23,12 @@ export function NearbyListings({
 
   return (
     <View style={styles.container}>
-      <Text variant="titleMedium" style={styles.heading}>
-        {heading}
-      </Text>
+      <View style={styles.headingBlock}>
+        <Eyebrow>Keep looking</Eyebrow>
+        <Text variant="headlineSmall" style={styles.heading}>
+          {heading}
+        </Text>
+      </View>
       {ads.map((ad) => (
         <AdCard key={ad.id} ad={ad} onPress={() => onSelect(ad.id)} />
       ))}
@@ -36,7 +40,14 @@ const styles = StyleSheet.create({
   container: {
     marginTop: 16,
   },
-  heading: {
+  headingBlock: {
+    gap: 4,
     marginBottom: 12,
+  },
+  // The heading wraps to two lines on narrow phones; web's `text-xl sm:text-2xl`
+  // steps down for the same reason.
+  heading: {
+    fontSize: 20,
+    lineHeight: 26,
   },
 });

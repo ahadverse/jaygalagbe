@@ -19,6 +19,7 @@ import {
   REPORT_REASONS,
   type ReportReasonCode,
 } from '../../features/reports/types';
+import { colors, radius } from '../../theme/tokens';
 
 // Mirrors web/src/components/ads/report-ad-button.tsx.
 export function ReportAdButton({
@@ -46,7 +47,14 @@ export function ReportAdButton({
 
   if (!user) {
     return (
-      <Button mode="text" icon="flag-outline" onPress={onRequireAuth}>
+      <Button
+        mode="text"
+        icon="flag-outline"
+        textColor={colors.neutral[600]}
+        rippleColor={colors.danger[50]}
+        style={styles.trigger}
+        onPress={onRequireAuth}
+      >
         Log in to report this listing
       </Button>
     );
@@ -91,11 +99,18 @@ export function ReportAdButton({
 
   return (
     <>
-      <Button mode="text" icon="flag-outline" onPress={() => setVisible(true)}>
+      <Button
+        mode="text"
+        icon="flag-outline"
+        textColor={colors.neutral[600]}
+        rippleColor={colors.danger[50]}
+        style={styles.trigger}
+        onPress={() => setVisible(true)}
+      >
         Report this listing
       </Button>
       <Portal>
-        <Dialog visible={visible} onDismiss={reset}>
+        <Dialog visible={visible} onDismiss={reset} style={styles.dialog}>
           <Dialog.Title>Report this listing</Dialog.Title>
           <Dialog.Content>
             {success ? (
@@ -120,6 +135,14 @@ export function ReportAdButton({
                       key={reason.code}
                       label={reason.label}
                       value={reason.code}
+                      position="leading"
+                      style={[
+                        styles.reason,
+                        reasonCode === reason.code
+                          ? styles.reasonSelected
+                          : null,
+                      ]}
+                      labelStyle={styles.reasonLabel}
                     />
                   ))}
                 </RadioButton.Group>
@@ -134,6 +157,7 @@ export function ReportAdButton({
                   onChangeText={setNote}
                   multiline
                   maxLength={REPORT_NOTE_MAX}
+                  style={styles.input}
                 />
                 <HelperText type={error ? 'error' : 'info'} visible>
                   {error ??
@@ -144,9 +168,22 @@ export function ReportAdButton({
           </Dialog.Content>
           <Dialog.Actions>
             {success ? (
-              <Button onPress={reset}>Close</Button>
-            ) : (
               <Button
+                mode="outlined"
+                rippleColor={colors.brand[100]}
+                style={styles.pillButton}
+                onPress={reset}
+              >
+                Close
+              </Button>
+            ) : (
+              /* Web submits this one as its danger variant - the action is
+               * destructive for the advertiser, not a brand CTA. */
+              <Button
+                mode="contained"
+                buttonColor={colors.danger[600]}
+                textColor="#ffffff"
+                style={styles.pillButton}
                 onPress={submit}
                 loading={submitting}
                 disabled={submitting}
@@ -164,5 +201,32 @@ export function ReportAdButton({
 const styles = StyleSheet.create({
   form: {
     gap: 8,
+  },
+  trigger: {
+    alignSelf: 'stretch',
+    borderRadius: radius.full,
+  },
+  dialog: {
+    borderRadius: radius.xl,
+  },
+  reason: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 4,
+    marginBottom: 6,
+  },
+  reasonSelected: {
+    borderColor: colors.brand[300],
+    backgroundColor: colors.brand[50],
+  },
+  reasonLabel: {
+    textAlign: 'left',
+  },
+  input: {
+    backgroundColor: colors.surfaceCard,
+  },
+  pillButton: {
+    borderRadius: radius.full,
   },
 });

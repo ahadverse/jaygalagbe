@@ -1,42 +1,32 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
-import { ActivityIndicator, Chip, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator } from 'react-native-paper';
 
+import { BrandCard, StatTile } from '../../components/brand/brand-card';
+import { Eyebrow } from '../../components/brand/eyebrow';
 import { getAdStats } from '../../features/analytics/api';
 import {
   STATS_RANGE_PRESETS,
   type StatsRangeValue,
 } from '../../features/analytics/types';
 import type { MyAdsStackScreenProps } from '../../navigation/types';
+import { colors, fontFamily, radius } from '../../theme/tokens';
 
-function StatCard({ label, value }: { label: string; value: string }) {
-  const theme = useTheme();
-  return (
-    <View
-      style={[
-        styles.statCard,
-        { backgroundColor: theme.colors.surfaceVariant },
-      ]}
-    >
-      <Text
-        variant="labelMedium"
-        style={{ color: theme.colors.onSurfaceVariant }}
-      >
-        {label}
-      </Text>
-      <Text variant="titleLarge">{value}</Text>
-    </View>
-  );
-}
+// Series colors follow web/src/components/charts/palette.ts's assignment:
+// impressions in soft brand, visits in brand, leads in accent.
+const SERIES = {
+  impressions: colors.brand[300],
+  visits: colors.brand[600],
+  leads: colors.accent[600],
+};
 
 // Mirrors web/src/app/dashboard/ads/[id]/stats/page.tsx: 4 range presets (no
 // custom date pickers), the same 5 stat cards, a 3-series trend chart, and a
 // 3-stage funnel that's just the window's Impressions/Visits/Leads totals.
 export function AdStatsScreen({ route }: MyAdsStackScreenProps<'AdStats'>) {
   const { adId } = route.params;
-  const theme = useTheme();
   const [range, setRange] = useState<StatsRangeValue>('30d');
 
   const {
@@ -51,114 +41,159 @@ export function AdStatsScreen({ route }: MyAdsStackScreenProps<'AdStats'>) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.chipRow}>
-        {STATS_RANGE_PRESETS.map((preset) => (
-          <Chip
-            key={preset.value}
-            selected={range === preset.value}
-            onPress={() => setRange(preset.value)}
-          >
-            {preset.label}
-          </Chip>
-        ))}
+        {STATS_RANGE_PRESETS.map((preset) => {
+          const selected = range === preset.value;
+          return (
+            <Pressable
+              key={preset.value}
+              onPress={() => setRange(preset.value)}
+              style={[styles.pill, selected ? styles.pillSelected : null]}
+            >
+              <Text
+                style={[
+                  styles.pillLabel,
+                  selected ? styles.pillLabelSelected : null,
+                ]}
+              >
+                {preset.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       {isPending ? <ActivityIndicator style={styles.state} /> : null}
       {isError ? (
-        <Text style={[styles.state, { color: theme.colors.error }]}>
-          Couldn&apos;t load stats for this ad.
-        </Text>
+        <View style={styles.stateBlock}>
+          <Text style={styles.stateTitle}>Couldn&apos;t load stats</Text>
+          <Text style={styles.stateNote}>
+            Check your connection and try this range again.
+          </Text>
+        </View>
       ) : null}
 
       {stats ? (
         <>
           <View style={styles.statsGrid}>
-            <StatCard label="Impressions" value={String(stats.impressions)} />
-            <StatCard label="Visits" value={String(stats.visits)} />
-            <StatCard label="Leads" value={String(stats.conversions)} />
-            <StatCard
+            <StatTile
+              label="Impressions"
+              value={String(stats.impressions)}
+              style={styles.statTile}
+            />
+            <StatTile
+              label="Visits"
+              value={String(stats.visits)}
+              style={styles.statTile}
+            />
+            <StatTile
+              label="Leads"
+              value={String(stats.conversions)}
+              style={styles.statTile}
+            />
+            <StatTile
               label="Click-through"
               value={
                 stats.impressions > 0
                   ? `${((stats.visits / stats.impressions) * 100).toFixed(1)}%`
                   : '0%'
               }
+              style={styles.statTile}
             />
-            <StatCard
+            <StatTile
               label="Conversion rate"
               value={`${(stats.conversionRate * 100).toFixed(1)}%`}
+              style={styles.statTile}
             />
           </View>
 
-          {stats.series.some(
-            (point) => point.impressions || point.visits || point.conversions,
-          ) ? (
-            <View style={styles.chartCard}>
-              <Text variant="titleMedium" style={styles.chartTitle}>
-                Trend
-              </Text>
-              <LineChart
-                data={stats.series.map((point) => ({
-                  value: point.impressions,
-                }))}
-                data2={stats.series.map((point) => ({ value: point.visits }))}
-                data3={stats.series.map((point) => ({
-                  value: point.conversions,
-                }))}
-                color={theme.colors.primary}
-                color2={theme.colors.tertiary}
-                color3={theme.colors.secondary}
-                thickness={2}
-                hideDataPoints
-                spacing={Math.max(4, 300 / stats.series.length)}
-                height={180}
-                noOfSections={4}
-                xAxisLabelTextStyle={{ fontSize: 0 }}
-                yAxisTextStyle={{ color: theme.colors.onSurfaceVariant }}
-              />
-              <View style={styles.legendRow}>
-                <Text style={{ color: theme.colors.primary }}>
-                  - Impressions
-                </Text>
-                <Text style={{ color: theme.colors.tertiary }}>- Visits</Text>
-                <Text style={{ color: theme.colors.secondary }}>- Leads</Text>
-              </View>
+          <BrandCard variant="card" radius="lg" style={styles.chartCard}>
+            <View style={styles.chartHeader}>
+              <Eyebrow>Activity over time</Eyebrow>
+              <Text style={styles.chartTitle}>Trend</Text>
             </View>
-          ) : (
-            <Text style={{ color: theme.colors.onSurfaceVariant }}>
-              No activity in this range yet.
-            </Text>
-          )}
+            {stats.series.some(
+              (point) => point.impressions || point.visits || point.conversions,
+            ) ? (
+              <>
+                <LineChart
+                  data={stats.series.map((point) => ({
+                    value: point.impressions,
+                  }))}
+                  data2={stats.series.map((point) => ({ value: point.visits }))}
+                  data3={stats.series.map((point) => ({
+                    value: point.conversions,
+                  }))}
+                  color={SERIES.impressions}
+                  color2={SERIES.visits}
+                  color3={SERIES.leads}
+                  thickness={2}
+                  hideDataPoints
+                  spacing={Math.max(4, 300 / stats.series.length)}
+                  height={180}
+                  noOfSections={4}
+                  rulesColor={colors.neutral[300]}
+                  yAxisColor={colors.neutral[300]}
+                  xAxisColor={colors.neutral[300]}
+                  xAxisLabelTextStyle={{ fontSize: 0 }}
+                  yAxisTextStyle={styles.axisLabel}
+                />
+                <View style={styles.legendRow}>
+                  <LegendItem color={SERIES.impressions} label="Impressions" />
+                  <LegendItem color={SERIES.visits} label="Visits" />
+                  <LegendItem color={SERIES.leads} label="Leads" />
+                </View>
+              </>
+            ) : (
+              <Text style={styles.chartEmpty}>
+                No activity in this range yet. Try a wider range.
+              </Text>
+            )}
+          </BrandCard>
 
-          <View style={styles.chartCard}>
-            <Text variant="titleMedium" style={styles.chartTitle}>
-              Funnel
-            </Text>
+          <BrandCard variant="card" radius="lg" style={styles.chartCard}>
+            <View style={styles.chartHeader}>
+              <Eyebrow>Performance funnel</Eyebrow>
+              <Text style={styles.chartTitle}>Seen to contacted</Text>
+            </View>
             <BarChart
               data={[
                 {
                   value: stats.impressions,
                   label: 'Impressions',
-                  frontColor: theme.colors.primary,
+                  frontColor: SERIES.impressions,
                 },
                 {
                   value: stats.visits,
                   label: 'Visits',
-                  frontColor: theme.colors.tertiary,
+                  frontColor: SERIES.visits,
                 },
                 {
                   value: stats.conversions,
                   label: 'Leads',
-                  frontColor: theme.colors.secondary,
+                  frontColor: SERIES.leads,
                 },
               ]}
               height={160}
-              yAxisTextStyle={{ color: theme.colors.onSurfaceVariant }}
-              xAxisLabelTextStyle={{ color: theme.colors.onSurfaceVariant }}
+              barBorderRadius={radius.xs}
+              rulesColor={colors.neutral[300]}
+              yAxisColor={colors.neutral[300]}
+              xAxisColor={colors.neutral[300]}
+              yAxisTextStyle={styles.axisLabel}
+              xAxisLabelTextStyle={styles.axisLabel}
             />
-          </View>
+          </BrandCard>
         </>
       ) : null}
     </ScrollView>
+  );
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <View style={styles.legendItem}>
+      <View style={[styles.legendDot, { backgroundColor: color }]} />
+      <Text style={styles.legendLabel}>{label}</Text>
+    </View>
   );
 }
 
@@ -172,31 +207,94 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  pill: {
+    backgroundColor: colors.brand[50],
+    borderRadius: radius.full,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  pillSelected: {
+    backgroundColor: colors.brand[600],
+  },
+  pillLabel: {
+    fontFamily: fontFamily.textSemibold,
+    fontSize: 13,
+    lineHeight: 16,
+    color: colors.brand[800],
+  },
+  pillLabelSelected: {
+    color: colors.surfaceCard,
+  },
   state: {
-    textAlign: 'center',
     marginTop: 16,
+  },
+  stateBlock: {
+    marginTop: 24,
+    alignItems: 'center',
+    gap: 6,
+  },
+  stateTitle: {
+    fontFamily: fontFamily.displaySemibold,
+    fontSize: 16,
+    color: colors.neutral[700],
+  },
+  stateNote: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    textAlign: 'center',
+    color: colors.neutral[500],
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  statCard: {
-    borderRadius: 12,
-    padding: 12,
+  statTile: {
     minWidth: '30%',
     flexGrow: 1,
-    gap: 4,
+    padding: 12,
   },
   chartCard: {
-    gap: 8,
+    gap: 12,
+  },
+  chartHeader: {
+    gap: 4,
   },
   chartTitle: {
-    marginBottom: 4,
+    fontFamily: fontFamily.display,
+    fontSize: 17,
+    letterSpacing: -0.3,
+    color: colors.neutral[900],
+  },
+  chartEmpty: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    color: colors.neutral[500],
+  },
+  axisLabel: {
+    fontFamily: fontFamily.text,
+    fontSize: 11,
+    color: colors.neutral[500],
   },
   legendRow: {
     flexDirection: 'row',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 14,
     justifyContent: 'center',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+  },
+  legendLabel: {
+    fontFamily: fontFamily.textMedium,
+    fontSize: 12,
+    color: colors.neutral[600],
   },
 });

@@ -1,16 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import {
-  ActivityIndicator,
-  Chip,
-  SegmentedButtons,
-  Searchbar,
-  Text,
-  useTheme,
-} from 'react-native-paper';
+import { ActivityIndicator, Text } from 'react-native-paper';
 
 import { AdCard } from '../../components/ads/ad-card';
+import { Eyebrow } from '../../components/brand/eyebrow';
+import { Hero } from '../../components/home/hero';
 import { getLiveAds } from '../../features/ads/api';
 import { sectors, type SectorSlug } from '../../features/ads/sectors';
 import type { Ad } from '../../features/ads/types';
@@ -19,23 +14,11 @@ import {
   useAdImpressions,
 } from '../../features/analytics/use-ad-impressions';
 import type { HomeStackScreenProps } from '../../navigation/types';
-
-// Mirrors web/src/components/home/hero.tsx's hardcoded shortlist - same
-// reasoning applies here (a handful of areas people actually search, not a
-// full district list; that's the district-browse section web has and this
-// trimmed mobile home screen intentionally drops, see app.md).
-const POPULAR_AREAS = [
-  'Dhanmondi',
-  'Bashundhara',
-  'Uttara',
-  'Chattogram',
-  'Sylhet',
-];
+import { colors } from '../../theme/tokens';
 
 const LATEST_TAKE = 10;
 
 export function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>) {
-  const theme = useTheme();
   const [sector, setSector] = useState<SectorSlug>(sectors[0].slug);
   const [location, setLocation] = useState('');
   const onViewableItemsChanged = useAdImpressions('HOMEPAGE');
@@ -64,89 +47,79 @@ export function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>) {
       data={ads ?? []}
       keyExtractor={(ad) => ad.id}
       renderItem={({ item }) => (
-        <AdCard
-          ad={item}
-          onPress={() => navigation.push('AdDetail', { adId: item.id })}
-        />
+        <View style={styles.cardSlot}>
+          <AdCard
+            ad={item}
+            onPress={() => navigation.push('AdDetail', { adId: item.id })}
+          />
+        </View>
       )}
       onViewableItemsChanged={onViewableItemsChanged}
       viewabilityConfig={AD_IMPRESSION_VIEWABILITY_CONFIG}
-      contentContainerStyle={styles.listContent}
+      style={styles.list}
       ListHeaderComponent={
-        <View style={styles.header}>
-          <SegmentedButtons
-            value={sector}
-            onValueChange={(value) => setSector(value as SectorSlug)}
-            buttons={sectors.map((option) => ({
-              value: option.slug,
-              label: option.label,
-            }))}
+        <View>
+          <Hero
+            sector={sector}
+            onSectorChange={setSector}
+            location={location}
+            onLocationChange={setLocation}
+            onSearch={goToSectorListing}
           />
 
-          <Searchbar
-            placeholder="Area or district - e.g. Dhanmondi, Dhaka"
-            value={location}
-            onChangeText={setLocation}
-            onSubmitEditing={() => goToSectorListing(location)}
-            onIconPress={() => goToSectorListing(location)}
-          />
+          <View style={styles.latestHeader}>
+            <View style={styles.sectionHeading}>
+              <Eyebrow>Fresh on the market</Eyebrow>
+              <Text variant="headlineSmall">Latest listings</Text>
+            </View>
 
-          <View style={styles.chipRow}>
-            {POPULAR_AREAS.map((area) => (
-              <Chip key={area} onPress={() => goToSectorListing(area)}>
-                {area}
-              </Chip>
-            ))}
+            {isPending ? (
+              <ActivityIndicator style={styles.stateIndicator} />
+            ) : null}
+            {isError ? (
+              <Text style={[styles.stateIndicator, styles.errorText]}>
+                Couldn&apos;t load listings. Pull down to try again.
+              </Text>
+            ) : null}
+            {!isPending && !isError && ads?.length === 0 ? (
+              <Text style={[styles.stateIndicator, styles.mutedText]}>
+                No listings yet - check back shortly.
+              </Text>
+            ) : null}
           </View>
-
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Latest listings
-          </Text>
-
-          {isPending ? (
-            <ActivityIndicator style={styles.stateIndicator} />
-          ) : null}
-          {isError ? (
-            <Text
-              style={[styles.stateIndicator, { color: theme.colors.error }]}
-            >
-              Couldn&apos;t load listings. Pull down to try again.
-            </Text>
-          ) : null}
-          {!isPending && !isError && ads?.length === 0 ? (
-            <Text
-              style={[
-                styles.stateIndicator,
-                { color: theme.colors.onSurfaceVariant },
-              ]}
-            >
-              No listings yet - check back shortly.
-            </Text>
-          ) : null}
         </View>
       }
+      ListFooterComponent={<View style={styles.listFooter} />}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  listContent: {
-    padding: 16,
+  list: {
+    backgroundColor: colors.surface,
   },
-  header: {
-    gap: 16,
-    marginBottom: 8,
+  cardSlot: {
+    paddingHorizontal: 16,
   },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  latestHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 22,
+    paddingBottom: 4,
   },
-  sectionTitle: {
-    marginTop: 4,
+  listFooter: {
+    height: 8,
+  },
+  sectionHeading: {
+    gap: 4,
   },
   stateIndicator: {
     marginTop: 8,
     textAlign: 'center',
+  },
+  errorText: {
+    color: colors.danger[600],
+  },
+  mutedText: {
+    color: colors.neutral[600],
   },
 });

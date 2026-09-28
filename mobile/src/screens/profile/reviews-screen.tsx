@@ -1,23 +1,25 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   ActivityIndicator,
   Button,
-  Card,
   HelperText,
-  IconButton,
-  Text,
   TextInput,
-  useTheme,
 } from 'react-native-paper';
 
 import { ApiError } from '../../api/errors';
+import { BrandCard } from '../../components/brand/brand-card';
+import { Eyebrow } from '../../components/brand/eyebrow';
 import { useAuth } from '../../features/auth/auth-context';
 import { getMyConversations } from '../../features/messaging/api';
 import { getReviewsBatch, upsertReview } from '../../features/reviews/api';
 import type { Review } from '../../features/reviews/types';
 import { formatRelativeTime } from '../../lib/format';
+import { colors, fontFamily, radius } from '../../theme/tokens';
+
+const STARS = [1, 2, 3, 4, 5];
 
 type ReviewableAdvertiser = {
   advertiserId: string;
@@ -65,6 +67,16 @@ function useReviewableAdvertisers(userId: string) {
   });
 }
 
+function Star({ filled, size }: { filled: boolean; size: number }) {
+  return (
+    <Ionicons
+      name={filled ? 'star' : 'star-outline'}
+      size={size}
+      color={filled ? colors.warning[500] : colors.neutral[300]}
+    />
+  );
+}
+
 function StarRatingInput({
   value,
   onChange,
@@ -74,21 +86,30 @@ function StarRatingInput({
 }) {
   return (
     <View style={styles.starRow}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <IconButton
+      {STARS.map((n) => (
+        <Pressable
           key={n}
-          icon={n <= value ? 'star' : 'star-outline'}
-          size={22}
-          style={styles.starButton}
           onPress={() => onChange(n)}
-        />
+          hitSlop={6}
+          style={styles.starTarget}
+          accessibilityRole="button"
+          accessibilityLabel={`Rate ${n} out of 5`}
+        >
+          <Star filled={n <= value} size={26} />
+        </Pressable>
       ))}
     </View>
   );
 }
 
 function StarDisplay({ rating }: { rating: number }) {
-  return <Text>{'★'.repeat(rating) + '☆'.repeat(5 - rating)}</Text>;
+  return (
+    <View style={styles.starRow}>
+      {STARS.map((n) => (
+        <Star key={n} filled={n <= rating} size={15} />
+      ))}
+    </View>
+  );
 }
 
 function ReviewableCard({
@@ -130,36 +151,39 @@ function ReviewableCard({
   }
 
   return (
-    <Card style={styles.card}>
-      <Card.Title title={advertiser.name} />
-      <Card.Content style={styles.cardContent}>
-        <StarRatingInput value={rating} onChange={setRating} />
-        <TextInput
-          mode="outlined"
-          label="Comment (optional)"
-          placeholder="How was dealing with this advertiser?"
-          value={comment}
-          onChangeText={setComment}
-          multiline
-          maxLength={1000}
-        />
-        {error ? (
-          <HelperText type="error" visible>
-            {error}
-          </HelperText>
-        ) : null}
-        {saved ? (
-          <HelperText type="info" visible>
-            Review saved.
-          </HelperText>
-        ) : null}
-      </Card.Content>
-      <Card.Actions>
-        <Button onPress={submit} loading={saving} disabled={saving}>
-          {advertiser.existing ? 'Update review' : 'Submit review'}
-        </Button>
-      </Card.Actions>
-    </Card>
+    <BrandCard variant="card" radius="lg" style={styles.card}>
+      <Text style={styles.personName}>{advertiser.name}</Text>
+      <StarRatingInput value={rating} onChange={setRating} />
+      <TextInput
+        mode="outlined"
+        label="Comment (optional)"
+        placeholder="How was dealing with this advertiser?"
+        value={comment}
+        onChangeText={setComment}
+        multiline
+        maxLength={1000}
+      />
+      {error ? (
+        <HelperText type="error" visible>
+          {error}
+        </HelperText>
+      ) : null}
+      {saved ? (
+        <HelperText type="info" visible>
+          Review saved.
+        </HelperText>
+      ) : null}
+      <Button
+        mode="contained"
+        onPress={submit}
+        loading={saving}
+        disabled={saving}
+        style={styles.submitButton}
+        contentStyle={styles.submitContent}
+      >
+        {advertiser.existing ? 'Update review' : 'Submit review'}
+      </Button>
+    </BrandCard>
   );
 }
 
@@ -167,7 +191,6 @@ function ReviewableCard({
 // app.md - both sections always show together, unlike web's toggle.
 export function ReviewsScreen() {
   const { user } = useAuth();
-  const theme = useTheme();
   const queryClient = useQueryClient();
   const { data: received, isPending: loadingReceived } = useReceivedReviews(
     user!.id,
@@ -182,37 +205,33 @@ export function ReviewsScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.section}>
-        <Text variant="titleMedium">About you</Text>
-        <Text
-          variant="bodySmall"
-          style={{ color: theme.colors.onSurfaceVariant }}
-        >
+        <Eyebrow>Received</Eyebrow>
+        <Text style={styles.sectionTitle}>About you</Text>
+        <Text style={styles.sectionHint}>
           Reviews left by people who contacted you.
         </Text>
         {loadingReceived ? (
           <ActivityIndicator />
         ) : received && received.reviews.length > 0 ? (
           received.reviews.map((review) => (
-            <View
+            <BrandCard
               key={review.id}
-              style={[
-                styles.reviewRow,
-                { borderBottomColor: theme.colors.outlineVariant },
-              ]}
+              variant="card"
+              radius="lg"
+              style={styles.card}
             >
               <StarDisplay rating={review.rating} />
-              <Text variant="titleSmall">{review.customer.name}</Text>
-              <Text
-                variant="bodySmall"
-                style={{ color: theme.colors.onSurfaceVariant }}
-              >
+              <Text style={styles.personName}>{review.customer.name}</Text>
+              {review.comment ? (
+                <Text style={styles.reviewBody}>{review.comment}</Text>
+              ) : null}
+              <Text style={styles.reviewDate}>
                 {formatRelativeTime(review.createdAt)}
               </Text>
-              {review.comment ? <Text>{review.comment}</Text> : null}
-            </View>
+            </BrandCard>
           ))
         ) : (
-          <Text style={{ color: theme.colors.onSurfaceVariant }}>
+          <Text style={styles.emptyText}>
             Nobody has reviewed you yet. Reviews appear once someone you have
             talked to rates the experience.
           </Text>
@@ -220,11 +239,9 @@ export function ReviewsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text variant="titleMedium">Rate an owner</Text>
-        <Text
-          variant="bodySmall"
-          style={{ color: theme.colors.onSurfaceVariant }}
-        >
+        <Eyebrow>Given</Eyebrow>
+        <Text style={styles.sectionTitle}>Rate an owner</Text>
+        <Text style={styles.sectionHint}>
           Anyone whose listing you have messaged about.
         </Text>
         {loadingReviewable ? (
@@ -238,7 +255,7 @@ export function ReviewsScreen() {
             />
           ))
         ) : (
-          <Text style={{ color: theme.colors.onSurfaceVariant }}>
+          <Text style={styles.emptyText}>
             Contact an owner about a listing and you will be able to rate them
             here.
           </Text>
@@ -254,24 +271,64 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   section: {
-    gap: 8,
+    gap: 4,
+  },
+  sectionTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 20,
+    letterSpacing: -0.4,
+    color: colors.neutral[900],
+  },
+  sectionHint: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.neutral[600],
+    marginBottom: 6,
   },
   card: {
-    marginTop: 4,
-  },
-  cardContent: {
+    marginTop: 6,
     gap: 8,
   },
   starRow: {
     flexDirection: 'row',
-    marginLeft: -8,
+    alignSelf: 'flex-start',
+    gap: 2,
   },
-  starButton: {
-    margin: 0,
+  starTarget: {
+    paddingVertical: 2,
+    paddingHorizontal: 3,
   },
-  reviewRow: {
-    gap: 4,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  personName: {
+    fontFamily: fontFamily.displaySemibold,
+    fontSize: 16,
+    letterSpacing: -0.2,
+    color: colors.neutral[900],
+  },
+  reviewBody: {
+    fontFamily: fontFamily.text,
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.neutral[700],
+  },
+  reviewDate: {
+    fontFamily: fontFamily.text,
+    fontSize: 12,
+    color: colors.neutral[500],
+  },
+  emptyText: {
+    fontFamily: fontFamily.text,
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.neutral[500],
+  },
+  submitButton: {
+    borderRadius: radius.full,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  submitContent: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
 });

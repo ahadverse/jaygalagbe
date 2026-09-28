@@ -9,6 +9,7 @@ import { ProfileScreen } from '../screens/profile/profile-screen';
 import { ReviewsScreen } from '../screens/profile/reviews-screen';
 import { SavedScreen } from '../screens/profile/saved-screen';
 import { SettingsScreen } from '../screens/profile/settings-screen';
+import { defaultStackScreenOptions } from './screen-options';
 import type { ProfileStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -19,7 +20,7 @@ export function ProfileStack() {
   const { user } = useAuth();
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={defaultStackScreenOptions}>
       {user ? (
         <>
           <Stack.Screen

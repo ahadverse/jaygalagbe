@@ -1,78 +1,114 @@
 import {
-  argbFromHex,
-  hexFromArgb,
-  themeFromSourceColor,
-  type Scheme,
-} from '@material/material-color-utilities';
-import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
+  configureFonts,
+  MD3LightTheme,
+  type MD3Theme,
+} from 'react-native-paper';
 
-// Seed colors pulled from web/src/app/globals.css's OKLCH brand tokens
-// (--color-brand-500, --color-accent-500), converted to sRGB hex. The two
-// apps intentionally don't share a component system (this one is native
-// MD3, not a port of web's Tailwind system), but using the same seed hues
-// keeps them reading as one brand.
-const BRAND_SEED_HEX = '#ed5f0b'; // burnt-orange, brand-500
-const ACCENT_SEED_HEX = '#da354e'; // crimson, accent-500
+import { colors, fontFamily } from './tokens';
 
-const brandTheme = themeFromSourceColor(argbFromHex(BRAND_SEED_HEX));
-// On web, crimson is "reserved almost exclusively" for special emphasis.
-// MD3's tertiary role (a contrasting accent) is the closest semantic match,
-// so it borrows the accent seed's own primary family rather than the brand
-// seed's algorithmically hue-shifted tertiary.
-const accentTheme = themeFromSourceColor(argbFromHex(ACCENT_SEED_HEX));
-
-function buildColors(mode: 'light' | 'dark') {
-  const brand: Scheme =
-    mode === 'light' ? brandTheme.schemes.light : brandTheme.schemes.dark;
-  const accent: Scheme =
-    mode === 'light' ? accentTheme.schemes.light : accentTheme.schemes.dark;
-  const hex = (argb: number) => hexFromArgb(argb);
-
-  return {
-    primary: hex(brand.primary),
-    onPrimary: hex(brand.onPrimary),
-    primaryContainer: hex(brand.primaryContainer),
-    onPrimaryContainer: hex(brand.onPrimaryContainer),
-    secondary: hex(brand.secondary),
-    onSecondary: hex(brand.onSecondary),
-    secondaryContainer: hex(brand.secondaryContainer),
-    onSecondaryContainer: hex(brand.onSecondaryContainer),
-    tertiary: hex(accent.primary),
-    onTertiary: hex(accent.onPrimary),
-    tertiaryContainer: hex(accent.primaryContainer),
-    onTertiaryContainer: hex(accent.onPrimaryContainer),
-    error: hex(brand.error),
-    onError: hex(brand.onError),
-    errorContainer: hex(brand.errorContainer),
-    onErrorContainer: hex(brand.onErrorContainer),
-    background: hex(brand.background),
-    onBackground: hex(brand.onBackground),
-    surface: hex(brand.surface),
-    onSurface: hex(brand.onSurface),
-    surfaceVariant: hex(brand.surfaceVariant),
-    onSurfaceVariant: hex(brand.onSurfaceVariant),
-    outline: hex(brand.outline),
-    outlineVariant: hex(brand.outlineVariant),
-    shadow: hex(brand.shadow),
-    scrim: hex(brand.scrim),
-    inverseSurface: hex(brand.inverseSurface),
-    inverseOnSurface: hex(brand.inverseOnSurface),
-    inversePrimary: hex(brand.inversePrimary),
-  };
-}
-
-export const jaygalagbeLightTheme: MD3Theme = {
-  ...MD3LightTheme,
-  colors: {
-    ...MD3LightTheme.colors,
-    ...buildColors('light'),
+// Web has no dark mode ("intentionally light/off-white only", see
+// web/src/app/globals.css) and app.json's userInterfaceStyle is "light", so
+// there's exactly one theme here - no light/dark pair to pick between.
+const fontConfig = {
+  displayLarge: {
+    fontFamily: fontFamily.display,
+    fontWeight: '700' as const,
+    letterSpacing: -0.25,
   },
+  displayMedium: {
+    fontFamily: fontFamily.display,
+    fontWeight: '700' as const,
+    letterSpacing: -0.25,
+  },
+  displaySmall: {
+    fontFamily: fontFamily.display,
+    fontWeight: '700' as const,
+    letterSpacing: -0.2,
+  },
+  headlineLarge: {
+    fontFamily: fontFamily.display,
+    fontWeight: '700' as const,
+    letterSpacing: -0.2,
+  },
+  headlineMedium: {
+    fontFamily: fontFamily.display,
+    fontWeight: '700' as const,
+    letterSpacing: -0.15,
+  },
+  headlineSmall: {
+    fontFamily: fontFamily.display,
+    fontWeight: '700' as const,
+    letterSpacing: -0.1,
+  },
+  titleLarge: {
+    fontFamily: fontFamily.displaySemibold,
+    fontWeight: '600' as const,
+    letterSpacing: -0.1,
+  },
+  titleMedium: {
+    fontFamily: fontFamily.displaySemibold,
+    fontWeight: '600' as const,
+  },
+  titleSmall: {
+    fontFamily: fontFamily.displaySemibold,
+    fontWeight: '600' as const,
+  },
+  bodyLarge: { fontFamily: fontFamily.text, fontWeight: '400' as const },
+  bodyMedium: { fontFamily: fontFamily.text, fontWeight: '400' as const },
+  bodySmall: { fontFamily: fontFamily.text, fontWeight: '400' as const },
+  labelLarge: { fontFamily: fontFamily.textMedium, fontWeight: '500' as const },
+  labelMedium: {
+    fontFamily: fontFamily.textMedium,
+    fontWeight: '500' as const,
+  },
+  labelSmall: { fontFamily: fontFamily.textMedium, fontWeight: '500' as const },
 };
 
-export const jaygalagbeDarkTheme: MD3Theme = {
-  ...MD3DarkTheme,
+export const jaygalagbeTheme: MD3Theme = {
+  ...MD3LightTheme,
+  // Paper multiplies roundness by 1/2/3/4 depending on component; 3 lands
+  // default cards/buttons around 12px, matching web's rounded-xl baseline.
+  roundness: 3,
+  fonts: configureFonts({ config: fontConfig }),
   colors: {
-    ...MD3DarkTheme.colors,
-    ...buildColors('dark'),
+    ...MD3LightTheme.colors,
+    primary: colors.brand[700],
+    onPrimary: '#ffffff',
+    primaryContainer: colors.brand[100],
+    onPrimaryContainer: colors.brand[800],
+    secondary: colors.brand[500],
+    onSecondary: '#ffffff',
+    secondaryContainer: colors.brand[50],
+    onSecondaryContainer: colors.brand[800],
+    // Web reserves crimson accent almost exclusively for "boosted"/paid
+    // surfaces and things that need attention - MD3's tertiary role is the
+    // closest match for that "special emphasis, used sparingly" semantic.
+    tertiary: colors.accent[600],
+    onTertiary: '#ffffff',
+    tertiaryContainer: colors.accent[100],
+    onTertiaryContainer: colors.accent[800],
+    error: colors.danger[600],
+    onError: '#ffffff',
+    errorContainer: colors.danger[100],
+    onErrorContainer: colors.danger[800],
+    background: colors.surface,
+    onBackground: colors.neutral[900],
+    surface: colors.surfaceCard,
+    onSurface: colors.neutral[900],
+    surfaceVariant: colors.neutral[100],
+    onSurfaceVariant: colors.neutral[600],
+    outline: colors.border,
+    outlineVariant: colors.neutral[200],
+    inverseSurface: colors.neutral[900],
+    inverseOnSurface: colors.neutral[50],
+    inversePrimary: colors.brand[200],
+    elevation: {
+      level0: 'transparent',
+      level1: colors.surfaceCard,
+      level2: colors.surfaceCard,
+      level3: colors.surfaceCard,
+      level4: colors.surfaceCard,
+      level5: colors.surfaceCard,
+    },
   },
 };

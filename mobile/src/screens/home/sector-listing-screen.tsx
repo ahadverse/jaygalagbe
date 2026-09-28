@@ -8,10 +8,10 @@ import {
   SegmentedButtons,
   Text,
   TextInput,
-  useTheme,
 } from 'react-native-paper';
 
 import { AdCard } from '../../components/ads/ad-card';
+import { BrandCard } from '../../components/brand/brand-card';
 import { getLiveAds } from '../../features/ads/api';
 import { getSectorOption } from '../../features/ads/sectors';
 import type { Ad } from '../../features/ads/types';
@@ -25,6 +25,7 @@ import {
   AD_IMPRESSION_VIEWABILITY_CONFIG,
 } from '../../features/analytics/use-ad-impressions';
 import type { HomeStackScreenProps } from '../../navigation/types';
+import { colors, radius, shadow } from '../../theme/tokens';
 
 const BROWSE_TAKE = 200;
 const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
@@ -39,7 +40,6 @@ export function SectorListingScreen({
   route,
   navigation,
 }: HomeStackScreenProps<'SectorListing'>) {
-  const theme = useTheme();
   const { sector: slug, location: initialLocation } = route.params;
   const sectorOption = getSectorOption(slug);
 
@@ -110,118 +110,156 @@ export function SectorListingScreen({
       )}
       onViewableItemsChanged={onViewableItemsChanged}
       viewabilityConfig={AD_IMPRESSION_VIEWABILITY_CONFIG}
+      style={styles.list}
       contentContainerStyle={styles.listContent}
       ListHeaderComponent={
         <View style={styles.header}>
-          <TextInput
-            mode="outlined"
-            label="Keyword"
-            placeholder="e.g. corner plot, near school"
-            value={q}
-            onChangeText={setQ}
-          />
-          <TextInput
-            mode="outlined"
-            label="Location"
-            placeholder="Area or district"
-            value={location}
-            onChangeText={setLocation}
-          />
-
-          <View style={styles.row}>
+          {/* Web renders the filters as a floating sheet over the canvas
+           * (sector-filters.tsx), so they're grouped rather than sitting
+           * loose on the background. */}
+          <BrandCard variant="card" radius="lg" style={styles.filterPanel}>
             <TextInput
               mode="outlined"
-              label="Min price"
-              keyboardType="numeric"
-              value={minPrice}
-              onChangeText={setMinPrice}
-              style={styles.flex1}
+              label="Keyword"
+              placeholder="e.g. corner plot, near school"
+              value={q}
+              onChangeText={setQ}
+              style={styles.input}
             />
             <TextInput
               mode="outlined"
-              label="Max price"
-              keyboardType="numeric"
-              value={maxPrice}
-              onChangeText={setMaxPrice}
-              style={styles.flex1}
+              label="Location"
+              placeholder="Area or district"
+              value={location}
+              onChangeText={setLocation}
+              style={styles.input}
             />
-          </View>
 
-          <View style={styles.chipRow}>
-            {sectorOption.propertyTypes.map((type) => (
-              <Chip
-                key={type}
-                selected={propertyType === type}
-                onPress={() =>
-                  setPropertyType((current) =>
-                    current === type ? undefined : type,
-                  )
-                }
-              >
-                {type}
-              </Chip>
-            ))}
-          </View>
-
-          {sectorOption.sector === 'LAND' ? (
-            <TextInput
-              mode="outlined"
-              label="Min size (katha)"
-              keyboardType="numeric"
-              value={minSize}
-              onChangeText={setMinSize}
-            />
-          ) : (
-            <View style={styles.chipRow}>
-              {BEDROOM_OPTIONS.map((count) => (
-                <Chip
-                  key={count}
-                  selected={bedrooms === count}
-                  onPress={() =>
-                    setBedrooms((current) =>
-                      current === count ? undefined : count,
-                    )
-                  }
-                >
-                  {count}+ beds
-                </Chip>
-              ))}
+            <View style={styles.row}>
+              <TextInput
+                mode="outlined"
+                label="Min price"
+                keyboardType="numeric"
+                value={minPrice}
+                onChangeText={setMinPrice}
+                style={[styles.input, styles.flex1]}
+              />
+              <TextInput
+                mode="outlined"
+                label="Max price"
+                keyboardType="numeric"
+                value={maxPrice}
+                onChangeText={setMaxPrice}
+                style={[styles.input, styles.flex1]}
+              />
             </View>
-          )}
 
-          <SegmentedButtons
-            value={sort}
-            onValueChange={(value) => setSort(value as SortOption)}
-            buttons={SORT_BUTTONS}
-          />
+            <View style={styles.chipRow}>
+              {sectorOption.propertyTypes.map((type) => {
+                const selected = propertyType === type;
+                return (
+                  <Chip
+                    key={type}
+                    selected={selected}
+                    showSelectedCheck={false}
+                    onPress={() =>
+                      setPropertyType((current) =>
+                        current === type ? undefined : type,
+                      )
+                    }
+                    style={[
+                      styles.filterChip,
+                      selected ? styles.filterChipSelected : null,
+                    ]}
+                    textStyle={
+                      selected
+                        ? styles.filterChipLabelSelected
+                        : styles.filterChipLabel
+                    }
+                  >
+                    {type}
+                  </Chip>
+                );
+              })}
+            </View>
 
-          {hasActiveFilters ? (
-            <Button
-              mode="text"
-              onPress={clearFilters}
-              style={styles.clearButton}
-            >
-              Clear filters
-            </Button>
-          ) : null}
+            {sectorOption.sector === 'LAND' ? (
+              <TextInput
+                mode="outlined"
+                label="Min size (katha)"
+                keyboardType="numeric"
+                value={minSize}
+                onChangeText={setMinSize}
+                style={styles.input}
+              />
+            ) : (
+              <View style={styles.chipRow}>
+                {BEDROOM_OPTIONS.map((count) => {
+                  const selected = bedrooms === count;
+                  return (
+                    <Chip
+                      key={count}
+                      selected={selected}
+                      showSelectedCheck={false}
+                      onPress={() =>
+                        setBedrooms((current) =>
+                          current === count ? undefined : count,
+                        )
+                      }
+                      style={[
+                        styles.filterChip,
+                        selected ? styles.filterChipSelected : null,
+                      ]}
+                      textStyle={
+                        selected
+                          ? styles.filterChipLabelSelected
+                          : styles.filterChipLabel
+                      }
+                    >
+                      {count}+ beds
+                    </Chip>
+                  );
+                })}
+              </View>
+            )}
+
+            <View style={styles.toggleTrack}>
+              <SegmentedButtons
+                value={sort}
+                onValueChange={(value) => setSort(value as SortOption)}
+                buttons={SORT_BUTTONS.map((option) => ({
+                  ...option,
+                  checkedColor: colors.brand[800],
+                  uncheckedColor: colors.neutral[600],
+                  style: [
+                    styles.toggleSegment,
+                    sort === option.value ? styles.toggleSegmentActive : null,
+                  ],
+                }))}
+              />
+            </View>
+
+            {hasActiveFilters ? (
+              <Button
+                mode="text"
+                onPress={clearFilters}
+                style={styles.clearButton}
+              >
+                Clear filters
+              </Button>
+            ) : null}
+          </BrandCard>
 
           {isPending ? (
             <ActivityIndicator style={styles.stateIndicator} />
           ) : null}
           {isError ? (
-            <Text
-              style={[styles.stateIndicator, { color: theme.colors.error }]}
-            >
+            <Text style={[styles.stateIndicator, styles.errorText]}>
               Couldn&apos;t load listings. Pull down to try again.
             </Text>
           ) : null}
           {!isPending && !isError ? (
-            <Text
-              style={[
-                styles.stateIndicator,
-                { color: theme.colors.onSurfaceVariant },
-              ]}
-            >
+            <Text style={[styles.stateIndicator, styles.mutedText]}>
               {filteredAds.length === 0
                 ? hasActiveFilters
                   ? 'No listings match those filters.'
@@ -236,12 +274,23 @@ export function SectorListingScreen({
 }
 
 const styles = StyleSheet.create({
+  list: {
+    backgroundColor: colors.surface,
+  },
   listContent: {
     padding: 16,
   },
   header: {
     gap: 12,
     marginBottom: 8,
+  },
+  filterPanel: {
+    gap: 12,
+  },
+  // The outlined inputs sit on the white sheet, not the canvas, and Paper
+  // takes the label's notch fill from this same backgroundColor.
+  input: {
+    backgroundColor: colors.surfaceCard,
   },
   row: {
     flexDirection: 'row',
@@ -255,11 +304,51 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  filterChip: {
+    backgroundColor: colors.brand[50],
+    borderColor: colors.brand[100],
+    borderRadius: radius.full,
+  },
+  filterChipSelected: {
+    backgroundColor: colors.brand[600],
+    borderColor: colors.brand[600],
+  },
+  filterChipLabel: {
+    color: colors.brand[800],
+  },
+  filterChipLabelSelected: {
+    color: '#ffffff',
+  },
+  toggleTrack: {
+    backgroundColor: colors.neutral[100],
+    borderRadius: radius.full,
+    padding: 4,
+  },
+  toggleSegment: {
+    borderWidth: 0,
+    borderLeftWidth: 0,
+    backgroundColor: 'transparent',
+    borderTopLeftRadius: radius.full,
+    borderTopRightRadius: radius.full,
+    borderBottomLeftRadius: radius.full,
+    borderBottomRightRadius: radius.full,
+  },
+  toggleSegmentActive: {
+    backgroundColor: colors.surfaceCard,
+    ...shadow('sm'),
+  },
   clearButton: {
     alignSelf: 'flex-start',
+    borderRadius: radius.full,
   },
   stateIndicator: {
     marginTop: 4,
     textAlign: 'center',
+  },
+  errorText: {
+    color: colors.danger[600],
+  },
+  mutedText: {
+    color: colors.neutral[600],
   },
 });
