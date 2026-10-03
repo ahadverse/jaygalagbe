@@ -7,10 +7,8 @@ import { ActivityIndicator } from 'react-native-paper';
 import { AdCard } from '../../components/ads/ad-card';
 import { Eyebrow } from '../../components/brand/eyebrow';
 import { getAd } from '../../features/ads/api';
-import {
-  useRecentlyViewedIds,
-  useSavedAdIds,
-} from '../../features/ads/local-lists';
+import { useRecentlyViewedIds } from '../../features/ads/local-lists';
+import { useSavedAdIds } from '../../features/ads/saved-ads';
 import type { Ad } from '../../features/ads/types';
 import type { ProfileStackScreenProps } from '../../navigation/types';
 import { colors, fontFamily } from '../../theme/tokens';
@@ -79,10 +77,10 @@ export function SavedScreen({ navigation }: ProfileStackScreenProps<'Saved'>) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <AdSection
-        eyebrow="Kept on this device"
+        eyebrow="Synced to your account"
         title="Saved listings"
         emptyText={
-          'Tap "Save this ad" on any listing and it will be kept here on this device.'
+          'Tap "Save this ad" on any listing and it will be kept here, on every device you sign in on.'
         }
         emptyIcon="bookmark-outline"
         ids={savedIds}

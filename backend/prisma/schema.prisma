@@ -1,22 +1,22 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   name         String
-  email        String?  @unique
-  phone        String?  @unique
+  email        String?
+  phone        String?
   passwordHash String
   isAdmin      Boolean  @default(false)
   isVerified   Boolean  @default(false)
@@ -37,6 +37,7 @@ model User {
   adVisits                AdVisit[]
   adConversions           AdConversion[]
   auditEntries            AdminAuditLog[] @relation("AuditActor")
+  savedAds                SavedAd[]
 
   @@map("users")
 }
@@ -55,13 +56,13 @@ enum AdStatus {
 }
 
 model Ad {
-  id               String   @id @default(cuid())
-  ownerId          String
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId          String @db.ObjectId
   owner            User     @relation(fields: [ownerId], references: [id])
   sector           Sector
   title            String
   description      String
-  price            Decimal  @db.Decimal(12, 2)
+  price            Float  
   locationDivision String?
   locationArea     String
   locationDistrict String
@@ -82,8 +83,22 @@ model Ad {
   impressions   AdImpression[]
   visits        AdVisit[]
   conversions   AdConversion[]
+  savedBy       SavedAd[]
 
   @@map("ads")
+}
+
+model SavedAd {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  adId      String   @db.ObjectId
+  ad        Ad       @relation(fields: [adId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, adId])
+  @@index([userId, createdAt])
+  @@map("saved_ads")
 }
 
 enum BoostTier {
@@ -112,14 +127,14 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id         String         @id @default(cuid())
-  userId     String
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String @db.ObjectId
   user       User           @relation(fields: [userId], references: [id])
-  adId       String
+  adId       String @db.ObjectId
   ad         Ad             @relation(fields: [adId], references: [id])
   gateway    PaymentGateway
-  gatewayRef String?        @unique
-  amount     Decimal        @db.Decimal(12, 2)
+  gatewayRef String?
+  amount     Float  
   status     PaymentStatus  @default(PENDING)
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
@@ -129,16 +144,17 @@ model Payment {
   @@map("payments")
 }
 
-// Partial unique index on (adId) WHERE status IN (PENDING, ACTIVE) exists
-// in the database (see migrations/); not representable in this DSL.
+// "One pending/active boost per ad" used to be a Postgres partial unique
+// index. MongoDB has no equivalent, so BoostService.purchase enforces it
+// inside a transaction.
 model Boost {
-  id        String      @id @default(cuid())
-  adId      String
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  adId      String @db.ObjectId
   ad        Ad          @relation(fields: [adId], references: [id])
   tier      BoostTier
   startAt   DateTime?
   endAt     DateTime?
-  paymentId String      @unique
+  paymentId String @unique @db.ObjectId
   payment   Payment     @relation(fields: [paymentId], references: [id])
   status    BoostStatus @default(PENDING)
   createdAt DateTime    @default(now())
@@ -148,12 +164,12 @@ model Boost {
 }
 
 model Conversation {
-  id           String   @id @default(cuid())
-  adId         String
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  adId         String @db.ObjectId
   ad           Ad       @relation(fields: [adId], references: [id])
-  customerId   String
+  customerId   String @db.ObjectId
   customer     User     @relation("CustomerConversations", fields: [customerId], references: [id])
-  advertiserId String
+  advertiserId String @db.ObjectId
   advertiser   User     @relation("AdvertiserConversations", fields: [advertiserId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -165,10 +181,10 @@ model Conversation {
 }
 
 model Message {
-  id             String       @id @default(cuid())
-  conversationId String
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String @db.ObjectId
   conversation   Conversation @relation(fields: [conversationId], references: [id])
-  senderId       String
+  senderId       String @db.ObjectId
   sender         User         @relation(fields: [senderId], references: [id])
   body           String
   deliveredAt    DateTime?
@@ -179,10 +195,10 @@ model Message {
 }
 
 model Review {
-  id           String   @id @default(cuid())
-  advertiserId String
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  advertiserId String @db.ObjectId
   advertiser   User     @relation("AdvertiserReviews", fields: [advertiserId], references: [id])
-  customerId   String
+  customerId   String @db.ObjectId
   customer     User     @relation("CustomerReviews", fields: [customerId], references: [id])
   rating       Int
   comment      String?
@@ -204,10 +220,10 @@ enum ReportStatus {
 }
 
 model Report {
-  id         String       @id @default(cuid())
-  adId       String
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  adId       String @db.ObjectId
   ad         Ad           @relation(fields: [adId], references: [id])
-  reporterId String
+  reporterId String @db.ObjectId
   reporter   User         @relation(fields: [reporterId], references: [id])
   reason     String
   status     ReportStatus @default(PENDING)
@@ -223,10 +239,10 @@ enum ImpressionContext {
 }
 
 model AdImpression {
-  id        String            @id @default(cuid())
-  adId      String
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  adId      String @db.ObjectId
   ad        Ad                @relation(fields: [adId], references: [id])
-  viewerId  String?
+  viewerId  String? @db.ObjectId
   viewer    User?             @relation(fields: [viewerId], references: [id])
   context   ImpressionContext
   createdAt DateTime          @default(now())
@@ -235,26 +251,28 @@ model AdImpression {
 }
 
 model AdVisit {
-  id        String   @id @default(cuid())
-  adId      String
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  adId      String @db.ObjectId
   ad        Ad       @relation(fields: [adId], references: [id])
-  viewerId  String?
+  viewerId  String? @db.ObjectId
   viewer    User?    @relation(fields: [viewerId], references: [id])
   sessionId String
   createdAt DateTime @default(now())
 
-  conversion AdConversion?
+  // At most one per visit — enforced by the partial unique index in
+  // ensure-indexes.ts, since Prisma cannot express it on MongoDB.
+  conversions AdConversion[]
 
   @@map("ad_visits")
 }
 
 model AdConversion {
-  id          String   @id @default(cuid())
-  adId        String
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  adId        String @db.ObjectId
   ad          Ad       @relation(fields: [adId], references: [id])
-  userId      String
+  userId      String @db.ObjectId
   user        User     @relation(fields: [userId], references: [id])
-  visitId     String?  @unique
+  visitId     String? @db.ObjectId
   visit       AdVisit? @relation(fields: [visitId], references: [id])
   convertedAt DateTime @default(now())
 
@@ -300,8 +318,8 @@ enum AuditTargetType {
  * listings down has to be able to answer "who did this, and when".
  */
 model AdminAuditLog {
-  id         String          @id @default(cuid())
-  actorId    String
+  id         String          @id @default(auto()) @map("_id") @db.ObjectId
+  actorId    String @db.ObjectId
   actor      User            @relation("AuditActor", fields: [actorId], references: [id])
   action     AuditAction
   targetType AuditTargetType

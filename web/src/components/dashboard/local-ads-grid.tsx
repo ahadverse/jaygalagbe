@@ -5,7 +5,8 @@ import Link from "next/link";
 import { EmptyState, buttonVariants } from "@/components/ui";
 import { AdCard } from "@/components/ads/ad-card";
 import { AdCardSkeleton } from "@/components/ads/ad-card-skeleton";
-import { useRecentlyViewedIds, useSavedAdIds } from "@/lib/ads/local-lists";
+import { useRecentlyViewedIds } from "@/lib/ads/local-lists";
+import { useSavedAds } from "@/lib/ads/saved-ads";
 import type { Ad } from "@/lib/ads/types";
 
 type Source = "saved" | "viewed";
@@ -16,7 +17,7 @@ const COPY: Record<Source, { title: string; description: string }> = {
   saved: {
     title: "Nothing saved yet",
     description:
-      "Tap “Save this ad” on any listing and it will be kept here on this device.",
+      "Tap “Save this ad” on any listing and it will be kept here, on every device you sign in on.",
   },
   viewed: {
     title: "Nothing viewed yet",
@@ -26,8 +27,9 @@ const COPY: Record<Source, { title: string; description: string }> = {
 };
 
 /**
- * Both lists live in this browser, so the ids are read on the client and the
- * listings themselves fetched through our own route.
+ * Saved listings come from the account (through our own route); recently
+ * viewed stays in this browser, so those ids are read on the client and the
+ * listings fetched through the ids route.
  */
 export function LocalAdsGrid({
   source,
@@ -38,9 +40,48 @@ export function LocalAdsGrid({
   limit?: number;
   skeletonCount?: number;
 }) {
-  const savedIds = useSavedAdIds();
-  const viewedIds = useRecentlyViewedIds();
-  const ids = source === "saved" ? savedIds : viewedIds;
+  return source === "saved" ? (
+    <SavedGrid limit={limit} skeletonCount={skeletonCount} />
+  ) : (
+    <ViewedGrid limit={limit} skeletonCount={skeletonCount} />
+  );
+}
+
+type GridProps = { limit?: number; skeletonCount: number };
+
+function SavedGrid({ limit, skeletonCount }: GridProps) {
+  const { status, ids } = useSavedAds();
+  const key = ids.join(",");
+  const [fetched, setFetched] = useState<Ad[] | null>(null);
+  const ads =
+    status === "loading" ? null : status === "guest" ? EMPTY_ADS : fetched;
+
+  useEffect(() => {
+    if (status !== "user") return;
+
+    let active = true;
+    fetch(`/api/saved-ads?view=list&limit=${limit ?? 50}`)
+      .then((response) => (response.ok ? response.json() : { data: [] }))
+      .then((body: { data: Ad[] }) => {
+        if (active) setFetched(body.data);
+      })
+      .catch(() => {
+        if (active) setFetched(EMPTY_ADS);
+      });
+
+    return () => {
+      active = false;
+    };
+    // key: refetch when the saved set changes (e.g. after the guest import).
+  }, [status, key, limit]);
+
+  return (
+    <AdsGrid ads={ads} source="saved" limit={limit} skeletonCount={skeletonCount} />
+  );
+}
+
+function ViewedGrid({ limit, skeletonCount }: GridProps) {
+  const ids = useRecentlyViewedIds();
   const key = ids.join(",");
 
   const [fetched, setFetched] = useState<Ad[] | null>(null);
@@ -72,6 +113,17 @@ export function LocalAdsGrid({
     };
   }, [key]);
 
+  return (
+    <AdsGrid ads={ads} source="viewed" limit={limit} skeletonCount={skeletonCount} />
+  );
+}
+
+function AdsGrid({
+  ads,
+  source,
+  limit,
+  skeletonCount,
+}: GridProps & { ads: Ad[] | null; source: Source }) {
   if (ads === null) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

@@ -16,6 +16,9 @@ import { MessagingEvent } from './messaging-events.js';
 import { CreateConversationDto } from './dto/create-conversation.dto.js';
 import { CreateMessageDto } from './dto/create-message.dto.js';
 
+import { isEmpty } from '../common/object-id.js';
+
+const UNREAD = isEmpty('readAt');
 const MAX_MESSAGES_PER_THREAD = 200;
 const MAX_CONVERSATIONS = 200;
 
@@ -80,7 +83,7 @@ export class MessagingService {
     const [messages, conversationIds] = await Promise.all([
       this.prisma.message.count({
         where: {
-          readAt: null,
+          AND: [UNREAD],
           senderId: { not: userId },
           conversation: {
             OR: [{ customerId: userId }, { advertiserId: userId }],
@@ -89,7 +92,7 @@ export class MessagingService {
       }),
       this.prisma.message.findMany({
         where: {
-          readAt: null,
+          AND: [UNREAD],
           senderId: { not: userId },
           conversation: {
             OR: [{ customerId: userId }, { advertiserId: userId }],
@@ -169,7 +172,7 @@ export class MessagingService {
   async markRead(conversationId: string, userId: string) {
     await this.getParticipantConversation(conversationId, userId);
     await this.prisma.message.updateMany({
-      where: { conversationId, senderId: { not: userId }, readAt: null },
+      where: { conversationId, senderId: { not: userId }, AND: [UNREAD] },
       data: { readAt: new Date() },
     });
   }

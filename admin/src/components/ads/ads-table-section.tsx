@@ -423,12 +423,12 @@ export function AdsTableSection({
             />
           }
           renderCard={(ad) => (
-            <button
-              type="button"
-              onClick={() => setDetailId(ad.id)}
-              className="flex w-full flex-col gap-2 text-left"
-            >
-              <div className="flex gap-2.5">
+            <div className="flex w-full flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setDetailId(ad.id)}
+                className="flex w-full gap-2.5 text-left"
+              >
                 <AdThumb photos={ad.photos} alt="" className="h-14 w-18" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{ad.title}</p>
@@ -446,14 +446,14 @@ export function AdsTableSection({
                     <ReportFlag count={ad._count.reports} />
                   </div>
                 </div>
-              </div>
+              </button>
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate text-xs text-muted-foreground">
                   {ad.owner.name} · {formatAge(ad.createdAt)}
                 </span>
                 {rowActions(ad)}
               </div>
-            </button>
+            </div>
           )}
         />
 

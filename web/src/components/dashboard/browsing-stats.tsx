@@ -2,11 +2,12 @@
 
 import { StatCard } from "./stat-card";
 import { DashboardIcon } from "./icons";
-import { useRecentlyViewedIds, useSavedAdIds } from "@/lib/ads/local-lists";
+import { useRecentlyViewedIds } from "@/lib/ads/local-lists";
+import { useSavedAds } from "@/lib/ads/saved-ads";
 
-/** Counts that only exist in this browser, so they render after hydration. */
+/** Counts read on the client, so they render after hydration. */
 export function BrowsingStats() {
-  const saved = useSavedAdIds().length;
+  const saved = useSavedAds().savedIds.length;
   const viewed = useRecentlyViewedIds().length;
 
   return (
@@ -14,7 +15,7 @@ export function BrowsingStats() {
       <StatCard
         label="Saved"
         value={saved.toLocaleString()}
-        hint="Kept on this device"
+        hint="Synced to your account"
         tone="info"
         icon={
           <svg

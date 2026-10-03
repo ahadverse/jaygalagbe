@@ -1,6 +1,6 @@
 # Jayga Lagbe — Backend
 
-NestJS + Prisma + PostgreSQL API. Single source of truth for both frontends:
+NestJS + Prisma + MongoDB API. Single source of truth for both frontends:
 the public Next.js site (`../web`) and the admin console (`../admin`) talk to
 this and nothing else.
 
@@ -9,7 +9,7 @@ this and nothing else.
 ```bash
 npm install
 cp /dev/null .env          # then fill it in — see Environment below
-npm run prisma:migrate
+npm run db:push        # creates collections + indexes
 npm run prisma:seed
 npm run start:dev
 ```
@@ -36,7 +36,7 @@ of these values belong in the repository.
 
 | Variable                    | Required | What it is                                                        |
 | --------------------------- | -------- | ----------------------------------------------------------------- |
-| `DATABASE_URL`              | yes      | PostgreSQL connection string                                       |
+| `DATABASE_URL`              | yes      | MongoDB connection string (include the db name)                   |
 | `JWT_SECRET`                | yes      | Signing secret for access tokens                                   |
 | `JWT_EXPIRES_IN`            | no       | Token lifetime, e.g. `7d`                                          |
 | `PORT`                      | no       | HTTP port (default `5000`)                                         |
@@ -55,30 +55,48 @@ of these values belong in the repository.
 | `SMTP_PORT`                 | no       | Outbound mail port                                                 |
 | `SMTP_USER`                 | no       | Mail username                                                      |
 | `SMTP_PASSWORD`             | no       | Mail password                                                      |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | no  | Service-account JSON (as a string) for FCM push; or set `GOOGLE_APPLICATION_CREDENTIALS` to a key file path. Push is skipped if neither is set |
 | `EMAIL_FROM`                | no       | From address on notification emails                                |
 
-## Deploying to Render
+## Deploying
 
-`render.yaml` at the repository root describes this service and its database.
-In the Render dashboard choose **New → Blueprint**, point it at this repo, and
-Render will prompt for every secret; nothing sensitive lives in the file.
+The API is a plain Node service: build it with `npm ci --include=dev && npm run build:deploy`,
+start it with `npm run start:prod`, and point your host's health check at `/health`.
+Set the variables from the Environment table above on the host — `DATABASE_URL` is a
+MongoDB Atlas connection string. Atlas replica sets are required: the API uses
+transactions, which MongoDB only offers on a replica set (every Atlas tier is one).
 
-What it sets up:
+Indexes are not created on deploy. Run `npm run prod:push` once after changing
+`schema.prisma` (it also creates the partial unique indexes Prisma cannot express —
+see `prisma/ensure-indexes.ts`).
 
-- **`jaygalagbe-api`** — this service, built from `backend/` with
-  `npm ci && npm run build:deploy && npm run migrate:deploy`, started with
-  `npm run start:prod`, health-checked at `/health`.
+### Deploying on Vercel
 
-Postgres is **not** provisioned by Render: the database lives on Neon, so
-`DATABASE_URL` is pasted in as a secret. Use Neon's *pooled* connection string
-— a web service opens far more connections than one Postgres instance is happy
-with. `JWT_SECRET` must match the value in `backend/.env.prod`, or tokens
-minted in one place will not validate in the other.
+`api/index.js` is the function entry and `vercel.json` rewrites every path to it, so
+the API runs as a single serverless function (Fluid compute) built from `dist/`.
 
-Migrations run in the build command rather than as a pre-deploy step, because
-pre-deploy commands need a paid instance type. The Prisma client is generated
-into `src/generated/` which is git-ignored, so `build:deploy` regenerates it
-on every build.
+1. Import the repo in Vercel and set the **Root Directory** to `backend`. The build
+   settings come from `vercel.json` (`npm ci --include=dev`, then
+   `npm run build:deploy`, which generates the Prisma client including the
+   `rhel-openssl-3.0.x` engine Vercel runs on).
+2. Add the variables from the Environment table above (Production scope). `NODE_ENV`
+   is set to `production` by Vercel. `DATABASE_URL` is the Atlas string and Atlas must
+   allow Vercel's IPs (Network Access `0.0.0.0/0`, since function IPs are not fixed).
+3. Run `npm run prod:push` once from your machine to create collections and indexes.
+4. Set `CORS_ORIGINS` and `PAYSTATION_CALLBACK_URL` as in "After the first deploy", and
+   `API_BASE_URL` to the deployed URL.
+
+What serverless changes:
+
+- **No WebSockets.** Vercel functions cannot hold a Socket.IO connection, so live chat
+  and in-app notification events do not reach clients. Messages, the unread count and
+  push (FCM) still work over HTTP; clients must poll for new messages.
+- **Request bodies are capped at 4.5 MB** by Vercel, below the 8 MB per-photo limit in
+  `uploads/upload-limits.ts`. Photos larger than that are rejected by the platform
+  before they reach the API, so resize on the client.
+- **Rate limits are per instance.** The throttler keeps counts in memory, so the login
+  and tracking limits apply to each warm instance, not globally.
+- **Cold starts** boot Nest and connect to Atlas once per instance (a second or two).
 
 ### Working against the production database locally
 
@@ -88,8 +106,7 @@ every other env file. These scripts run against it without touching your local
 
 | Script                  | What it does                                  |
 | ----------------------- | --------------------------------------------- |
-| `npm run prod:status`   | Show which migrations the prod DB has          |
-| `npm run prod:migrate`  | Apply pending migrations to the prod DB        |
+| `npm run prod:push`     | Sync collections and indexes on the prod DB    |
 | `npm run prod:seed`     | Seed the prod DB (idempotent)                  |
 | `npm run prod:start`    | Run the built server against prod config       |
 
@@ -112,7 +129,7 @@ Both are plain environment variables; editing them triggers a redeploy.
 
 ### Pointing the front ends at it
 
-Neither front end reads `render.yaml`; each takes the API URL from its own
+Each front end takes the API URL from its own
 environment:
 
 | App     | Variable             | Where it is read               | Set it as               |
@@ -140,14 +157,6 @@ Each app keeps its own `.env` (`backend/.env`, `web/.env`, `admin/.env`), all
 git-ignored. To run the front ends against a deployed API, point those
 variables at its public URL.
 
-### Free-tier caveats
-
-- A free web service sleeps after inactivity; the first request afterwards
-  waits ~50s for a cold start. Real-time chat reconnects, but the delay is
-  visible.
-- A free Postgres instance **expires 30 days after creation**. Take a dump and
-  move to a paid plan before then, or the data goes with it.
-
 ## Scripts
 
 | Script                    | What it does                          |
@@ -155,12 +164,11 @@ variables at its public URL.
 | `npm run dev`             | Watch-mode dev server                 |
 | `npm run build`           | Compile to `dist/`                    |
 | `npm run build:deploy`    | Generate the Prisma client, then build |
-| `npm run migrate:deploy`  | Apply migrations without prompting     |
 | `npm run start:prod`      | Run the compiled server               |
 | `npm run lint`            | oxlint                                |
 | `npm test`                | Unit tests                            |
 | `npm run test:e2e`        | End-to-end tests                      |
-| `npm run prisma:migrate`  | Apply migrations in development       |
+| `npm run db:push`         | Sync collections and indexes          |
 | `npm run prisma:seed`     | Seed demo data (idempotent)           |
 | `npm run prisma:generate` | Regenerate the Prisma client          |
 

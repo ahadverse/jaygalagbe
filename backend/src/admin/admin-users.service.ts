@@ -1,3 +1,4 @@
+import { isObjectId } from '../common/object-id.js';
 import {
   ConflictException,
   ForbiddenException,
@@ -53,7 +54,7 @@ function buildWhere(query: ListUsersDto): Prisma.UserWhereInput {
   if (query.search) {
     const contains = { contains: query.search, mode: 'insensitive' } as const;
     where.OR = [
-      { id: query.search },
+      ...(isObjectId(query.search) ? [{ id: query.search }] : []),
       { name: contains },
       { email: contains },
       { phone: contains },
@@ -513,6 +514,7 @@ export class AdminUsersService {
         where: { viewerId: id },
         data: { viewerId: null },
       });
+      await tx.savedAd.deleteMany({ where: { userId: id } });
       await tx.user.delete({ where: { id } });
     });
 

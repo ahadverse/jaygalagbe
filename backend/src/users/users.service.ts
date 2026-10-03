@@ -1,10 +1,12 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { deleteUserAndData } from './account-deletion.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { RegisterFcmTokenDto } from './dto/register-fcm-token.dto.js';
 
@@ -60,7 +62,13 @@ export class UsersService {
   }
 
   async deleteAccount(id: string) {
-    await this.prisma.user.delete({ where: { id } });
+    const user = await this.findById(id);
+    if (user.isAdmin) {
+      throw new ForbiddenException(
+        'Admins cannot delete their own account - ask another admin to revoke your admin access first',
+      );
+    }
+    await deleteUserAndData(this.prisma, id);
   }
 
   async registerFcmToken(id: string, dto: RegisterFcmTokenDto) {

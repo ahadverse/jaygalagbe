@@ -123,8 +123,8 @@ export class AdminAnalyticsService {
       newAds: kpi(newAds, newAdsBefore),
       newUsers: kpi(newUsers, newUsersBefore),
       revenue: kpi(
-        revenue._sum.amount?.toNumber() ?? 0,
-        revenueBefore._sum.amount?.toNumber() ?? 0,
+        revenue._sum.amount ?? 0,
+        revenueBefore._sum.amount ?? 0,
       ),
       visits: kpi(visits, visitsBefore),
       conversions: kpi(conversions, conversionsBefore),
@@ -178,7 +178,7 @@ export class AdminAnalyticsService {
       payments,
       range,
       (row) => row.createdAt,
-      (row) => row.amount.toNumber(),
+      (row) => row.amount,
     );
     const visitBuckets = tally(visits, range, (row) => row.createdAt);
     const conversionBuckets = tally(

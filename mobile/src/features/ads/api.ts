@@ -11,6 +11,23 @@ export function getLiveAds(
   return apiGet<Ad[]>(`/ads?${params.toString()}`);
 }
 
+/** The backend's own ceiling - ads.service.ts clamps /ads to 200 rows. */
+export const LIVE_ADS_TAKE = 200;
+
+/*
+ * Home and the sector listing both want every live ad in a sector: home
+ * derives its district/budget facets from the whole set the same way web's
+ * page.tsx does, and the listing screen filters it client-side. Sharing one
+ * query descriptor means they share one cache entry, so opening a sector from
+ * home costs no round trip.
+ */
+export function liveAdsQuery(sector: Sector) {
+  return {
+    queryKey: ['ads', 'live', sector, 'browse'] as const,
+    queryFn: () => getLiveAds(sector, { take: LIVE_ADS_TAKE }),
+  };
+}
+
 export function getAd(id: string): Promise<Ad> {
   return apiGet<Ad>(`/ads/${id}`);
 }

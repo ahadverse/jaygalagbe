@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 
-// Mirrors web/src/lib/ads/local-lists.ts: device-local, not account-synced
-// (a visitor can collect listings before signing up, and nothing about what
-// they browsed leaves the device) - same keys, same id-only storage format,
+// Mirrors web/src/lib/ads/local-lists.ts: recently-viewed is device-local, and
+// a guest's saved list sits here until sign-in imports it into the account
+// (see saved-ads.ts); nothing about what a visitor browsed leaves the device - same keys, same id-only storage format,
 // same caps/ordering, just AsyncStorage instead of localStorage and a plain
 // subscribe/notify hook instead of useSyncExternalStore (AsyncStorage is
 // async, so a snapshot can't be read synchronously the way localStorage's can).
@@ -71,6 +71,10 @@ export function getSavedAdIds(): Promise<string[]> {
   return read(SAVED_KEY);
 }
 
+export async function clearLocalSavedAds(): Promise<void> {
+  await write(SAVED_KEY, []);
+}
+
 export async function isAdSaved(adId: string): Promise<boolean> {
   return (await read(SAVED_KEY)).includes(adId);
 }
@@ -86,7 +90,7 @@ export async function toggleSavedAd(adId: string): Promise<boolean> {
   return !isSaved;
 }
 
-export function useSavedAdIds(): string[] {
+export function useLocalSavedAdIds(): string[] {
   return useLocalIds(SAVED_KEY);
 }
 

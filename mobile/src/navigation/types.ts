@@ -3,9 +3,26 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { SectorSlug } from '../features/ads/sectors';
 
-export type HomeStackParamList = {
+// The static company/legal screens hang off more than one stack - the home
+// footer and the Profile tab both reach them - so their routes are declared
+// once here and spread into each stack that registers them.
+export type InfoScreensParamList = {
+  About: undefined;
+  Contact: undefined;
+  Privacy: undefined;
+  Terms: undefined;
+};
+
+export type HomeStackParamList = InfoScreensParamList & {
   Home: undefined;
-  SectorListing: { sector: SectorSlug; location?: string };
+  // minPrice/maxPrice arrive from the home BudgetGuide, which links straight
+  // into a price bracket the same way web's /[sector]?minPrice=… does.
+  SectorListing: {
+    sector: SectorSlug;
+    location?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  };
   AdDetail: { adId: string };
 };
 
@@ -35,7 +52,7 @@ export type MessagesStackScreenProps<T extends keyof MessagesStackParamList> =
 // top-level auth stack, since there's no login wall - guest actions
 // elsewhere (contact-gate, report-ad) reach these through the parent tab
 // navigator (see ad-detail-screen.tsx's requireAuth()).
-export type ProfileStackParamList = {
+export type ProfileStackParamList = InfoScreensParamList & {
   Profile: undefined;
   Login: undefined;
   Register: undefined;

@@ -1,3 +1,4 @@
+import { isObjectId } from '../common/object-id.js';
 import {
   ConflictException,
   Injectable,
@@ -49,7 +50,7 @@ function buildWhere(query: ListTransactionsDto): Prisma.PaymentWhereInput {
   if (query.search) {
     const contains = { contains: query.search, mode: 'insensitive' } as const;
     where.OR = [
-      { id: query.search },
+      ...(isObjectId(query.search) ? [{ id: query.search }] : []),
       { gatewayRef: contains },
       { user: { name: contains } },
       { user: { email: contains } },

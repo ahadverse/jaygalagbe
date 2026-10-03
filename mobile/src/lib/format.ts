@@ -7,6 +7,15 @@ export function formatPrice(price: string | number): string {
   return `৳ ${priceFormatter.format(Number(price))}`;
 }
 
+/** Absolute date, for the places a listing states a fact rather than its age. */
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 const DAY = 86_400_000;
 
 /** Listing freshness is the strongest trust signal on a classifieds card. */

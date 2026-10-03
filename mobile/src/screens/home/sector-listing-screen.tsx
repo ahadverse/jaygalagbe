@@ -12,7 +12,7 @@ import {
 
 import { AdCard } from '../../components/ads/ad-card';
 import { BrandCard } from '../../components/brand/brand-card';
-import { getLiveAds } from '../../features/ads/api';
+import { liveAdsQuery } from '../../features/ads/api';
 import { getSectorOption } from '../../features/ads/sectors';
 import type { Ad } from '../../features/ads/types';
 import {
@@ -27,7 +27,6 @@ import {
 import type { HomeStackScreenProps } from '../../navigation/types';
 import { colors, radius, shadow } from '../../theme/tokens';
 
-const BROWSE_TAKE = 200;
 const BEDROOM_OPTIONS = [1, 2, 3, 4, 5];
 
 const SORT_BUTTONS: { value: SortOption; label: string }[] = [
@@ -40,13 +39,24 @@ export function SectorListingScreen({
   route,
   navigation,
 }: HomeStackScreenProps<'SectorListing'>) {
-  const { sector: slug, location: initialLocation } = route.params;
+  const {
+    sector: slug,
+    location: initialLocation,
+    minPrice: initialMinPrice,
+    maxPrice: initialMaxPrice,
+  } = route.params;
   const sectorOption = getSectorOption(slug);
 
   const [q, setQ] = useState('');
   const [location, setLocation] = useState(initialLocation ?? '');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
+  // Seeded rather than locked: arriving from a home budget bracket pre-fills
+  // the range, and the user can still widen or clear it from here.
+  const [minPrice, setMinPrice] = useState(
+    initialMinPrice != null ? String(initialMinPrice) : '',
+  );
+  const [maxPrice, setMaxPrice] = useState(
+    initialMaxPrice != null ? String(initialMaxPrice) : '',
+  );
   const [propertyType, setPropertyType] = useState<string | undefined>();
   const [minSize, setMinSize] = useState('');
   const [bedrooms, setBedrooms] = useState<number | undefined>();
@@ -58,10 +68,7 @@ export function SectorListingScreen({
     data: ads,
     isPending,
     isError,
-  } = useQuery({
-    queryKey: ['ads', 'live', sectorOption.sector, 'browse'],
-    queryFn: () => getLiveAds(sectorOption.sector, { take: BROWSE_TAKE }),
-  });
+  } = useQuery(liveAdsQuery(sectorOption.sector));
 
   const filters: AdFilters = {
     q: q.trim() || undefined,

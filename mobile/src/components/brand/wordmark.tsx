@@ -13,13 +13,9 @@ const TEXT = { sm: 17, lg: 24 } as const;
 export function Wordmark({
   size = 'sm',
   showText = true,
-  tone = 'dark',
 }: {
   size?: 'sm' | 'lg';
   showText?: boolean;
-  // `light` is for the wordmark sitting over the hero photo, where web's
-  // near-black text would disappear.
-  tone?: 'dark' | 'light';
 }) {
   const tileSize = TILE[size];
   const glyphSize = tileSize * 0.58;
@@ -52,22 +48,9 @@ export function Wordmark({
       </LinearGradient>
 
       {showText ? (
-        <Text
-          style={[
-            styles.text,
-            { fontSize: TEXT[size] },
-            tone === 'light' ? styles.textLight : null,
-          ]}
-        >
+        <Text style={[styles.text, { fontSize: TEXT[size] }]}>
           Jayga
-          <Text
-            style={[
-              styles.textAccent,
-              tone === 'light' ? styles.textAccentLight : null,
-            ]}
-          >
-            Lagbe
-          </Text>
+          <Text style={styles.textAccent}>Lagbe</Text>
         </Text>
       ) : null}
     </View>
@@ -92,11 +75,5 @@ const styles = StyleSheet.create({
   textAccent: {
     fontFamily: fontFamily.display,
     color: colors.brand[700],
-  },
-  textLight: {
-    color: '#ffffff',
-  },
-  textAccentLight: {
-    color: colors.brand[200],
   },
 });

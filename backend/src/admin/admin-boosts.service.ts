@@ -1,3 +1,4 @@
+import { isObjectId } from '../common/object-id.js';
 import {
   ConflictException,
   Injectable,
@@ -68,8 +69,8 @@ function buildWhere(query: ListBoostsDto): Prisma.BoostWhereInput {
     const contains = { contains: query.search, mode: 'insensitive' } as const;
     and.push({
       OR: [
-        { id: query.search },
-        { adId: query.search },
+        ...(isObjectId(query.search) ? [{ id: query.search }] : []),
+        ...(isObjectId(query.search) ? [{ adId: query.search }] : []),
         { ad: { title: contains } },
         { ad: { owner: { name: contains } } },
         { payment: { gatewayRef: contains } },

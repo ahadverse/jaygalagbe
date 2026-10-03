@@ -1,14 +1,14 @@
 import { StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
 
-import { toggleSavedAd, useSavedAdIds } from '../../features/ads/local-lists';
+import { useSavedAdIds, useToggleSavedAd } from '../../features/ads/saved-ads';
 import { colors, radius } from '../../theme/tokens';
 
-// Mirrors web/src/components/ads/save-ad-button.tsx: saving is pure
-// device-local storage, no auth required, works identically for guests and
-// logged-in users.
+// Mirrors web/src/components/ads/save-ad-button.tsx: signed-in users save to
+// their account, guests save on this device until they sign in.
 export function SaveAdButton({ adId }: { adId: string }) {
   const savedIds = useSavedAdIds();
+  const toggleSaved = useToggleSavedAd();
   const saved = savedIds.includes(adId);
 
   return (
@@ -17,7 +17,7 @@ export function SaveAdButton({ adId }: { adId: string }) {
       icon={saved ? 'bookmark' : 'bookmark-outline'}
       rippleColor={colors.brand[100]}
       style={[styles.button, saved ? styles.saved : styles.unsaved]}
-      onPress={() => toggleSavedAd(adId)}
+      onPress={() => void toggleSaved(adId)}
     >
       {saved ? 'Saved to your list' : 'Save this ad'}
     </Button>

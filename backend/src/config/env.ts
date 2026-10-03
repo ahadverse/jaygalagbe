@@ -43,4 +43,17 @@ export function assertRequiredEnv(): void {
   if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL is not set');
   }
+
+  // Optional: push is a no-op without it, but a malformed value should be
+  // loud at boot rather than silently disabling push.
+  const firebaseJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (firebaseJson) {
+    try {
+      JSON.parse(firebaseJson);
+    } catch {
+      console.warn(
+        'FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON - push notifications will be disabled',
+      );
+    }
+  }
 }

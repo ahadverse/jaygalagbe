@@ -1,3 +1,4 @@
+import { isObjectId } from '../common/object-id.js';
 import {
   ConflictException,
   Injectable,
@@ -50,7 +51,7 @@ function buildWhere(query: ListReportsDto): Prisma.ReportWhereInput {
   if (query.search) {
     const contains = { contains: query.search, mode: 'insensitive' } as const;
     where.OR = [
-      { id: query.search },
+      ...(isObjectId(query.search) ? [{ id: query.search }] : []),
       { reason: contains },
       { reporter: { name: contains } },
       { reporter: { email: contains } },

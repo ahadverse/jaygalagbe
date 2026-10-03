@@ -1,13 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useQuery } from '@tanstack/react-query';
 import type { ComponentProps } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Badge, Button, List } from 'react-native-paper';
 
-import { BrandCard, StatTile } from '../../components/brand/brand-card';
+import { BrandCard } from '../../components/brand/brand-card';
 import { Eyebrow } from '../../components/brand/eyebrow';
+import { DashboardOverview } from '../../components/dashboard/dashboard-overview';
 import { useAuth } from '../../features/auth/auth-context';
-import { getOverview } from '../../features/analytics/api';
 import { useNotifications } from '../../features/notifications/notifications-context';
 import type { ProfileStackScreenProps } from '../../navigation/types';
 import { colors, fontFamily, radius } from '../../theme/tokens';
@@ -48,20 +47,15 @@ function NavRow({
   );
 }
 
-// The Profile tab's logged-in root: a light dashboard overview (aggregate
-// stats rollup, only shown once the user has posted at least one ad) plus
-// the nav rows into Saved/Reviews/Notifications/Settings - see app.md's
-// Profile tab section.
+// The Profile tab's logged-in root, and mobile's equivalent of web's
+// /dashboard: the identity card, the full overview, then the nav rows. The
+// overview owns its own queries and filter state, so this screen stays a
+// layout - see components/dashboard/dashboard-overview.tsx.
 export function ProfileScreen({
   navigation,
 }: ProfileStackScreenProps<'Profile'>) {
   const { user, logout } = useAuth();
   const { unreadActivity } = useNotifications();
-
-  const { data: overview } = useQuery({
-    queryKey: ['analytics', 'overview', '30d'],
-    queryFn: () => getOverview('30d'),
-  });
 
   const initial = user?.name?.trim().charAt(0).toUpperCase() ?? '?';
   const contact = user?.email ?? user?.phone ?? null;
@@ -84,33 +78,7 @@ export function ProfileScreen({
         </View>
       </BrandCard>
 
-      {overview && overview.ads.length > 0 ? (
-        <View style={styles.statsBlock}>
-          <Eyebrow>Last 30 days</Eyebrow>
-          <View style={styles.statsGrid}>
-            <StatTile
-              label="Impressions"
-              value={String(overview.totals.impressions)}
-              style={styles.statTile}
-            />
-            <StatTile
-              label="Visits"
-              value={String(overview.totals.visits)}
-              style={styles.statTile}
-            />
-            <StatTile
-              label="Leads"
-              value={String(overview.totals.conversions)}
-              style={styles.statTile}
-            />
-            <StatTile
-              label="Conv. rate"
-              value={`${(overview.totals.conversionRate * 100).toFixed(1)}%`}
-              style={styles.statTile}
-            />
-          </View>
-        </View>
-      ) : null}
+      <DashboardOverview />
 
       <BrandCard style={styles.navCard}>
         <NavRow
@@ -139,6 +107,38 @@ export function ProfileScreen({
           divided
         />
       </BrandCard>
+
+      {/* A second group rather than four more rows on the first: these are
+       * read-once documents, not places anyone returns to. */}
+      <View style={styles.infoBlock}>
+        <Eyebrow>Company &amp; legal</Eyebrow>
+        <BrandCard style={styles.navCard}>
+          <NavRow
+            title="About Jayga Lagbe"
+            icon="information-outline"
+            onPress={() => navigation.navigate('About')}
+            divided={false}
+          />
+          <NavRow
+            title="Contact us"
+            icon="email-outline"
+            onPress={() => navigation.navigate('Contact')}
+            divided
+          />
+          <NavRow
+            title="Privacy Policy"
+            icon="shield-check-outline"
+            onPress={() => navigation.navigate('Privacy')}
+            divided
+          />
+          <NavRow
+            title="Terms of Service"
+            icon="file-document-outline"
+            onPress={() => navigation.navigate('Terms')}
+            divided
+          />
+        </BrandCard>
+      </View>
 
       <Button
         mode="outlined"
@@ -192,23 +192,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.neutral[600],
   },
-  statsBlock: {
-    gap: 10,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  statTile: {
-    minWidth: '45%',
-    flexGrow: 1,
-  },
   navCard: {
     // BrandCard's own 16px padding would inset the rows and cut their
     // separators short of the card edges.
     padding: 0,
     overflow: 'hidden',
+  },
+  infoBlock: {
+    gap: 10,
   },
   navRow: {
     paddingRight: 12,

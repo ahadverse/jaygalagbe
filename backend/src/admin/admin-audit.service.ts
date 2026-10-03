@@ -1,3 +1,4 @@
+import { isObjectId } from '../common/object-id.js';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -24,7 +25,7 @@ function buildWhere(query: ListAuditDto): Prisma.AdminAuditLogWhereInput {
   if (query.search) {
     const contains = { contains: query.search, mode: 'insensitive' } as const;
     where.OR = [
-      { id: query.search },
+      ...(isObjectId(query.search) ? [{ id: query.search }] : []),
       { targetId: query.search },
       { summary: contains },
       { actor: { name: contains } },

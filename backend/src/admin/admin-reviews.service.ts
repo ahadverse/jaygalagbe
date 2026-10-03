@@ -1,3 +1,4 @@
+import { isEmpty, isObjectId } from '../common/object-id.js';
 import {
   ConflictException,
   Injectable,
@@ -41,7 +42,7 @@ function buildWhere(query: ListReviewsDto): Prisma.ReviewWhereInput {
   if (query.search) {
     const contains = { contains: query.search, mode: 'insensitive' } as const;
     where.OR = [
-      { id: query.search },
+      ...(isObjectId(query.search) ? [{ id: query.search }] : []),
       { comment: contains },
       { advertiser: { name: contains } },
       { customer: { name: contains } },
@@ -55,7 +56,11 @@ function buildWhere(query: ListReviewsDto): Prisma.ReviewWhereInput {
     where.isHidden = query.hidden;
   }
   if (query.hasComment !== undefined) {
-    where.comment = query.hasComment ? { not: null } : null;
+    if (query.hasComment) {
+      where.comment = { not: null };
+    } else {
+      where.AND = [isEmpty('comment')];
+    }
   }
   if (query.advertiserId) {
     where.advertiserId = query.advertiserId;

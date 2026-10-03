@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -17,63 +18,75 @@ import {
 import { Eyebrow } from '../../components/brand/eyebrow';
 import { useAuth } from '../../features/auth/auth-context';
 import { getConversation, getMessages } from '../../features/messaging/api';
+import { mergeMessages } from '../../features/messaging/merge-messages';
 import type { Message } from '../../features/messaging/types';
 import { useConversationSocket } from '../../features/messaging/use-conversation-socket';
+import { useAppActive } from '../../lib/use-app-active';
 import type { MessagesStackScreenProps } from '../../navigation/types';
 import { colors, radius, shadow } from '../../theme/tokens';
 
-// Mirrors web/src/components/messaging/chat-thread.tsx: messages arrive only
+// Mirrors web/src/components/messaging/chat-thread.tsx: messages arrive
 // through the socket's `message:new` echo (no local-optimistic append), a
 // message from the other party marks the thread read immediately while it's
-// open, and Sent/Seen is a simple two-party read receipt.
+// open, and Sent/Seen is a simple two-party read receipt. When the socket is
+// unavailable the messages endpoint is polled every 3s while the app is in
+// the foreground and this screen is focused; results merge by message id.
+const POLL_INTERVAL_MS = 3000;
+
 export function ChatThreadScreen({
   route,
   navigation,
 }: MessagesStackScreenProps<'ChatThread'>) {
   const { conversationId } = route.params;
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
+  // Messages that arrived by socket or REST send, layered over the fetched
+  // list (initial load + polls) and de-duplicated by id when merged.
+  const [liveMessages, setLiveMessages] = useState<Message[]>([]);
+  const [readAllAt, setReadAllAt] = useState<string | null>(null);
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
-  const seeded = useRef(false);
+  const appActive = useAppActive();
+  const focused = useIsFocused();
+  const queryClient = useQueryClient();
+  const messagesKey = ['conversations', conversationId, 'messages'];
 
   const { data: conversation } = useQuery({
     queryKey: ['conversations', conversationId],
     queryFn: () => getConversation(conversationId),
   });
 
-  const { data: initialMessages, isPending } = useQuery({
-    queryKey: ['conversations', conversationId, 'messages'],
-    queryFn: () => getMessages(conversationId),
-  });
-
-  useEffect(() => {
-    if (initialMessages && !seeded.current) {
-      setMessages(initialMessages);
-      seeded.current = true;
-    }
-  }, [initialMessages]);
-
-  const { sendMessage, markRead } = useConversationSocket(
+  const { fallback, sendMessage, markRead } = useConversationSocket(
     conversationId,
     (message) => {
-      setMessages((current) =>
-        current.some((existing) => existing.id === message.id)
-          ? current
-          : [...current, message],
-      );
+      setLiveMessages((current) => mergeMessages(current, [message]));
     },
     (readerId) => {
       if (readerId === user?.id) return;
-      setMessages((current) =>
-        current.map((message) =>
-          message.readAt
-            ? message
-            : { ...message, readAt: new Date().toISOString() },
-        ),
-      );
+      setReadAllAt((current) => current ?? new Date().toISOString());
+    },
+    // Socket is back: one refetch closes any gap left while polling.
+    () => {
+      void queryClient.refetchQueries({ queryKey: messagesKey });
     },
   );
+
+  const { data: fetchedMessages, isPending } = useQuery({
+    queryKey: messagesKey,
+    queryFn: () => getMessages(conversationId),
+    refetchInterval:
+      fallback && appActive && focused ? POLL_INTERVAL_MS : false,
+  });
+
+  // Fetched list (initial load + polls) merged with live arrivals; the
+  // reference only changes when the content does.
+  const messages = useMemo(() => {
+    const merged = mergeMessages(fetchedMessages ?? [], liveMessages);
+    return readAllAt
+      ? merged.map((m) =>
+          m.readAt || m.createdAt > readAllAt ? m : { ...m, readAt: readAllAt },
+        )
+      : merged;
+  }, [fetchedMessages, liveMessages, readAllAt]);
 
   useEffect(() => {
     const last = messages[messages.length - 1];
@@ -98,7 +111,10 @@ export function ChatThreadScreen({
     setSending(true);
     setBody('');
     try {
-      await sendMessage(trimmed);
+      const sent = await sendMessage(trimmed);
+      // Over REST there is no `message:new` echo to wait for; merging by id
+      // keeps this safe when the socket echo arrives as well.
+      setLiveMessages((current) => mergeMessages(current, [sent]));
     } catch {
       setBody(trimmed);
     } finally {

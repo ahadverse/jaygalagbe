@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { BarChart, LineChart } from 'react-native-gifted-charts';
 import { ActivityIndicator } from 'react-native-paper';
 
 import { BrandCard, StatTile } from '../../components/brand/brand-card';
 import { Eyebrow } from '../../components/brand/eyebrow';
+import { FunnelBarChart } from '../../components/charts/funnel-bar-chart';
+import { TrendChart } from '../../components/charts/trend-chart';
 import { getAdStats } from '../../features/analytics/api';
 import {
   STATS_RANGE_PRESETS,
@@ -13,14 +14,6 @@ import {
 } from '../../features/analytics/types';
 import type { MyAdsStackScreenProps } from '../../navigation/types';
 import { colors, fontFamily, radius } from '../../theme/tokens';
-
-// Series colors follow web/src/components/charts/palette.ts's assignment:
-// impressions in soft brand, visits in brand, leads in accent.
-const SERIES = {
-  impressions: colors.brand[300],
-  visits: colors.brand[600],
-  leads: colors.accent[600],
-};
 
 // Mirrors web/src/app/dashboard/ads/[id]/stats/page.tsx: 4 range presets (no
 // custom date pickers), the same 5 stat cards, a 3-series trend chart, and a
@@ -114,35 +107,7 @@ export function AdStatsScreen({ route }: MyAdsStackScreenProps<'AdStats'>) {
             {stats.series.some(
               (point) => point.impressions || point.visits || point.conversions,
             ) ? (
-              <>
-                <LineChart
-                  data={stats.series.map((point) => ({
-                    value: point.impressions,
-                  }))}
-                  data2={stats.series.map((point) => ({ value: point.visits }))}
-                  data3={stats.series.map((point) => ({
-                    value: point.conversions,
-                  }))}
-                  color={SERIES.impressions}
-                  color2={SERIES.visits}
-                  color3={SERIES.leads}
-                  thickness={2}
-                  hideDataPoints
-                  spacing={Math.max(4, 300 / stats.series.length)}
-                  height={180}
-                  noOfSections={4}
-                  rulesColor={colors.neutral[300]}
-                  yAxisColor={colors.neutral[300]}
-                  xAxisColor={colors.neutral[300]}
-                  xAxisLabelTextStyle={{ fontSize: 0 }}
-                  yAxisTextStyle={styles.axisLabel}
-                />
-                <View style={styles.legendRow}>
-                  <LegendItem color={SERIES.impressions} label="Impressions" />
-                  <LegendItem color={SERIES.visits} label="Visits" />
-                  <LegendItem color={SERIES.leads} label="Leads" />
-                </View>
-              </>
+              <TrendChart data={stats.series} />
             ) : (
               <Text style={styles.chartEmpty}>
                 No activity in this range yet. Try a wider range.
@@ -155,45 +120,17 @@ export function AdStatsScreen({ route }: MyAdsStackScreenProps<'AdStats'>) {
               <Eyebrow>Performance funnel</Eyebrow>
               <Text style={styles.chartTitle}>Seen to contacted</Text>
             </View>
-            <BarChart
-              data={[
-                {
-                  value: stats.impressions,
-                  label: 'Impressions',
-                  frontColor: SERIES.impressions,
-                },
-                {
-                  value: stats.visits,
-                  label: 'Visits',
-                  frontColor: SERIES.visits,
-                },
-                {
-                  value: stats.conversions,
-                  label: 'Leads',
-                  frontColor: SERIES.leads,
-                },
+            <FunnelBarChart
+              stages={[
+                { label: 'Impressions', value: stats.impressions },
+                { label: 'Visits', value: stats.visits },
+                { label: 'Leads', value: stats.conversions },
               ]}
-              height={160}
-              barBorderRadius={radius.xs}
-              rulesColor={colors.neutral[300]}
-              yAxisColor={colors.neutral[300]}
-              xAxisColor={colors.neutral[300]}
-              yAxisTextStyle={styles.axisLabel}
-              xAxisLabelTextStyle={styles.axisLabel}
             />
           </BrandCard>
         </>
       ) : null}
     </ScrollView>
-  );
-}
-
-function LegendItem({ color, label }: { color: string; label: string }) {
-  return (
-    <View style={styles.legendItem}>
-      <View style={[styles.legendDot, { backgroundColor: color }]} />
-      <Text style={styles.legendLabel}>{label}</Text>
-    </View>
   );
 }
 
@@ -270,31 +207,5 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.text,
     fontSize: 13,
     color: colors.neutral[500],
-  },
-  axisLabel: {
-    fontFamily: fontFamily.text,
-    fontSize: 11,
-    color: colors.neutral[500],
-  },
-  legendRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 14,
-    justifyContent: 'center',
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: radius.full,
-  },
-  legendLabel: {
-    fontFamily: fontFamily.textMedium,
-    fontSize: 12,
-    color: colors.neutral[600],
   },
 });

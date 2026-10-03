@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { toggleSavedAd, useSavedAdIds } from "@/lib/ads/local-lists";
+import { toggleSaved, useSavedAds } from "@/lib/ads/saved-ads";
 
 export function SaveAdButton({ adId }: { adId: string }) {
-  const saved = useSavedAdIds().includes(adId);
+  const saved = useSavedAds().savedIds.includes(adId);
 
   return (
     <Button
@@ -16,7 +16,7 @@ export function SaveAdButton({ adId }: { adId: string }) {
         "w-full",
         saved && "border-brand-300 bg-brand-50 text-brand-800",
       )}
-      onClick={() => toggleSavedAd(adId)}
+      onClick={() => void toggleSaved(adId)}
     >
       <svg
         viewBox="0 0 24 24"

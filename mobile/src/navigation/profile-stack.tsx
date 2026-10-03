@@ -4,6 +4,10 @@ import { useAuth } from '../features/auth/auth-context';
 import { LoginScreen } from '../screens/auth/login-screen';
 import { RegisterScreen } from '../screens/auth/register-screen';
 import { AdDetailScreen } from '../screens/home/ad-detail-screen';
+import { AboutScreen } from '../screens/info/about-screen';
+import { ContactScreen } from '../screens/info/contact-screen';
+import { PrivacyScreen } from '../screens/info/privacy-screen';
+import { TermsScreen } from '../screens/info/terms-screen';
 import { NotificationsScreen } from '../screens/profile/notifications-screen';
 import { ProfileScreen } from '../screens/profile/profile-screen';
 import { ReviewsScreen } from '../screens/profile/reviews-screen';
@@ -68,6 +72,30 @@ export function ProfileStack() {
           />
         </>
       )}
+
+      {/* Outside the auth branch on purpose: a guest has to be able to read
+       * the privacy policy, and the home footer links here from a tab that
+       * knows nothing about whether anyone is logged in. */}
+      <Stack.Screen
+        name="About"
+        component={AboutScreen}
+        options={{ title: 'About' }}
+      />
+      <Stack.Screen
+        name="Contact"
+        component={ContactScreen}
+        options={{ title: 'Contact us' }}
+      />
+      <Stack.Screen
+        name="Privacy"
+        component={PrivacyScreen}
+        options={{ title: 'Privacy Policy' }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
+        options={{ title: 'Terms of Service' }}
+      />
     </Stack.Navigator>
   );
 }

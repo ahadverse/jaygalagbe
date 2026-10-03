@@ -27,7 +27,7 @@ const SECTOR_ROWS = [
   },
 ];
 
-export function NavMenuButton({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
+export function NavMenuButton() {
   const navigation = useNavigation<NavigationProp<RootTabParamList>>();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -63,7 +63,7 @@ export function NavMenuButton({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
         <Svg width={21} height={21} viewBox="0 0 24 24">
           <Path
             d="M4 7h16M4 12h16M4 17h16"
-            stroke={tone === 'light' ? '#ffffff' : colors.neutral[900]}
+            stroke={colors.neutral[900]}
             strokeWidth={1.9}
             strokeLinecap="round"
           />

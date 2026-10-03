@@ -7,9 +7,9 @@ const VIEWED_KEY = "jl_recent_ads";
 const MAX_VIEWED = 12;
 
 /**
- * Saved and recently-viewed listings are per-browser, not per-account: a
- * visitor can collect listings before signing up, and nothing about what they
- * browsed leaves the device.
+ * Recently-viewed listings are per-browser, not per-account, and a guest's saved
+ * list is kept here until they sign in (see saved-ads.ts, which imports it into
+ * the account). Nothing about what a visitor browsed leaves the device.
  */
 const listeners = new Set<() => void>();
 
@@ -77,6 +77,10 @@ export function getSavedAdIds(): string[] {
   return read(SAVED_KEY);
 }
 
+export function clearLocalSavedAds(): void {
+  write(SAVED_KEY, []);
+}
+
 export function isAdSaved(adId: string): boolean {
   return read(SAVED_KEY).includes(adId);
 }
@@ -92,7 +96,7 @@ export function toggleSavedAd(adId: string): boolean {
   return false;
 }
 
-export function useSavedAdIds(): string[] {
+export function useLocalSavedAdIds(): string[] {
   return useLocalIds(SAVED_KEY);
 }
 

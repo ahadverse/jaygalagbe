@@ -1,6 +1,6 @@
 import 'dotenv/config';
+import { createHash } from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { PrismaPg } from '@prisma/adapter-pg';
 import {
   PrismaClient,
   BoostStatus,
@@ -12,8 +12,15 @@ import {
 } from '../src/generated/prisma/client.js';
 import { BOOST_TIER_CONFIG } from '../src/boost/boost-tier.config.js';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
+
+/**
+ * MongoDB ids are 24-char hex ObjectIds, so readable seed keys are hashed into
+ * one. Deterministic, which keeps every upsert idempotent across re-seeds.
+ */
+function oid(key: string): string {
+  return createHash('sha1').update(key).digest('hex').slice(0, 24);
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -86,10 +93,30 @@ type SeedLocation = { division: string; district: string; area: string };
 
 /** Every row is a real division → district → thana path in bd-geo.ts. */
 const dhakaThanas: SeedLocation[] = [
-  'Badda', 'Banani', 'Bhatara', 'Cantonment', 'Dakshinkhan', 'Dhanmondi',
-  'Gulshan', 'Kafrul', 'Khilgaon', 'Khilkhet', 'Mirpur', 'Mohammadpur',
-  'Motijheel', 'Pallabi', 'Rampura', 'Sabujbagh', 'Shyampur', 'Tejgaon',
-  'Turag', 'Uttara East', 'Uttara West', 'Wari', 'Savar', 'Keraniganj',
+  'Badda',
+  'Banani',
+  'Bhatara',
+  'Cantonment',
+  'Dakshinkhan',
+  'Dhanmondi',
+  'Gulshan',
+  'Kafrul',
+  'Khilgaon',
+  'Khilkhet',
+  'Mirpur',
+  'Mohammadpur',
+  'Motijheel',
+  'Pallabi',
+  'Rampura',
+  'Sabujbagh',
+  'Shyampur',
+  'Tejgaon',
+  'Turag',
+  'Uttara East',
+  'Uttara West',
+  'Wari',
+  'Savar',
+  'Keraniganj',
 ].map((area) => ({ division: 'Dhaka', district: 'Dhaka', area }));
 
 const otherThanas: SeedLocation[] = [
@@ -114,7 +141,11 @@ function locationFor(index: number): SeedLocation {
     : dhakaThanas[index % dhakaThanas.length];
 }
 
-const landPropertyTypes = ['Residential', 'Commercial', 'Agricultural'] as const;
+const landPropertyTypes = [
+  'Residential',
+  'Commercial',
+  'Agricultural',
+] as const;
 const landSizes = [2, 3, 4, 5, 6, 8, 10, 12, 15, 20];
 
 function generateLandAds(count: number, startIndex: number): SeedAd[] {
@@ -124,11 +155,15 @@ function generateLandAds(count: number, startIndex: number): SeedAd[] {
     const size = landSizes[index % landSizes.length];
     const propertyType = landPropertyTypes[index % landPropertyTypes.length];
     const pricePerKatha =
-      propertyType === 'Commercial' ? 2200000 : propertyType === 'Agricultural' ? 350000 : 900000;
+      propertyType === 'Commercial'
+        ? 2200000
+        : propertyType === 'Agricultural'
+          ? 350000
+          : 900000;
     const price = size * pricePerKatha + (index % 7) * 50000;
 
     return {
-      id: `seed-ad-land-gen-${index}`,
+      id: oid(`seed-ad-land-gen-${index}`),
       title: `${size} Katha ${propertyType} Land in ${area}`,
       description: `${propertyType} plot in ${area}, ${district} — ${size} katha, ready for registration.`,
       price,
@@ -150,7 +185,8 @@ function generateHouseAds(count: number, startIndex: number): SeedAd[] {
     const { division, district, area } = locationFor(index + 3);
     const bedrooms = (index % 4) + 1;
     const propertyType = houseTypes[index % houseTypes.length];
-    const basePrice = propertyType === 'Room' || propertyType === 'Sublet' ? 8000 : 15000;
+    const basePrice =
+      propertyType === 'Room' || propertyType === 'Sublet' ? 8000 : 15000;
     const price = basePrice + bedrooms * 9000 + (index % 5) * 1500;
     const furnished = index % 3 === 0;
     const title =
@@ -159,7 +195,7 @@ function generateHouseAds(count: number, startIndex: number): SeedAd[] {
         : `${bedrooms} Bedroom ${propertyType} in ${area}`;
 
     return {
-      id: `seed-ad-house-gen-${index}`,
+      id: oid(`seed-ad-house-gen-${index}`),
       title,
       description: `${furnished ? 'Furnished' : 'Unfurnished'} ${propertyType.toLowerCase()} in ${area}, ${district}.`,
       price,
@@ -167,21 +203,54 @@ function generateHouseAds(count: number, startIndex: number): SeedAd[] {
       locationDistrict: district,
       locationArea: area,
       photos: rentPhotos(index),
-      attributes: { bedrooms, bathrooms: Math.max(1, bedrooms - 1), furnished, propertyType },
+      attributes: {
+        bedrooms,
+        bathrooms: Math.max(1, bedrooms - 1),
+        furnished,
+        propertyType,
+      },
       status: 'LIVE',
     };
   });
 }
 
 const givenNames = [
-  'Rahim', 'Karim', 'Shakib', 'Tanvir', 'Nusrat', 'Farhana', 'Imran', 'Sadia',
-  'Mehedi', 'Rubel', 'Jannatul', 'Arif', 'Sumaiya', 'Rafiq', 'Nabila',
-  'Shahriar', 'Tasnim', 'Mizanur', 'Rehana', 'Asif', 'Maliha', 'Sabbir',
+  'Rahim',
+  'Karim',
+  'Shakib',
+  'Tanvir',
+  'Nusrat',
+  'Farhana',
+  'Imran',
+  'Sadia',
+  'Mehedi',
+  'Rubel',
+  'Jannatul',
+  'Arif',
+  'Sumaiya',
+  'Rafiq',
+  'Nabila',
+  'Shahriar',
+  'Tasnim',
+  'Mizanur',
+  'Rehana',
+  'Asif',
+  'Maliha',
+  'Sabbir',
 ];
 
 const familyNames = [
-  'Uddin', 'Hasan', 'Islam', 'Ahmed', 'Chowdhury', 'Rahman', 'Akter',
-  'Khan', 'Sarker', 'Bhuiyan', 'Talukder',
+  'Uddin',
+  'Hasan',
+  'Islam',
+  'Ahmed',
+  'Chowdhury',
+  'Rahman',
+  'Akter',
+  'Khan',
+  'Sarker',
+  'Bhuiyan',
+  'Talukder',
 ];
 
 type SeedUser = {
@@ -207,7 +276,7 @@ function generateUsers(count: number): SeedUser[] {
     const family = familyNames[(index * 3) % familyNames.length];
 
     return {
-      id: `seed-user-${index}`,
+      id: oid(`seed-user-${index}`),
       name: `${given} ${family}`,
       email: `${given.toLowerCase()}.${family.toLowerCase()}${index}@example.com`,
       phone: `+8801${String(700000000 + index * 137).slice(0, 9)}`,
@@ -234,7 +303,10 @@ const GATEWAYS = [
  * Boost purchases spread across the last ~6 months so the dashboard's revenue
  * chart has a real trend, with a realistic share of failed/pending attempts.
  */
-async function seedTransactions(adIds: string[], ownerByAdId: Map<string, string>) {
+async function seedTransactions(
+  adIds: string[],
+  ownerByAdId: Map<string, string>,
+) {
   for (const [i, adId] of adIds.entries()) {
     const index = i + 1;
     const tier = BOOST_TIERS[index % BOOST_TIERS.length];
@@ -242,9 +314,7 @@ async function seedTransactions(adIds: string[], ownerByAdId: Map<string, string
     // Spread right up to today so the most recent purchases are still inside
     // their boost window — otherwise every boost seeds as already expired and
     // the "currently boosted" filter can never match anything.
-    const purchasedAt = daysAgo(
-      Math.round(178 - (index / adIds.length) * 178),
-    );
+    const purchasedAt = daysAgo(Math.round(178 - (index / adIds.length) * 178));
     const status =
       index % 9 === 0
         ? PaymentStatus.FAILED
@@ -252,7 +322,7 @@ async function seedTransactions(adIds: string[], ownerByAdId: Map<string, string
           ? PaymentStatus.PENDING
           : PaymentStatus.SUCCESS;
 
-    const paymentId = `seed-payment-${index}`;
+    const paymentId = oid(`seed-payment-${index}`);
     const payment = {
       userId: ownerByAdId.get(adId)!,
       adId,
@@ -285,9 +355,9 @@ async function seedTransactions(adIds: string[], ownerByAdId: Map<string, string
     };
 
     await prisma.boost.upsert({
-      where: { id: `seed-boost-${index}` },
+      where: { id: oid(`seed-boost-${index}`) },
       update: boost,
-      create: { id: `seed-boost-${index}`, ...boost },
+      create: { id: oid(`seed-boost-${index}`), ...boost },
     });
   }
 }
@@ -305,7 +375,7 @@ const reportReasons = [
 async function seedReports(adIds: string[], reporterIds: string[]) {
   for (const [i, adId] of adIds.entries()) {
     const index = i + 1;
-    const reportId = `seed-report-${index}`;
+    const reportId = oid(`seed-report-${index}`);
     const report = {
       adId,
       reporterId: reporterIds[index % reporterIds.length],
@@ -327,41 +397,35 @@ async function seedReports(adIds: string[], reporterIds: string[]) {
   }
 }
 
+/** Email is not a Prisma @unique on MongoDB (see ensure-indexes.ts), so no upsert. */
+async function ensureUser(email: string, data: Prisma.UserCreateInput) {
+  const existing = await prisma.user.findFirst({ where: { email } });
+  return existing ?? prisma.user.create({ data });
+}
+
 async function main() {
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@jaygalagbe.com' },
-    update: {},
-    create: {
-      name: 'Admin',
-      email: 'admin@jaygalagbe.com',
-      passwordHash,
-      isAdmin: true,
-      isVerified: true,
-    },
+  const admin = await ensureUser('admin@jaygalagbe.com', {
+    name: 'Admin',
+    email: 'admin@jaygalagbe.com',
+    passwordHash,
+    isAdmin: true,
+    isVerified: true,
   });
 
-  const advertiser = await prisma.user.upsert({
-    where: { email: 'advertiser@jaygalagbe.com' },
-    update: {},
-    create: {
-      name: 'Rahim Uddin',
-      email: 'advertiser@jaygalagbe.com',
-      passwordHash,
-      isVerified: true,
-    },
+  const advertiser = await ensureUser('advertiser@jaygalagbe.com', {
+    name: 'Rahim Uddin',
+    email: 'advertiser@jaygalagbe.com',
+    passwordHash,
+    isVerified: true,
   });
 
-  const customer = await prisma.user.upsert({
-    where: { email: 'customer@jaygalagbe.com' },
-    update: {},
-    create: {
-      name: 'Karim Hasan',
-      email: 'customer@jaygalagbe.com',
-      passwordHash,
-      isVerified: true,
-    },
+  const customer = await ensureUser('customer@jaygalagbe.com', {
+    name: 'Karim Hasan',
+    email: 'customer@jaygalagbe.com',
+    passwordHash,
+    isVerified: true,
   });
 
   const extraUsers = generateUsers(44);
@@ -385,7 +449,7 @@ async function main() {
 
   const landAds: SeedAd[] = [
     {
-      id: 'seed-ad-land-1',
+      id: oid('seed-ad-land-1'),
       title: '5 Katha Residential Land in Bashundhara',
       description:
         'Prime residential plot, ready for construction, clear title.',
@@ -398,7 +462,7 @@ async function main() {
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-land-2',
+      id: oid('seed-ad-land-2'),
       title: '3 Katha Corner Plot in Bosila',
       description:
         'South-facing corner plot on a paved 20ft road, walking distance to the main bazar.',
@@ -411,7 +475,7 @@ async function main() {
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-land-3',
+      id: oid('seed-ad-land-3'),
       title: '10 Katha Commercial Land on Mirpur Road',
       description:
         'High-visibility commercial frontage, ideal for a showroom or office complex.',
@@ -424,7 +488,7 @@ async function main() {
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-land-4',
+      id: oid('seed-ad-land-4'),
       title: '6 Katha Land in Purbachal, Sector 12',
       description:
         'Plot allotment in a planned sector with underground utilities already laid.',
@@ -437,7 +501,7 @@ async function main() {
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-land-5',
+      id: oid('seed-ad-land-5'),
       title: '4 Katha Agricultural Land near Gazipur Bypass',
       description:
         'Fertile farmland with an irrigation canal along the eastern border.',
@@ -450,7 +514,7 @@ async function main() {
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-land-6',
+      id: oid('seed-ad-land-6'),
       title: '8 Katha Land in Savar EPZ Area',
       description:
         'Close to Savar EPZ, suitable for warehousing or staff housing development.',
@@ -463,7 +527,7 @@ async function main() {
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-land-7',
+      id: oid('seed-ad-land-7'),
       title: '5 Katha Plot in Halishahar',
       description:
         'Quiet residential plot near Halishahar Housing Estate, ready to build.',
@@ -476,7 +540,7 @@ async function main() {
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-land-8',
+      id: oid('seed-ad-land-8'),
       title: '2 Katha Land in Ambarkhana',
       description:
         'Compact residential plot in a well-established Sylhet neighborhood.',
@@ -489,7 +553,7 @@ async function main() {
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-land-9',
+      id: oid('seed-ad-land-9'),
       title: '15 Katha Land in Rajshahi City',
       description:
         'Large plot near the city center, previously used for agriculture.',
@@ -500,13 +564,14 @@ async function main() {
       photos: landPhotos(108),
       attributes: { sizeKatha: 15, propertyType: 'Agricultural' },
       status: 'REJECTED' as const,
-      rejectionReason: 'Ownership documents unclear — please resubmit with an updated deed.',
+      rejectionReason:
+        'Ownership documents unclear — please resubmit with an updated deed.',
     },
   ];
 
   const houseAds: SeedAd[] = [
     {
-      id: 'seed-ad-house-1',
+      id: oid('seed-ad-house-1'),
       title: '2 Bedroom Apartment in Uttara',
       description:
         'Family-friendly apartment near main road, gas + water included.',
@@ -515,11 +580,16 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Uttara West',
       photos: rentPhotos(100),
-      attributes: { bedrooms: 2, bathrooms: 2, furnished: false, propertyType: 'Flat' },
+      attributes: {
+        bedrooms: 2,
+        bathrooms: 2,
+        furnished: false,
+        propertyType: 'Flat',
+      },
       status: 'PENDING' as const,
     },
     {
-      id: 'seed-ad-house-2',
+      id: oid('seed-ad-house-2'),
       title: '3 Bedroom Flat in Dhanmondi',
       description:
         'Spacious flat with a balcony overlooking the lake, close to Road 8.',
@@ -528,11 +598,16 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Dhanmondi',
       photos: rentPhotos(101),
-      attributes: { bedrooms: 3, bathrooms: 2, furnished: false, propertyType: 'Flat' },
+      attributes: {
+        bedrooms: 3,
+        bathrooms: 2,
+        furnished: false,
+        propertyType: 'Flat',
+      },
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-house-3',
+      id: oid('seed-ad-house-3'),
       title: 'Studio Apartment in Gulshan',
       description:
         'Modern studio in a serviced building, ideal for a single professional.',
@@ -541,11 +616,16 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Gulshan',
       photos: rentPhotos(102),
-      attributes: { bedrooms: 1, bathrooms: 1, furnished: true, propertyType: 'Flat' },
+      attributes: {
+        bedrooms: 1,
+        bathrooms: 1,
+        furnished: true,
+        propertyType: 'Flat',
+      },
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-house-4',
+      id: oid('seed-ad-house-4'),
       title: '2 Bedroom Flat in Banani',
       description:
         'Bright corner unit on the 4th floor, two minutes from Banani Road 11.',
@@ -554,11 +634,16 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Banani',
       photos: rentPhotos(103),
-      attributes: { bedrooms: 2, bathrooms: 2, furnished: false, propertyType: 'Flat' },
+      attributes: {
+        bedrooms: 2,
+        bathrooms: 2,
+        furnished: false,
+        propertyType: 'Flat',
+      },
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-house-5',
+      id: oid('seed-ad-house-5'),
       title: '4 Bedroom House in Bashundhara',
       description:
         'Full-floor house with rooftop access, generator backup, and parking.',
@@ -567,11 +652,16 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Bhatara',
       photos: rentPhotos(104),
-      attributes: { bedrooms: 4, bathrooms: 3, furnished: false, propertyType: 'House' },
+      attributes: {
+        bedrooms: 4,
+        bathrooms: 3,
+        furnished: false,
+        propertyType: 'House',
+      },
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-house-6',
+      id: oid('seed-ad-house-6'),
       title: '1 Bedroom Sublet in Mohammadpur',
       description:
         'Furnished room with attached bath, shared kitchen, bills included.',
@@ -580,11 +670,16 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Mohammadpur',
       photos: rentPhotos(105),
-      attributes: { bedrooms: 1, bathrooms: 1, furnished: true, propertyType: 'Sublet' },
+      attributes: {
+        bedrooms: 1,
+        bathrooms: 1,
+        furnished: true,
+        propertyType: 'Sublet',
+      },
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-house-7',
+      id: oid('seed-ad-house-7'),
       title: '3 Bedroom Flat in Agrabad',
       description:
         'Well-maintained flat close to Agrabad commercial area, ready to move in.',
@@ -593,31 +688,48 @@ async function main() {
       locationDistrict: 'Chattogram',
       locationArea: 'Double Mooring',
       photos: rentPhotos(106),
-      attributes: { bedrooms: 3, bathrooms: 2, furnished: false, propertyType: 'Flat' },
+      attributes: {
+        bedrooms: 3,
+        bathrooms: 2,
+        furnished: false,
+        propertyType: 'Flat',
+      },
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-house-8',
+      id: oid('seed-ad-house-8'),
       title: '2 Bedroom Flat in Zindabazar',
-      description: 'Central location, walking distance to shops and restaurants.',
+      description:
+        'Central location, walking distance to shops and restaurants.',
       price: 18000,
       locationDivision: 'Sylhet',
       locationDistrict: 'Sylhet',
       locationArea: 'Sylhet Kotwali',
       photos: rentPhotos(107),
-      attributes: { bedrooms: 2, bathrooms: 1, furnished: false, propertyType: 'Flat' },
+      attributes: {
+        bedrooms: 2,
+        bathrooms: 1,
+        furnished: false,
+        propertyType: 'Flat',
+      },
       status: 'LIVE' as const,
     },
     {
-      id: 'seed-ad-house-9',
+      id: oid('seed-ad-house-9'),
       title: 'Furnished Studio in Baridhara',
-      description: 'Fully furnished studio in a diplomatic-zone-adjacent building.',
+      description:
+        'Fully furnished studio in a diplomatic-zone-adjacent building.',
       price: 35000,
       locationDivision: 'Dhaka',
       locationDistrict: 'Dhaka',
       locationArea: 'Bhatara',
       photos: rentPhotos(108),
-      attributes: { bedrooms: 1, bathrooms: 1, furnished: true, propertyType: 'Flat' },
+      attributes: {
+        bedrooms: 1,
+        bathrooms: 1,
+        furnished: true,
+        propertyType: 'Flat',
+      },
       status: 'SOLD' as const,
     },
   ];
@@ -628,7 +740,11 @@ async function main() {
   // Ads are spread across every advertiser so the admin tables can be grouped,
   // sorted and filtered by owner rather than showing one name on every row.
   const ownerByAdId = new Map<string, string>();
-  const upsertAd = async (ad: SeedAd, sector: 'LAND' | 'HOUSE_RENT', i: number) => {
+  const upsertAd = async (
+    ad: SeedAd,
+    sector: 'LAND' | 'HOUSE_RENT',
+    i: number,
+  ) => {
     const { id, ...data } = ad;
     const ownerId = advertiserIds[i % advertiserIds.length];
     ownerByAdId.set(id, ownerId);

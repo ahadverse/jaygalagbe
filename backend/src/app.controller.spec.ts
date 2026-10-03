@@ -8,13 +8,13 @@ describe('AppController', () => {
   let queryRaw: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
-    queryRaw = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+    queryRaw = vi.fn().mockResolvedValue({ ok: 1 });
 
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
       providers: [
         AppService,
-        { provide: PrismaService, useValue: { $queryRaw: queryRaw } },
+        { provide: PrismaService, useValue: { $runCommandRaw: queryRaw } },
       ],
     }).compile();
 

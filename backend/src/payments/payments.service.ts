@@ -204,7 +204,7 @@ export class PaymentsService {
     if (
       transaction.invoice_number !== payment.id ||
       !Number.isFinite(paid) ||
-      paid < payment.amount.toNumber()
+      paid < payment.amount
     ) {
       this.logger.warn(`Rejected unverified settlement for ${payment.id}`);
       return PaymentStatus.PENDING;

@@ -1,3 +1,4 @@
+import { isObjectId } from '../common/object-id.js';
 import {
   BadRequestException,
   ConflictException,
@@ -59,7 +60,7 @@ function buildWhere(query: ListAdsDto): Prisma.AdWhereInput {
     const contains = { contains: query.search, mode: 'insensitive' } as const;
     and.push({
       OR: [
-        { id: query.search },
+        ...(isObjectId(query.search) ? [{ id: query.search }] : []),
         { title: contains },
         { description: contains },
         { locationArea: contains },
@@ -306,6 +307,7 @@ export class AdminAdsService {
       await tx.report.deleteMany({ where: { adId: id } });
       await tx.boost.deleteMany({ where: { adId: id } });
       await tx.payment.deleteMany({ where: { adId: id } });
+      await tx.savedAd.deleteMany({ where: { adId: id } });
       await tx.ad.delete({ where: { id } });
     });
 

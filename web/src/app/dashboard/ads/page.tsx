@@ -34,7 +34,8 @@ export default async function MyListingsPage({
 }: PageProps<"/dashboard/ads">) {
   await requireUser();
   const token = (await getToken())!;
-  const ads = await fetchMyAds(token);
+  // Removed listings are gone from the owner's point of view.
+  const ads = (await fetchMyAds(token)).filter((ad) => ad.status !== "REMOVED");
 
   const resolved = await searchParams;
   const requested = firstSearchParam(resolved?.status) ?? "all";

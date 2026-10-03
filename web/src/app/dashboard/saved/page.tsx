@@ -12,7 +12,7 @@ export default function SavedAdsPage() {
     <div className="flex flex-col gap-6">
       <PageTitle
         title="Saved & viewed"
-        description="Your shortlist and your browsing history. Both are kept in this browser, so they stay private to this device."
+        description="Your shortlist, synced to your account, and your browsing history, which stays on this device."
       />
 
       <Panel

@@ -8,6 +8,10 @@ import { getSectorOption } from '../features/ads/sectors';
 import { AdDetailScreen } from '../screens/home/ad-detail-screen';
 import { HomeScreen } from '../screens/home/home-screen';
 import { SectorListingScreen } from '../screens/home/sector-listing-screen';
+import { AboutScreen } from '../screens/info/about-screen';
+import { ContactScreen } from '../screens/info/contact-screen';
+import { PrivacyScreen } from '../screens/info/privacy-screen';
+import { TermsScreen } from '../screens/info/terms-screen';
 import { defaultStackScreenOptions } from './screen-options';
 import type { HomeStackParamList } from './types';
 
@@ -21,17 +25,15 @@ export function HomeStack() {
         component={HomeScreen}
         options={{
           title: 'Jayga Lagbe',
-          // Web's header is an opaque white bar above the hero. On a phone
-          // that leaves a dead strip across the top, so the same three
-          // controls float over the photo instead and the hero runs edge to
-          // edge, including behind the status bar.
-          headerTransparent: true,
-          headerStyle: { backgroundColor: 'transparent' },
-          headerTitle: () => <Wordmark size="sm" tone="light" />,
+          // Matches web: an opaque bar on the paper canvas above the hero.
+          // A transparent header floating over the photo was tried first, but
+          // the hero then had to guess how far down its own content should
+          // start, and any mismatch put the eyebrow pill under the wordmark.
+          headerTitle: () => <Wordmark size="sm" />,
           headerRight: () => (
             <View style={styles.headerActions}>
               <PostAdButton />
-              <NavMenuButton tone="light" />
+              <NavMenuButton />
             </View>
           ),
         }}
@@ -47,6 +49,28 @@ export function HomeStack() {
         name="AdDetail"
         component={AdDetailScreen}
         options={{ title: 'Listing' }}
+      />
+      {/* Registered here as well as on the Profile stack so the home footer
+       * reaches them without throwing the user into another tab. */}
+      <Stack.Screen
+        name="About"
+        component={AboutScreen}
+        options={{ title: 'About' }}
+      />
+      <Stack.Screen
+        name="Contact"
+        component={ContactScreen}
+        options={{ title: 'Contact us' }}
+      />
+      <Stack.Screen
+        name="Privacy"
+        component={PrivacyScreen}
+        options={{ title: 'Privacy Policy' }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
+        options={{ title: 'Terms of Service' }}
       />
     </Stack.Navigator>
   );

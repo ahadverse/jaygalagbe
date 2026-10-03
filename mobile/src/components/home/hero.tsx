@@ -7,15 +7,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { sectors, type SectorSlug } from '../../features/ads/sectors';
 import { colors, fontFamily, radius, shadow } from '../../theme/tokens';
-
-// Clears the transparent stack header floating above the photo (see
-// home-stack.tsx), on top of the status-bar inset.
-const FLOATING_HEADER_HEIGHT = 56;
 
 const POPULAR_AREAS = [
   'Dhanmondi',
@@ -49,8 +44,6 @@ export function Hero({
   onLocationChange: (location: string) => void;
   onSearch: (location?: string) => void;
 }) {
-  const insets = useSafeAreaInsets();
-
   return (
     <ImageBackground
       source={require('../../../assets/hero-dhaka-dusk.jpg')}
@@ -77,12 +70,7 @@ export function Hero({
         pointerEvents="none"
       />
 
-      <View
-        style={[
-          styles.content,
-          { paddingTop: insets.top + FLOATING_HEADER_HEIGHT },
-        ]}
-      >
+      <View style={styles.content}>
         <View style={styles.eyebrowPill}>
           <View style={styles.eyebrowDot} />
           <Text style={styles.eyebrowText}>

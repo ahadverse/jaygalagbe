@@ -5,6 +5,12 @@ import { Platform } from 'react-native';
 // `10.0.2.2` is the alias Android's emulator provides for the host's
 // localhost. A physical device needs the host's real LAN IP instead, set via
 // EXPO_PUBLIC_API_URL in a local .env file (not committed).
+//
+// Other EXPO_PUBLIC_ settings:
+// - EXPO_PUBLIC_DISABLE_SOCKET=true: never open a Socket.IO connection (for
+//   backends that can't hold WebSockets, e.g. Vercel serverless). Chat and the
+//   unread badge then run on HTTP polling only. When unset, Socket.IO is used
+//   and polling only kicks in if the socket can't connect (see socket.ts).
 const DEV_FALLBACK =
   Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
 

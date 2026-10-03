@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { AdStatus, Prisma } from '../generated/prisma/client.js';
+import { AdStatus } from '../generated/prisma/client.js';
 import type { AuthenticatedUser } from '../auth/current-user.decorator.js';
 import { LogImpressionDto } from './dto/log-impression.dto.js';
 import { LogVisitDto } from './dto/log-visit.dto.js';
@@ -17,6 +17,8 @@ import {
 } from './dto/get-stats-query.dto.js';
 
 const DAY_MS = 86_400_000;
+import { isEmpty } from '../common/object-id.js';
+
 const DEFAULT_RANGE_DAYS = 30;
 /** Hard ceiling on the requested window — the series is built one row per day. */
 const MAX_RANGE_DAYS = 366;
@@ -29,8 +31,7 @@ type DailyBucket = {
   conversions: number;
 };
 
-type AnalyticsTable = 'ad_impressions' | 'ad_visits' | 'ad_conversions';
-type DayCount = { day: Date; count: number };
+type DayCount = { day: string; count: number };
 
 function parseDate(value?: string): Date | null {
   if (!value) return null;
@@ -90,16 +91,21 @@ export class AnalyticsService {
     to: Date,
   ): Promise<DailyBucket[]> {
     const [impressions, visits, conversions] = await Promise.all([
-      this.countByDay('ad_impressions', 'createdAt', adIds, from, to),
-      this.countByDay('ad_visits', 'createdAt', adIds, from, to),
-      this.countByDay('ad_conversions', 'convertedAt', adIds, from, to),
+      this.countByDay('adImpression', 'createdAt', adIds, from, to),
+      this.countByDay('adVisit', 'createdAt', adIds, from, to),
+      this.countByDay('adConversion', 'convertedAt', adIds, from, to),
     ]);
 
     const buckets = new Map<string, DailyBucket>();
     const cursor = new Date(from);
     while (cursor <= to) {
       const key = cursor.toISOString().slice(0, 10);
-      buckets.set(key, { date: key, impressions: 0, visits: 0, conversions: 0 });
+      buckets.set(key, {
+        date: key,
+        impressions: 0,
+        visits: 0,
+        conversions: 0,
+      });
       cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
 
@@ -108,7 +114,7 @@ export class AnalyticsService {
       key: 'impressions' | 'visits' | 'conversions',
     ) => {
       for (const row of rows) {
-        const bucket = buckets.get(row.day.toISOString().slice(0, 10));
+        const bucket = buckets.get(row.day);
         if (bucket) bucket[key] = Number(row.count);
       }
     };
@@ -119,23 +125,40 @@ export class AnalyticsService {
     return [...buckets.values()];
   }
 
-  private countByDay(
-    table: AnalyticsTable,
+  private async countByDay(
+    model: 'adImpression' | 'adVisit' | 'adConversion',
     column: 'createdAt' | 'convertedAt',
     adIds: string[],
     from: Date,
     to: Date,
   ): Promise<DayCount[]> {
-    // Table and column come from the literal unions above, never from input;
-    // every value is still passed as a bound parameter.
-    return this.prisma.$queryRaw<DayCount[]>`
-      SELECT date_trunc('day', ${Prisma.raw(`"${column}"`)} AT TIME ZONE 'UTC') AS day,
-             COUNT(*)::int AS count
-      FROM ${Prisma.raw(`"${table}"`)}
-      WHERE "adId" = ANY(${adIds})
-        AND ${Prisma.raw(`"${column}"`)} BETWEEN ${from} AND ${to}
-      GROUP BY day
-    `;
+    const rows = (await this.prisma[model].aggregateRaw({
+      pipeline: [
+        {
+          $match: {
+            adId: { $in: adIds.map((id) => ({ $oid: id })) },
+            [column]: {
+              $gte: { $date: from.toISOString() },
+              $lte: { $date: to.toISOString() },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: '%Y-%m-%d',
+                date: `$${column}`,
+                timezone: 'UTC',
+              },
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ],
+    })) as unknown as { _id: string; count: number }[];
+
+    return rows.map((row) => ({ day: row._id, count: row.count }));
   }
 
   async logImpression(
@@ -172,12 +195,12 @@ export class AnalyticsService {
     if (dto.visitId) {
       const visit = await this.prisma.adVisit.findUnique({
         where: { id: dto.visitId },
-        include: { conversion: true },
+        include: { conversions: { take: 1 } },
       });
       if (!visit || visit.adId !== adId) {
         throw new NotFoundException('Visit not found');
       }
-      if (visit.conversion) {
+      if (visit.conversions.length > 0) {
         throw new ConflictException('Visit already converted');
       }
 
@@ -192,7 +215,7 @@ export class AnalyticsService {
 
     return this.prisma.$transaction(async (tx) => {
       const existing = await tx.adConversion.findFirst({
-        where: { adId, userId, visitId: null },
+        where: { adId, userId, ...isEmpty('visitId') },
       });
       if (existing) {
         return existing;
@@ -255,7 +278,12 @@ export class AnalyticsService {
 
     if (ads.length === 0) {
       return {
-        totals: { impressions: 0, visits: 0, conversions: 0, conversionRate: 0 },
+        totals: {
+          impressions: 0,
+          visits: 0,
+          conversions: 0,
+          conversionRate: 0,
+        },
         series: [] as DailyBucket[],
         ads: [] as Array<{
           id: string;
