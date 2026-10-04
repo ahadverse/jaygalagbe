@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const footerColumns = [
@@ -29,21 +30,14 @@ export function SiteFooter() {
     <footer className="mt-auto bg-neutral-950 text-neutral-300">
       <div className="shell grid gap-10 py-14 sm:grid-cols-2 sm:py-16 lg:grid-cols-4">
         <div className="flex flex-col gap-4 sm:col-span-2 lg:col-span-1">
-          <span className="inline-flex items-center gap-2.5">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-accent-600 text-white">
-              <svg viewBox="0 0 24 24" aria-hidden="true" className="size-[1.125rem]">
-                <path
-                  d="M4 11 12 4.5 20 11v8.5h-5.5V14h-5v5.5H4V11Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.9"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <span className="font-heading text-lg font-extrabold tracking-tight text-white">
-              Jayga<span className="text-brand-400">Lagbe</span>
-            </span>
+          <span className="inline-flex w-fit rounded-2xl bg-white p-3">
+            <Image
+              src="/logo.png"
+              alt="Jayga Lagbe"
+              width={900}
+              height={740}
+              className="h-24 w-auto"
+            />
           </span>
           <p className="max-w-xs text-sm leading-relaxed text-neutral-400">
             Verified land and rental listings, with every ad manually reviewed

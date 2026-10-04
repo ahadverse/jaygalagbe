@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -14,22 +15,14 @@ const navLinks = [
 
 export function Wordmark({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-accent-600 text-white shadow-brand">
-        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-[1.125rem]">
-          <path
-            d="M4 11 12 4.5 20 11v8.5h-5.5V14h-5v5.5H4V11Z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </span>
-      <span className="font-heading text-lg font-extrabold tracking-tight text-neutral-900">
-        Jayga<span className="text-primary">Lagbe</span>
-      </span>
-    </span>
+    <Image
+      src="/logo.png"
+      alt="Jayga Lagbe"
+      width={900}
+      height={740}
+      className={cn("h-14 w-auto sm:h-16", className)}
+      priority
+    />
   );
 }
 
