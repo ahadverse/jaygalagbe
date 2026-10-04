@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EmptyState, buttonVariants } from "@/components/ui";
 import { ConversationCard } from "@/components/messaging/conversation-card";
+import { RefreshButton } from "@/components/messaging/refresh-button";
 import { PageTitle } from "@/components/dashboard/page-title";
 import { Panel, PanelNote } from "@/components/dashboard/panel";
 import { requireUser } from "@/lib/auth/require-user";
@@ -124,6 +125,10 @@ export default async function MessagesPage({
         />
       ) : (
         <>
+          <div className="flex justify-end">
+            <RefreshButton />
+          </div>
+
           <nav
             aria-label="Filter conversations"
             className="flex flex-wrap gap-2"

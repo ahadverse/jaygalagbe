@@ -14,6 +14,7 @@ import {
 import { usePathname } from "next/navigation";
 import type { Socket } from "socket.io-client";
 import { createSocket, SOCKET_DISABLED } from "@/lib/socket/client";
+import { usePolling } from "@/lib/socket/use-polling";
 import { useToast } from "@/lib/toast/toast-context";
 import { formatNotification, type FormattedNotification } from "./format";
 import {
@@ -36,6 +37,7 @@ export type MessageEntry = NotificationEntry & {
 };
 
 const MAX_ENTRIES = 10;
+const UNREAD_POLL_MS = 20_000;
 
 type RealtimeValue = {
   /** Account activity only — approvals, rejections. Never messages. */
@@ -105,25 +107,25 @@ export function RealtimeProvider({
     }
   }
 
-  // Seed the badge from the server — the socket only sees what arrives while
-  // this tab is open, so a fresh load would otherwise start at zero.
-  useEffect(() => {
-    if (!signedIn) return;
-    let cancelled = false;
+  // Seed the badge from the server and keep it fresh: the socket only sees
+  // what arrives while this tab is open (and not at all where it is disabled),
+  // so the count is also polled. Skipped while reading messages, where opening
+  // a thread already marks it read.
+  const refreshUnreadCount = useCallback(async () => {
+    const response = await fetch("/api/messages/unread-count", {
+      cache: "no-store",
+    });
+    if (!response.ok) return;
+    const data = (await response.json()) as { messages?: number };
+    if (
+      typeof data.messages === "number" &&
+      !pathnameRef.current.startsWith("/dashboard/messages")
+    ) {
+      setUnreadMessages(data.messages);
+    }
+  }, []);
 
-    fetch("/api/messages/unread-count")
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { messages?: number } | null) => {
-        if (!cancelled && typeof data?.messages === "number") {
-          setUnreadMessages(data.messages);
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [signedIn]);
+  usePolling(refreshUnreadCount, UNREAD_POLL_MS, signedIn);
 
   useEffect(() => {
     if (!signedIn || SOCKET_DISABLED) return;
