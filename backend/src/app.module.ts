@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from './common/throttler.js';
 import { AppController } from './app.controller.js';
 import { HttpThrottlerGuard } from './common/http-throttler.guard.js';
 import { AppService } from './app.service.js';

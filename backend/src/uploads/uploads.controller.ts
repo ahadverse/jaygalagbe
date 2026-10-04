@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle } from '../common/throttler.js';
 import { UploadsService } from './uploads.service.js';
 import { Auth } from '../auth/auth.decorator.js';
 import { Role } from '../auth/role.enum.js';

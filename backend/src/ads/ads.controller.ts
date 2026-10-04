@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle } from '../common/throttler.js';
 import { AdsService } from './ads.service.js';
 import { CreateAdDto } from './dto/create-ad.dto.js';
 import { UpdateAdDto } from './dto/update-ad.dto.js';

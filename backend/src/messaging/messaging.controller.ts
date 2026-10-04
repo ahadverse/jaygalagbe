@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle } from '../common/throttler.js';
 import { MessagingService } from './messaging.service.js';
 import { CreateConversationDto } from './dto/create-conversation.dto.js';
 import { CreateMessageDto } from './dto/create-message.dto.js';

@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle } from '../common/throttler.js';
 import { AnalyticsService } from './analytics.service.js';
 import { LogImpressionDto } from './dto/log-impression.dto.js';
 import { LogVisitDto } from './dto/log-visit.dto.js';
