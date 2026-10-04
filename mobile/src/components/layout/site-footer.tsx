@@ -1,11 +1,11 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import type { JSX } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { sectors, type SectorSlug } from '../../features/ads/sectors';
 import { colors, fontFamily, radius } from '../../theme/tokens';
 import { Eyebrow } from '../brand/eyebrow';
+
+const logo = require('../../../assets/logo.png');
 
 type InfoScreen = 'About' | 'Contact' | 'Privacy' | 'Terms';
 
@@ -21,26 +21,8 @@ const SECTOR_GLOSS: Record<SectorSlug, string> = {
 
 function FooterWordmark() {
   return (
-    <View style={styles.wordmarkRow}>
-      <LinearGradient
-        colors={[colors.brand[500], colors.accent[600]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.wordmarkTile}
-      >
-        <Svg width={18} height={18} viewBox="0 0 24 24">
-          <Path
-            d="M4 11 12 4.5 20 11v8.5h-5.5V14h-5v5.5H4V11Z"
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth={1.9}
-            strokeLinejoin="round"
-          />
-        </Svg>
-      </LinearGradient>
-      <Text style={styles.wordmarkText}>
-        Jayga<Text style={styles.wordmarkTextAccent}>Lagbe</Text>
-      </Text>
+    <View style={styles.logoCard}>
+      <Image source={logo} style={styles.logo} resizeMode="contain" />
     </View>
   );
 }
@@ -151,27 +133,15 @@ const styles = StyleSheet.create({
   brandBlock: {
     gap: 12,
   },
-  wordmarkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
+  logoCard: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#ffffff',
+    borderRadius: radius.md,
+    padding: 10,
   },
-  wordmarkTile: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  wordmarkText: {
-    fontFamily: fontFamily.display,
-    fontSize: 19,
-    letterSpacing: -0.4,
-    color: '#ffffff',
-  },
-  wordmarkTextAccent: {
-    fontFamily: fontFamily.display,
-    color: colors.brand[400],
+  logo: {
+    width: 117,
+    height: 96,
   },
   tagline: {
     fontFamily: fontFamily.text,

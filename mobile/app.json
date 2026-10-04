@@ -18,9 +18,8 @@
     "android": {
       "package": "com.jaygalagbe.app",
       "adaptiveIcon": {
-        "backgroundColor": "#ed5f0b",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
@@ -39,7 +38,7 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ed5f0b"
+          "backgroundColor": "#ffffff"
         }
       ],
       "expo-font"
