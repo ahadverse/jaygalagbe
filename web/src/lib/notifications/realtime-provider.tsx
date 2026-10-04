@@ -13,7 +13,7 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 import type { Socket } from "socket.io-client";
-import { createSocket } from "@/lib/socket/client";
+import { createSocket, SOCKET_DISABLED } from "@/lib/socket/client";
 import { useToast } from "@/lib/toast/toast-context";
 import { formatNotification, type FormattedNotification } from "./format";
 import {
@@ -126,7 +126,7 @@ export function RealtimeProvider({
   }, [signedIn]);
 
   useEffect(() => {
-    if (!signedIn) return;
+    if (!signedIn || SOCKET_DISABLED) return;
     let cancelled = false;
 
     createSocket("/notifications")

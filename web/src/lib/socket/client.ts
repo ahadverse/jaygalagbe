@@ -1,7 +1,9 @@
 "use client";
 
 import { io, type Socket } from "socket.io-client";
-import { WS_URL } from "./config";
+import { SOCKET_DISABLED, WS_URL } from "./config";
+
+export { SOCKET_DISABLED };
 
 async function fetchSocketToken(): Promise<string> {
   const response = await fetch("/api/auth/socket-token");
@@ -18,4 +20,23 @@ export async function createSocket(namespace = ""): Promise<Socket> {
     auth: { token },
     transports: ["websocket"],
   });
+}
+
+/**
+ * Reports whether the socket is usable. `onDown` fires when a connection
+ * attempt fails or an open one drops; `onUp` when it (re)connects. Returns a
+ * function that stops listening.
+ */
+export function watchSocket(
+  socket: Socket,
+  { onUp, onDown }: { onUp: () => void; onDown: () => void },
+): () => void {
+  socket.on("connect", onUp);
+  socket.on("connect_error", onDown);
+  socket.on("disconnect", onDown);
+  return () => {
+    socket.off("connect", onUp);
+    socket.off("connect_error", onDown);
+    socket.off("disconnect", onDown);
+  };
 }
