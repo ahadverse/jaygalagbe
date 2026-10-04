@@ -10,14 +10,11 @@ import { Topbar } from './topbar';
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2.5 px-3 py-4">
-      <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-600 text-sm font-bold text-white">
-        JL
+    <div className="flex flex-col items-start gap-2 px-3 py-4">
+      <span className="rounded-xl bg-white p-2">
+        <img src="/logo.png" alt="Jayga Lagbe" className="h-20 w-auto" />
       </span>
-      <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-white">Jayga Lagbe</p>
-        <p className="truncate text-xs text-rail-muted">Admin console</p>
-      </div>
+      <p className="truncate text-xs text-rail-muted">Admin console</p>
     </div>
   );
 }

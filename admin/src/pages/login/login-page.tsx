@@ -59,14 +59,11 @@ export function LoginPage() {
       {/* On desktop the brand panel carries the context; on mobile it collapses
           to a compact header so the form stays above the fold. */}
       <div className="flex shrink-0 flex-col justify-between gap-8 px-6 py-8 lg:w-2/5 lg:px-12 lg:py-14">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-brand-600 text-sm font-bold text-white">
-            JL
+        <div className="flex flex-col items-start gap-2">
+          <span className="rounded-2xl bg-white p-3">
+            <img src="/logo.png" alt="Jayga Lagbe" className="h-24 w-auto" />
           </span>
-          <div>
-            <p className="text-sm font-semibold text-white">Jayga Lagbe</p>
-            <p className="text-xs text-ink-400">Admin console</p>
-          </div>
+          <p className="text-xs text-ink-400">Admin console</p>
         </div>
 
         <div className="hidden lg:block">
