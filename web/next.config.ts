@@ -12,11 +12,11 @@ const wsUrl = process.env.NEXT_PUBLIC_WS_URL ?? "http://localhost:5000";
 // those two directives stay permissive; everything else is locked to self.
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${isProduction ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self' ${wsUrl} ${wsUrl.replace(/^http/, "ws")}`,
+  `connect-src 'self' ${wsUrl} ${wsUrl.replace(/^http/, "ws")} https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

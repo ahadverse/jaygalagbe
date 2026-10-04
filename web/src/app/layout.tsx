@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -12,6 +13,8 @@ const display = Bricolage_Grotesque({
   subsets: ["latin"],
   display: "swap",
 });
+
+const GA_ID = "G-KNYFKMCDQ4";
 
 const text = Inter({
   variable: "--font-text",
@@ -33,6 +36,16 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${text.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`}
+        </Script>
         <ToastProvider>
           {/* One socket for the whole app, fanned out to the bell and the
               message badge — see RealtimeProvider. */}
