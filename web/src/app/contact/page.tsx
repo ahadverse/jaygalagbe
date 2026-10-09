@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContactForm } from "@/components/contact/contact-form";
+import { SocialLinks } from "@/components/social/social-links";
 import { SITE_CONTACT } from "@/lib/site-contact";
 
 export const metadata: Metadata = {
@@ -193,6 +194,15 @@ export default function ContactPage() {
                 )}
               </div>
             )}
+            <div className="rounded-2xl bg-card p-6 shadow-sm ring-1 ring-neutral-900/5">
+              <h2 className="font-heading text-lg font-bold text-neutral-900">
+                Follow us
+              </h2>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                New listings, property tips and updates on our social pages.
+              </p>
+              <SocialLinks className="mt-4" />
+            </div>
 
             <div className="rounded-2xl bg-card p-6 shadow-sm ring-1 ring-neutral-900/5">
               <h2 className="font-heading text-lg font-bold text-neutral-900">

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { SocialLinks } from "@/components/social/social-links";
 
 const footerColumns = [
   {
@@ -56,6 +57,7 @@ export function SiteFooter() {
             Bangladesh&apos;s property listing platform. Every listing is
             manually reviewed before publication.
           </p>
+          <SocialLinks tone="dark" />
         </div>
 
         {footerColumns.map((column) => (

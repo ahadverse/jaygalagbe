@@ -4,6 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { SectorSlug } from '../../features/ads/sectors';
 import { colors, fontFamily, radius } from '../../theme/tokens';
 import { Eyebrow } from '../brand/eyebrow';
+import { SocialLinks } from '../brand/social-links';
 
 const logo = require('../../../assets/logo.png');
 
@@ -105,6 +106,7 @@ export function SiteFooter({
           <Text style={styles.tagline}>
             Bangladesh's property listing platform. Every listing is manually reviewed before publication.
           </Text>
+          <SocialLinks tone="dark" />
         </View>
 
         <View style={styles.columns}>
