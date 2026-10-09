@@ -8,6 +8,7 @@ import { Button, HelperText, TextInput } from 'react-native-paper';
 import { ApiError } from '../../api/errors';
 import { BrandCard } from '../../components/brand/brand-card';
 import { Eyebrow } from '../../components/brand/eyebrow';
+import { SocialLinks } from '../../components/brand/social-links';
 import { SelectField } from '../../components/forms/select-field';
 import { CONTACT_TOPICS, sendContactMessage } from '../../features/contact/api';
 import {
@@ -280,6 +281,14 @@ export function ContactScreen() {
           Fill in the form and we&apos;ll reply by email or phone.
         </Text>
         <ContactForm />
+      </BrandCard>
+
+      <BrandCard radius="2xl" style={styles.formCard}>
+        <Text style={styles.cardTitle}>Follow us</Text>
+        <Text style={styles.cardSub}>
+          New listings, property tips and updates on our social pages.
+        </Text>
+        <SocialLinks />
       </BrandCard>
 
       <View style={styles.block}>
