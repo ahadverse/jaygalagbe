@@ -64,6 +64,16 @@ export class AdsController {
     return this.adsService.findOneVisible(id, user);
   }
 
+  @Get(':id/phone')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ medium: { ttl: 3_600_000, limit: 60 } })
+  revealPhone(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.adsService.revealPhone(id, user);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   update(

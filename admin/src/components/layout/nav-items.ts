@@ -4,6 +4,7 @@ import {
   ChartIcon,
   DashboardIcon,
   FlagIcon,
+  InboxIcon,
   HistoryIcon,
   ListIcon,
   QueueIcon,
@@ -26,6 +27,7 @@ export interface NavItem {
 export interface NavBadges {
   pendingAds?: number;
   pendingReports?: number;
+  newContacts?: number;
 }
 
 export interface NavSection {
@@ -78,6 +80,13 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Administration',
     items: [
       { to: '/users', label: 'Users', icon: UsersIcon },
+      {
+        to: '/contacts',
+        label: 'Contacts',
+        icon: InboxIcon,
+        badgeKey: 'newContacts',
+        badgeTone: 'danger',
+      },
       { to: '/audit-log', label: 'Audit log', icon: HistoryIcon },
     ],
   },

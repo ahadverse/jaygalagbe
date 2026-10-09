@@ -1,7 +1,7 @@
 const safeguards = [
   {
-    title: "Reviewed before it is published",
-    body: "Nothing reaches the listings straight from a form. Anything fake, duplicated or in the wrong sector is rejected with a reason, and the advertiser has to fix it and resubmit.",
+    title: "Manually Reviewed Listings",
+    body: "Every listing is reviewed before publication. Anything fake, duplicated or in the wrong sector is rejected with a reason.",
     icon: (
       <>
         <path d="M12 3.5 19 6v6c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6l7-2.5Z" />
@@ -10,20 +10,31 @@ const safeguards = [
     ),
   },
   {
-    title: "Contact details sit behind a free account",
-    body: "Advertiser inboxes are not sitting in the page source for scrapers. You make a free account to start a conversation, which keeps bulk spam off the platform.",
+    title: "Free Property Posting",
+    body: "List your property without a listing fee. You only pay if you choose to boost.",
     icon: (
       <>
-        <rect x="5" y="10.5" width="14" height="9" rx="2" />
-        <path d="M8.5 10.5V8a3.5 3.5 0 1 1 7 0v2.5" />
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M12 7.5v9M9.5 10a2.5 1.8 0 0 1 5 0c0 2-5 1.6-5 3.8a2.5 1.8 0 0 0 5 0" />
       </>
     ),
   },
   {
-    title: "Conversations stay on the platform",
-    body: "Messages are delivered in real time inside Jayga Lagbe, so you keep the whole thread — and you can rate the advertiser once you have dealt with them.",
+    title: "Direct Communication",
+    body: "Connect directly with the advertiser. Messages arrive in real time inside Jayga Lagbe, so you keep the whole thread.",
     icon: (
       <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4A1.5 1.5 0 0 1 4 14.5v-8Z" />
+    ),
+  },
+  {
+    title: "No Money Handling",
+    body: "We don't handle property transaction payments between users. Always verify ownership documents before paying anyone.",
+    icon: (
+      <>
+        <rect x="3.5" y="7" width="17" height="10.5" rx="2" />
+        <circle cx="12" cy="12.2" r="2.3" />
+        <path d="M4 20 20 4" />
+      </>
     ),
   },
 ];

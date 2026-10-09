@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button, Input, Select } from "@/components/ui";
 import type { SectorConfig } from "@/lib/ads/sectors";
+import { SIZE_UNITS } from "@/lib/ads/land-size";
 
 export type SectorFilterValues = {
   q?: string;
@@ -9,6 +10,7 @@ export type SectorFilterValues = {
   maxPrice?: string;
   propertyType?: string;
   minSize?: string;
+  minSizeUnit?: string;
   bedrooms?: string;
   sort?: string;
 };
@@ -97,17 +99,29 @@ export function SectorFilters({
         </Select>
 
         {config.sector === "LAND" ? (
-          <Input
-            name="minSize"
-            type="number"
-            inputMode="decimal"
-            step="0.5"
-            min={0}
-            label="Min size"
-            placeholder="Katha"
-            defaultValue={values.minSize}
-            className="numeric"
-          />
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <Input
+              name="minSize"
+              type="number"
+              inputMode="decimal"
+              step="any"
+              min={0}
+              label="Min size"
+              defaultValue={values.minSize}
+              className="numeric"
+            />
+            <Select
+              name="minSizeUnit"
+              label="Unit"
+              defaultValue={values.minSizeUnit ?? "katha"}
+            >
+              {SIZE_UNITS.map((unit) => (
+                <option key={unit.value} value={unit.value}>
+                  {unit.label}
+                </option>
+              ))}
+            </Select>
+          </div>
         ) : (
           <Select
             name="bedrooms"

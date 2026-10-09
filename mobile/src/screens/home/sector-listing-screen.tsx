@@ -11,6 +11,13 @@ import {
 } from 'react-native-paper';
 
 import { AdCard } from '../../components/ads/ad-card';
+import { SelectField } from '../../components/forms/select-field';
+import {
+  SIZE_UNITS,
+  sizeUnitFromLabel,
+  sizeUnitLabel,
+  type SizeUnit,
+} from '../../features/ads/land-size';
 import { BrandCard } from '../../components/brand/brand-card';
 import { liveAdsQuery } from '../../features/ads/api';
 import { getSectorOption } from '../../features/ads/sectors';
@@ -59,6 +66,7 @@ export function SectorListingScreen({
   );
   const [propertyType, setPropertyType] = useState<string | undefined>();
   const [minSize, setMinSize] = useState('');
+  const [minSizeUnit, setMinSizeUnit] = useState<SizeUnit>('katha');
   const [bedrooms, setBedrooms] = useState<number | undefined>();
   const [sort, setSort] = useState<SortOption>('newest');
 
@@ -77,6 +85,7 @@ export function SectorListingScreen({
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
     propertyType,
     minSize: minSize ? Number(minSize) : undefined,
+    minSizeUnit,
     bedrooms,
     sort,
   };
@@ -191,14 +200,22 @@ export function SectorListingScreen({
             </View>
 
             {sectorOption.sector === 'LAND' ? (
-              <TextInput
-                mode="outlined"
-                label="Min size (katha)"
-                keyboardType="numeric"
-                value={minSize}
-                onChangeText={setMinSize}
-                style={styles.input}
-              />
+              <>
+                <TextInput
+                  mode="outlined"
+                  label="Min size"
+                  keyboardType="numeric"
+                  value={minSize}
+                  onChangeText={setMinSize}
+                  style={styles.input}
+                />
+                <SelectField
+                  label="Unit"
+                  value={sizeUnitLabel(minSizeUnit)}
+                  options={SIZE_UNITS.map((unit) => unit.label)}
+                  onChange={(label) => setMinSizeUnit(sizeUnitFromLabel(label))}
+                />
+              </>
             ) : (
               <View style={styles.chipRow}>
                 {BEDROOM_OPTIONS.map((count) => {

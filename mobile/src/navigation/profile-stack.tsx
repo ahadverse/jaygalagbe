@@ -6,6 +6,7 @@ import { RegisterScreen } from '../screens/auth/register-screen';
 import { AdDetailScreen } from '../screens/home/ad-detail-screen';
 import { AboutScreen } from '../screens/info/about-screen';
 import { ContactScreen } from '../screens/info/contact-screen';
+import { FounderScreen } from '../screens/info/founder-screen';
 import { PrivacyScreen } from '../screens/info/privacy-screen';
 import { TermsScreen } from '../screens/info/terms-screen';
 import { NotificationsScreen } from '../screens/profile/notifications-screen';
@@ -82,9 +83,14 @@ export function ProfileStack() {
         options={{ title: 'About' }}
       />
       <Stack.Screen
+        name="Founder"
+        component={FounderScreen}
+        options={{ title: 'Meet the Founder' }}
+      />
+      <Stack.Screen
         name="Contact"
         component={ContactScreen}
-        options={{ title: 'Contact us' }}
+        options={{ title: 'Contact Us' }}
       />
       <Stack.Screen
         name="Privacy"
@@ -94,7 +100,7 @@ export function ProfileStack() {
       <Stack.Screen
         name="Terms"
         component={TermsScreen}
-        options={{ title: 'Terms of Service' }}
+        options={{ title: 'Terms and Conditions' }}
       />
     </Stack.Navigator>
   );

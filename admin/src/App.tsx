@@ -7,6 +7,7 @@ import { AnalyticsPage } from '@/pages/analytics/analytics-page';
 import { ReviewQueuePage } from '@/pages/review-queue/review-queue-page';
 import { AdsPage } from '@/pages/ads/ads-page';
 import { ReportsPage } from '@/pages/reports/reports-page';
+import { ContactsPage } from '@/pages/contacts/contacts-page';
 import { ReviewsPage } from '@/pages/reviews/reviews-page';
 import { UsersPage } from '@/pages/users/users-page';
 import { TransactionsPage } from '@/pages/transactions/transactions-page';
@@ -29,6 +30,7 @@ export function App() {
         <Route path="review-queue" element={<ReviewQueuePage />} />
         <Route path="ads" element={<AdsPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="contacts" element={<ContactsPage />} />
         <Route path="reviews" element={<ReviewsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="transactions" element={<TransactionsPage />} />

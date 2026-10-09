@@ -3,24 +3,37 @@ import Link from "next/link";
 
 const footerColumns = [
   {
-    title: "Browse",
+    title: "For Buyers",
     links: [
-      { href: "/jayga-jomi", label: "Jayga Jomi (Land for sale)" },
-      { href: "/basha-bhara", label: "Basha Bhara (House rent)" },
+      { href: "/jayga-jomi", label: "Browse Land" },
+      { href: "/basha-bhara", label: "Browse Rentals" },
+      { href: "/#districts-heading", label: "Search by District" },
     ],
   },
   {
-    title: "For advertisers",
+    title: "For Owners",
     links: [
-      { href: "/dashboard/ads/new", label: "Post an ad" },
-      { href: "/register", label: "Become an advertiser" },
+      { href: "/dashboard/ads/new", label: "Post Your Property" },
+      { href: "/register", label: "Become an Advertiser" },
+      { href: "/dashboard/ads", label: "Boost Your Listing" },
     ],
   },
   {
     title: "Company",
     links: [
-      { href: "/about", label: "About Jayga Lagbe" },
-      { href: "/contact", label: "Contact us" },
+      { href: "/about", label: "About Us" },
+      { href: "/founder", label: "Meet the Founder" },
+      { href: "/contact", label: "Contact Us" },
+      { href: "/terms", label: "Terms & Conditions" },
+      { href: "/privacy", label: "Privacy Policy" },
+    ],
+  },
+  {
+    title: "Support",
+    links: [
+      { href: "/contact", label: "Contact Support" },
+      { href: "/contact#safety-tips", label: "Safety Tips" },
+      { href: "/#faq-heading", label: "Frequently Asked Questions" },
     ],
   },
 ];
@@ -28,7 +41,7 @@ const footerColumns = [
 export function SiteFooter() {
   return (
     <footer className="mt-auto bg-neutral-950 text-neutral-300">
-      <div className="shell grid gap-10 py-14 sm:grid-cols-2 sm:py-16 lg:grid-cols-4">
+      <div className="shell grid gap-10 py-14 sm:grid-cols-2 sm:py-16 lg:grid-cols-5">
         <div className="flex flex-col gap-4 sm:col-span-2 lg:col-span-1">
           <span className="inline-flex w-fit rounded-2xl bg-white p-3">
             <Image
@@ -40,8 +53,8 @@ export function SiteFooter() {
             />
           </span>
           <p className="max-w-xs text-sm leading-relaxed text-neutral-400">
-            Verified land and rental listings, with every ad manually reviewed
-            before it goes live.
+            Bangladesh&apos;s property listing platform. Every listing is
+            manually reviewed before publication.
           </p>
         </div>
 

@@ -171,7 +171,7 @@ function generateLandAds(count: number, startIndex: number): SeedAd[] {
       locationDistrict: district,
       locationArea: area,
       photos: landPhotos(index),
-      attributes: { sizeKatha: size, propertyType },
+      attributes: { size: size, sizeUnit: 'katha', propertyType },
       status: 'LIVE',
     };
   });
@@ -458,7 +458,7 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Bhatara',
       photos: landPhotos(100),
-      attributes: { sizeKatha: 5, propertyType: 'Residential' },
+      attributes: { size: 5, sizeUnit: 'katha', propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
     {
@@ -471,7 +471,7 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Mohammadpur',
       photos: landPhotos(101),
-      attributes: { sizeKatha: 3, propertyType: 'Residential' },
+      attributes: { size: 3, sizeUnit: 'katha', propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
     {
@@ -484,7 +484,7 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Dhanmondi',
       photos: landPhotos(102),
-      attributes: { sizeKatha: 10, propertyType: 'Commercial' },
+      attributes: { size: 10, sizeUnit: 'katha', propertyType: 'Commercial' },
       status: 'LIVE' as const,
     },
     {
@@ -497,7 +497,7 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Bhatara',
       photos: landPhotos(103),
-      attributes: { sizeKatha: 6, propertyType: 'Residential' },
+      attributes: { size: 6, sizeUnit: 'katha', propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
     {
@@ -510,7 +510,7 @@ async function main() {
       locationDistrict: 'Gazipur',
       locationArea: 'Joydebpur',
       photos: landPhotos(104),
-      attributes: { sizeKatha: 4, propertyType: 'Agricultural' },
+      attributes: { size: 4, sizeUnit: 'katha', propertyType: 'Agricultural' },
       status: 'LIVE' as const,
     },
     {
@@ -523,7 +523,7 @@ async function main() {
       locationDistrict: 'Dhaka',
       locationArea: 'Savar',
       photos: landPhotos(105),
-      attributes: { sizeKatha: 8, propertyType: 'Commercial' },
+      attributes: { size: 8, sizeUnit: 'katha', propertyType: 'Commercial' },
       status: 'LIVE' as const,
     },
     {
@@ -536,7 +536,7 @@ async function main() {
       locationDistrict: 'Chattogram',
       locationArea: 'Halishahar',
       photos: landPhotos(106),
-      attributes: { sizeKatha: 5, propertyType: 'Residential' },
+      attributes: { size: 5, sizeUnit: 'katha', propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
     {
@@ -549,7 +549,7 @@ async function main() {
       locationDistrict: 'Sylhet',
       locationArea: 'Sylhet Kotwali',
       photos: landPhotos(107),
-      attributes: { sizeKatha: 2, propertyType: 'Residential' },
+      attributes: { size: 2, sizeUnit: 'katha', propertyType: 'Residential' },
       status: 'LIVE' as const,
     },
     {
@@ -562,7 +562,7 @@ async function main() {
       locationDistrict: 'Rajshahi',
       locationArea: 'Boalia',
       photos: landPhotos(108),
-      attributes: { sizeKatha: 15, propertyType: 'Agricultural' },
+      attributes: { size: 15, sizeUnit: 'katha', propertyType: 'Agricultural' },
       status: 'REJECTED' as const,
       rejectionReason:
         'Ownership documents unclear — please resubmit with an updated deed.',

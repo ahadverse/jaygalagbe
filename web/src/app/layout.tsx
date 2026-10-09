@@ -23,7 +23,7 @@ const text = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Jayga Lagbe",
+  title: "JaygaLagbe.com | Land, Houses & Property for Sale & Rent in Bangladesh",
   description: "Find land and rental listings near you.",
 };
 

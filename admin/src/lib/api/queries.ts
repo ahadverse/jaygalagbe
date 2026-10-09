@@ -10,6 +10,7 @@ import type {
   BoostPage,
   DashboardOverview,
   Paginated,
+  ContactPage,
   ReportPage,
   ReviewPage,
   TransactionPage,
@@ -26,6 +27,7 @@ export const queryKeys = {
   user: (id: string) => ['admin', 'users', 'detail', id] as const,
   transactions: (params: QueryParams) =>
     ['admin', 'transactions', params] as const,
+  contacts: (params: QueryParams) => ['admin', 'contacts', params] as const,
   reports: (params: QueryParams) => ['admin', 'reports', params] as const,
   boosts: (params: QueryParams) => ['admin', 'boosts', params] as const,
   reviews: (params: QueryParams) => ['admin', 'reviews', params] as const,
@@ -161,6 +163,17 @@ export function useAnalyticsQuery(params: QueryParams) {
     queryKey: queryKeys.analytics(params),
     queryFn: ({ signal }) =>
       apiRequest<AnalyticsOverview>(`/admin/analytics${buildQuery(params)}`, {
+        signal,
+      }),
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useContactsQuery(params: QueryParams) {
+  return useQuery({
+    queryKey: queryKeys.contacts(params),
+    queryFn: ({ signal }) =>
+      apiRequest<ContactPage>(`/admin/contacts${buildQuery(params)}`, {
         signal,
       }),
     placeholderData: (previous) => previous,

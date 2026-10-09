@@ -6,6 +6,7 @@ import type {
   AdStatus,
   BoostStatus,
   PaymentStatus,
+  ContactStatus,
   ReportStatus,
 } from '@/lib/api/types';
 import {
@@ -96,4 +97,12 @@ export function ReportStatusBadge({ status }: { status: ReportStatus }) {
 
 export function BoostStatusBadge({ status }: { status: BoostStatus }) {
   return <Badge tone={BOOST_STATUS_TONE[status]}>{humanize(status)}</Badge>;
+}
+
+export function ContactStatusBadge({ status }: { status: ContactStatus }) {
+  return (
+    <Badge tone={status === 'NEW' ? 'warning' : status === 'OPENED' ? 'info' : 'success'} dot>
+      {humanize(status)}
+    </Badge>
+  );
 }

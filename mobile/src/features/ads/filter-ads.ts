@@ -1,4 +1,5 @@
 import type { Sector } from './sectors';
+import { landSizeInDecimal, toDecimal, type SizeUnit } from './land-size';
 import type { Ad, HouseRentAttributes, LandAttributes } from './types';
 
 export type SortOption = 'newest' | 'price_asc' | 'price_desc';
@@ -10,6 +11,7 @@ export type AdFilters = {
   maxPrice?: number;
   propertyType?: string;
   minSize?: number;
+  minSizeUnit?: SizeUnit;
   bedrooms?: number;
   sort?: SortOption;
 };
@@ -43,7 +45,7 @@ function matchesAttributes(
     if (filters.propertyType && attrs?.propertyType !== filters.propertyType) {
       return false;
     }
-    if (filters.minSize != null && (attrs?.sizeKatha ?? 0) < filters.minSize) {
+    if (filters.minSize != null && landSizeInDecimal(attrs) < toDecimal(filters.minSize, filters.minSizeUnit ?? 'katha')) {
       return false;
     }
     return true;

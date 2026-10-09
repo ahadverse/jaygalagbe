@@ -28,7 +28,7 @@ const steps = [
     step: "03",
     title: "Close with confidence",
     description:
-      "Every ad is manually reviewed before it goes live, so you're never chasing a fake listing.",
+      "Every ad is manually reviewed before it goes live, so what you browse has been checked by a person first.",
     icon: (
       <>
         <path
@@ -52,8 +52,8 @@ export function HowItWorks() {
             From search to conversation in three steps
           </h2>
           <p className="measure text-base text-muted-foreground">
-            No brokers in the middle, no paywall on browsing — just verified
-            listings and a direct line to the owner.
+            No brokers in the middle, no paywall on browsing — just manually
+            reviewed listings and a direct line to the owner.
           </p>
         </div>
 

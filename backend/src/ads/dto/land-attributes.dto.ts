@@ -1,9 +1,12 @@
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class LandAttributesDto {
   @IsNumber()
   @Min(0)
-  sizeKatha!: number;
+  size!: number;
+
+  @IsIn(['katha', 'decimal'])
+  sizeUnit!: 'katha' | 'decimal';
 
   @IsOptional()
   @IsString()

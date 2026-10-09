@@ -8,6 +8,7 @@ import type { SectorSlug } from '../features/ads/sectors';
 // once here and spread into each stack that registers them.
 export type InfoScreensParamList = {
   About: undefined;
+  Founder: undefined;
   Contact: undefined;
   Privacy: undefined;
   Terms: undefined;

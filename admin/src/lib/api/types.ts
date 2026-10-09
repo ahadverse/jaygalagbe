@@ -19,6 +19,7 @@ export interface Paginated<T> {
 export type Sector = 'LAND' | 'HOUSE_RENT';
 export type AdStatus = 'PENDING' | 'LIVE' | 'REJECTED' | 'SOLD' | 'REMOVED';
 export type ReportStatus = 'PENDING' | 'REVIEWED' | 'DISMISSED';
+export type ContactStatus = 'NEW' | 'OPENED' | 'RESOLVED';
 export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
 export type PaymentGateway = 'BKASH' | 'NAGAD' | 'CARD';
 export type BoostTier = 'THREE_DAY' | 'SEVEN_DAY' | 'FIFTEEN_DAY';
@@ -429,3 +430,18 @@ export interface DashboardOverview extends AnalyticsOverview {
   }[];
   recentActivity: AuditEntry[];
 }
+
+export interface ContactListItem {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  topic: string;
+  message: string;
+  status: ContactStatus;
+  createdAt: string;
+}
+
+export type ContactPage = Paginated<ContactListItem> & {
+  countByStatus: Partial<Record<ContactStatus, number>>;
+};

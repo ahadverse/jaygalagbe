@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 
 import { colors, fontFamily } from '../theme/tokens';
@@ -13,5 +14,10 @@ export const defaultStackScreenOptions: NativeStackNavigationOptions = {
     fontSize: 17,
   },
   headerShadowVisible: false,
+  // On Android the system status bar already sits above the app window (the
+  // black strip), so the native header must not add the status-bar inset again.
+  ...(Platform.OS === 'android'
+    ? { unstable_headerInsets: { top: false } }
+    : null),
   contentStyle: { backgroundColor: colors.surface },
 };

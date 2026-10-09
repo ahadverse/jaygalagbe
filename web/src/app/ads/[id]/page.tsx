@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui";
 import { AdGallery } from "@/components/ads/ad-gallery";
 import { NearbyListings } from "@/components/ads/nearby-listings";
 import { ContactGate } from "@/components/ads/contact-gate";
+import { PhoneReveal } from "@/components/ads/phone-reveal";
 import { SaveAdButton } from "@/components/ads/save-ad-button";
 import { ReportAdButton } from "@/components/ads/report-ad-button";
+import { TrustBox } from "@/components/ads/trust-box";
 import { ViewRecorder } from "@/components/ads/view-recorder";
 import { fetchAd } from "@/lib/ads/fetch-ad";
 import { fetchLiveAds } from "@/lib/ads/fetch-live-ads";
@@ -236,6 +238,13 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
               ownerId={ad.ownerId}
               currentUser={currentUser}
             />
+            {currentUser?.id !== ad.ownerId && (
+              <PhoneReveal
+                adId={ad.id}
+                maskedPhone={ad.ownerPhoneMasked}
+                currentUser={currentUser}
+              />
+            )}
             <SaveAdButton adId={ad.id} />
             <ViewRecorder adId={ad.id} />
 
@@ -276,6 +285,8 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
                 </DetailRow>
               </dl>
             </section>
+
+            <TrustBox isLive={ad.status === "LIVE"} />
 
             <ReportAdButton
               adId={ad.id}

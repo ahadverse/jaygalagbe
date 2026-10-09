@@ -20,6 +20,7 @@ import { AnalyticsModule } from './analytics/analytics.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { SavedAdsModule } from './saved-ads/saved-ads.module.js';
+import { ContactModule } from './contact/contact.module.js';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { SavedAdsModule } from './saved-ads/saved-ads.module.js';
     UploadsModule,
     AdminModule,
     SavedAdsModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: HttpThrottlerGuard }],

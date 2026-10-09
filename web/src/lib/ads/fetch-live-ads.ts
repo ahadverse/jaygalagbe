@@ -11,7 +11,9 @@ export async function fetchLiveAds(
     if (options?.skip) params.set("skip", String(options.skip));
 
     const response = await fetch(`${API_URL}/ads?${params.toString()}`, {
-      cache: "no-store",
+      // Live ads only change when an admin approves one, so a short shared
+      // cache spares every visitor a cold serverless + database round trip.
+      next: { revalidate: 30 },
     });
 
     if (!response.ok) {

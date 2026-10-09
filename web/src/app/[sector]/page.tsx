@@ -47,7 +47,10 @@ function buildPageHref(slug: string, values: SectorFilterValues, page: number): 
   if (values.minPrice) params.set("minPrice", values.minPrice);
   if (values.maxPrice) params.set("maxPrice", values.maxPrice);
   if (values.propertyType) params.set("propertyType", values.propertyType);
-  if (values.minSize) params.set("minSize", values.minSize);
+  if (values.minSize) {
+    params.set("minSize", values.minSize);
+    if (values.minSizeUnit) params.set("minSizeUnit", values.minSizeUnit);
+  }
   if (values.bedrooms) params.set("bedrooms", values.bedrooms);
   if (values.sort && values.sort !== "newest") params.set("sort", values.sort);
   if (page > 1) params.set("page", String(page));
@@ -74,6 +77,8 @@ export default async function SectorPage({
     maxPrice: firstValue(resolved?.maxPrice),
     propertyType: firstValue(resolved?.propertyType),
     minSize: firstValue(resolved?.minSize),
+    // The unit select always submits a value; it only counts as a filter alongside a size.
+    minSizeUnit: firstValue(resolved?.minSize) ? firstValue(resolved?.minSizeUnit) : undefined,
     bedrooms: firstValue(resolved?.bedrooms),
     sort: firstValue(resolved?.sort),
   };
@@ -91,6 +96,7 @@ export default async function SectorPage({
         maxPrice: parseNumber(values.maxPrice),
         propertyType: values.propertyType || undefined,
         minSize: parseNumber(values.minSize),
+        minSizeUnit: values.minSizeUnit === "decimal" ? "decimal" : "katha",
         bedrooms: parseNumber(values.bedrooms),
         sort: (values.sort as SortOption) || "newest",
       });

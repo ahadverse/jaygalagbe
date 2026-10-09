@@ -16,6 +16,7 @@ import {
   type PhotoUploaderHandle,
 } from "@/components/dashboard/photo-uploader";
 import { sectorConfigs } from "@/lib/ads/sectors";
+import { getLandSize, SIZE_UNITS } from "@/lib/ads/land-size";
 import type { Ad, HouseRentAttributes, LandAttributes, Sector } from "@/lib/ads/types";
 
 function SubmitButton({ label, busy }: { label: string; busy: boolean }) {
@@ -60,7 +61,7 @@ function FormSection({
   );
 }
 
-export function AdForm({ ad }: { ad?: Ad }) {
+export function AdForm({ ad, phone }: { ad?: Ad; phone?: string }) {
   const isEdit = Boolean(ad);
   const [state, formAction] = useActionState<AdFormState, FormData>(
     isEdit ? updateAdAction : createAdAction,
@@ -102,6 +103,7 @@ export function AdForm({ ad }: { ad?: Ad }) {
     startTransition(() => formAction(formData));
   }
   const landAttrs = ad?.attributes as LandAttributes | undefined;
+  const landSize = getLandSize(landAttrs);
   const houseAttrs = ad?.attributes as HouseRentAttributes | undefined;
   const sectorName =
     sectorConfigs[sector === "LAND" ? "jayga-jomi" : "basha-bhara"].name;
@@ -188,6 +190,25 @@ export function AdForm({ ad }: { ad?: Ad }) {
         />
       </FormSection>
 
+      {!isEdit && (
+        <FormSection
+          title="Contact"
+          description="Buyers call or message this number. It is saved to your account."
+        >
+          <Input
+            name="phone"
+            type="tel"
+            inputMode="tel"
+            label="Phone number"
+            defaultValue={phone}
+            pattern="^(?:+?880|0)1[3-9]d{8}$"
+            placeholder="01XXXXXXXXX"
+            hint="A Bangladeshi mobile number."
+            required
+          />
+        </FormSection>
+      )}
+
       <FormSection
         title="Location"
         description="Pick the division, then the district, then the thana — buyers browse in that order."
@@ -219,17 +240,30 @@ export function AdForm({ ad }: { ad?: Ad }) {
       >
         {sector === "LAND" ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              name="sizeKatha"
-              type="number"
-              step="0.5"
-              inputMode="decimal"
-              min={0}
-              label="Size (katha)"
-              defaultValue={landAttrs?.sizeKatha}
-              className="numeric"
-              required
-            />
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <Input
+                name="size"
+                type="number"
+                step="any"
+                inputMode="decimal"
+                min={0}
+                label="Size"
+                defaultValue={landSize?.value}
+                className="numeric"
+                required
+              />
+              <Select
+                name="sizeUnit"
+                label="Unit"
+                defaultValue={landSize?.unit ?? "katha"}
+              >
+                {SIZE_UNITS.map((unit) => (
+                  <option key={unit.value} value={unit.value}>
+                    {unit.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
             <Select
               name="propertyType"
               label="Property type"

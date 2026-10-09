@@ -59,7 +59,7 @@ const sampleAd: Ad = {
   locationArea: "Bashundhara R/A",
   locationDistrict: "Dhaka",
   photos: [],
-  attributes: { sizeKatha: 5, propertyType: "Residential" },
+  attributes: { size: 5, sizeUnit: "katha", propertyType: "Residential" },
   status: "LIVE",
   createdAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
   updatedAt: new Date().toISOString(),

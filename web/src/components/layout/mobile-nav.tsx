@@ -19,6 +19,18 @@ const navLinks = [
     hint: "Houses for rent",
     icon: "M5 18V10l11-6 11 6v8M9 26V16h5v10M20 26h6v-7h-6v7Z",
   },
+  {
+    href: "/founder",
+    label: "Meet the Founder",
+    hint: "The story behind Jayga Lagbe",
+    icon: "M16 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM6 27a10 10 0 0 1 20 0",
+  },
+  {
+    href: "/contact",
+    label: "Contact Us",
+    hint: "Get help from our team",
+    icon: "M5 8h22v16H5zM5 9l11 9 11-9",
+  },
 ];
 
 export function MobileNav({ user }: { user: AuthUser | null }) {

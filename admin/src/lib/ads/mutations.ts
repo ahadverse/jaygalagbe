@@ -380,3 +380,54 @@ export function useBulkReportAction() {
           : 'Deleted',
   );
 }
+
+/* ── Contact messages ─────────────────────────────────────────────────── */
+
+export function useSetContactStatus() {
+  return useModerationMutation(
+    ({ id, status }: { id: string; status: 'NEW' | 'OPENED' | 'RESOLVED' }) =>
+      apiRequest(`/admin/contacts/${id}/status`, {
+        method: 'PATCH',
+        body: { status },
+      }),
+    ({ status }) =>
+      status === 'RESOLVED' ? 'Marked as resolved' : 'Marked as opened',
+  );
+}
+
+export function useDeleteContact() {
+  return useModerationMutation(
+    (id: string) => apiRequest(`/admin/contacts/${id}`, { method: 'DELETE' }),
+    () => 'Message deleted',
+  );
+}
+
+export function useBulkContactAction() {
+  return useBulkMutation(
+    (variables: { action: 'RESOLVED' | 'OPENED' | 'NEW' | 'DELETE'; ids: string[] }) =>
+      apiRequest<BulkResult>('/admin/contacts/bulk', {
+        method: 'POST',
+        body: variables,
+      }),
+    ({ action }) =>
+      action === 'RESOLVED'
+        ? 'Marked resolved'
+        : action === 'OPENED'
+          ? 'Marked opened'
+          : 'Deleted',
+  );
+}
+
+/** Fires when a message is first read, so it stays quiet: no toast. */
+export function useMarkContactOpened() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiRequest(`/admin/contacts/${id}/status`, {
+        method: 'PATCH',
+        body: { status: 'OPENED' },
+      }),
+    onSuccess: () =>
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'contacts'] }),
+  });
+}

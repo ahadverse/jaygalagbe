@@ -12,18 +12,50 @@ import { colors, fontFamily, radius, shadow } from '../../theme/tokens';
 // Ports web/src/components/layout/mobile-nav.tsx: the same two sector rows
 // with icon tiles and hints, over the same scrim, plus the log-in row web
 // shows at the bottom.
-const SECTOR_ROWS = [
+type NavRow = {
+  key: string;
+  label: string;
+  hint: string;
+  icon: string;
+  go: (navigation: NavigationProp<RootTabParamList>) => void;
+};
+
+const NAV_ROWS: NavRow[] = [
   {
-    slug: sectors[0].slug,
+    key: sectors[0].slug,
     label: sectors[0].label,
     hint: 'Land for sale',
     icon: 'M4 20h24M7 20V9l9-5 9 5v11M12 20v-6h6v6',
+    go: (navigation) =>
+      navigation.navigate('HomeTab', {
+        screen: 'SectorListing',
+        params: { sector: sectors[0].slug },
+      }),
   },
   {
-    slug: sectors[1].slug,
+    key: sectors[1].slug,
     label: sectors[1].label,
     hint: 'Houses for rent',
     icon: 'M5 18V10l11-6 11 6v8M9 26V16h5v10M20 26h6v-7h-6v7Z',
+    go: (navigation) =>
+      navigation.navigate('HomeTab', {
+        screen: 'SectorListing',
+        params: { sector: sectors[1].slug },
+      }),
+  },
+  {
+    key: 'founder',
+    label: 'Meet the Founder',
+    hint: 'The story behind Jayga Lagbe',
+    icon: 'M16 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM6 27a10 10 0 0 1 20 0',
+    go: (navigation) => navigation.navigate('HomeTab', { screen: 'Founder' }),
+  },
+  {
+    key: 'contact',
+    label: 'Contact Us',
+    hint: 'Get help from our team',
+    icon: 'M5 8h22v16H5zM5 9l11 9 11-9',
+    go: (navigation) => navigation.navigate('HomeTab', { screen: 'Contact' }),
   },
 ];
 
@@ -33,12 +65,9 @@ export function NavMenuButton() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
-  function goToSector(slug: (typeof SECTOR_ROWS)[number]['slug']) {
+  function goTo(row: NavRow) {
     setOpen(false);
-    navigation.navigate('HomeTab', {
-      screen: 'SectorListing',
-      params: { sector: slug },
-    });
+    row.go(navigation);
   }
 
   function goToAccount() {
@@ -97,11 +126,11 @@ export function NavMenuButton() {
             </Pressable>
           </View>
 
-          {SECTOR_ROWS.map((row) => (
+          {NAV_ROWS.map((row) => (
             <Pressable
-              key={row.slug}
+              key={row.key}
               accessibilityRole="button"
-              onPress={() => goToSector(row.slug)}
+              onPress={() => goTo(row)}
               style={({ pressed }) => [
                 styles.navRow,
                 pressed ? styles.navRowPressed : null,

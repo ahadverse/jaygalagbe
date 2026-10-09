@@ -39,7 +39,7 @@ export function ChatThread({
   currentUserId: string;
   initialMessages: Message[];
 }) {
-  const { messages, connected, sending, error, sendMessage } = useConversationSocket({
+  const { messages, ready, sending, error, sendMessage } = useConversationSocket({
     conversationId,
     currentUserId,
     initialMessages,
@@ -101,7 +101,7 @@ export function ChatThread({
     <div className="flex flex-1 flex-col gap-3">
       <div className="flex items-center justify-between px-1">
         <span className="eyebrow text-subtle-foreground">Conversation</span>
-        <ConnectionDot connected={connected} />
+        <ConnectionDot connected={ready} />
       </div>
 
       <div
@@ -174,12 +174,12 @@ export function ChatThread({
           <textarea
             ref={textareaRef}
             name="body"
-            placeholder={connected ? "Write a message…" : "Connecting…"}
+            placeholder={ready ? "Write a message…" : "Connecting…"}
             required
             minLength={1}
             maxLength={2000}
             rows={1}
-            disabled={!connected}
+            disabled={!ready}
             aria-label="Message"
             onKeyDown={handleKeyDown}
             onInput={resize}
@@ -189,7 +189,7 @@ export function ChatThread({
           <Button
             type="submit"
             size="icon"
-            disabled={!connected}
+            disabled={!ready}
             loading={sending}
             aria-label="Send message"
           >

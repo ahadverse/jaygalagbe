@@ -11,6 +11,8 @@ import type { AuthUser } from "@/lib/auth/types";
 const navLinks = [
   { href: "/jayga-jomi", label: "Jayga Jomi" },
   { href: "/basha-bhara", label: "Basha Bhara" },
+  { href: "/founder", label: "Meet the Founder" },
+  { href: "/contact", label: "Contact Us" },
 ];
 
 export function Wordmark({ className }: { className?: string }) {

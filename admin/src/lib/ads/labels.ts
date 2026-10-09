@@ -64,3 +64,18 @@ export function toOptions<T extends string>(
     label: label as string,
   }));
 }
+
+export const CONTACT_STATUS_LABEL: Record<'NEW' | 'OPENED' | 'RESOLVED', string> = {
+  NEW: 'New',
+  OPENED: 'Opened',
+  RESOLVED: 'Resolved',
+};
+
+export const CONTACT_TOPIC_LABEL: Record<string, string> = {
+  general: 'General question',
+  listing: 'A listing',
+  advertising: 'Posting or boosting an ad',
+  account: 'Account',
+  report: 'Report a problem',
+  other: 'Something else',
+};

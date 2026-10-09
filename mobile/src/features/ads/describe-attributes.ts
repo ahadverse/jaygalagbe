@@ -1,4 +1,5 @@
 import type { Ad, HouseRentAttributes, LandAttributes } from './types';
+import { formatLandSize } from './land-size';
 
 export type AdFact = { label: string; value: string };
 
@@ -10,7 +11,7 @@ export function describeAdAttributes(ad: Ad): AdFact[] {
     const attrs = ad.attributes as LandAttributes | null;
     if (!attrs) return [];
     const facts: AdFact[] = [
-      { label: 'Size', value: `${attrs.sizeKatha} katha` },
+      { label: 'Size', value: formatLandSize(attrs) },
     ];
     if (attrs.propertyType) {
       facts.push({ label: 'Type', value: attrs.propertyType });

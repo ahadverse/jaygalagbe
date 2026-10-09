@@ -1,99 +1,213 @@
-import { BulletList, InfoPage, Paragraph, Section } from './legal-layout';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { colors, fontFamily } from '../../theme/tokens';
+import {
+  BulletList,
+  Callout,
+  InfoPage,
+  Paragraph,
+  Section,
+} from './legal-layout';
+
+const reasons = [
+  {
+    title: 'Nationwide Property Opportunities',
+    body: 'Explore property advertisements from different parts of Bangladesh and discover options that match your location and requirements.',
+  },
+  {
+    title: 'Convenient Property Search',
+    body: 'Browse listings and compare available details, including location, price, size, and property type, where provided.',
+  },
+  {
+    title: 'A Platform for Owners and Advertisers',
+    body: 'We aim to make it easier for property owners and authorized advertisers to publish listings and reach interested people.',
+  },
+  {
+    title: 'Designed for Buyers and Renters',
+    body: 'Our goal is to help users discover relevant property advertisements without having to search across numerous unrelated sources.',
+  },
+  {
+    title: 'A Growing Property Community',
+    body: 'We aim to build a useful online destination where people can explore property opportunities and connect with potential buyers, sellers, landlords, and tenants.',
+  },
+];
 
 export function AboutScreen() {
   return (
     <InfoPage
-      eyebrow="About"
-      title="About Jayga Lagbe"
-      intro="A property classifieds app for Bangladesh, built around one idea: a listing you can trust is worth more than a hundred you cannot."
+      eyebrow="About Us"
+      title="About JaygaLagbe.com"
+      subtitle="Your Trusted Destination for Property Listings in Bangladesh"
+      intro="Welcome to JaygaLagbe.com, an online platform designed to make finding, buying, selling, and renting property easier across Bangladesh."
     >
-      <Section title="What you will find here">
+      <Paragraph>
+        Whether you are looking for land to purchase, a house to sell, an
+        apartment to rent, or a suitable property for your next investment,
+        JaygaLagbe.com aims to help you discover property opportunities in one
+        convenient place.
+      </Paragraph>
+
+      <Section title="Our Mission">
         <Paragraph>
-          Jayga Lagbe covers two things, and only two things, so that both are
-          done properly:
+          Our mission is to connect property owners, buyers, sellers,
+          landlords, tenants, and real estate professionals through an
+          accessible and user-friendly online platform.
+        </Paragraph>
+        <Paragraph>
+          We aim to make property advertising more convenient and help people
+          discover opportunities across different districts of Bangladesh.
+        </Paragraph>
+      </Section>
+
+      <Section title="What You Can Find on JaygaLagbe.com">
+        <Paragraph>
+          Our platform is designed for a range of property needs, including:
         </Paragraph>
         <BulletList
           items={[
-            'Jayga Jomi - land for sale, whether residential, commercial or agricultural.',
-            'Basha Bhara - houses, flats, rooms and sublets for rent.',
+            {
+              lead: 'Land for Sale:',
+              text: 'Explore land and plot advertisements in different locations.',
+            },
+            {
+              lead: 'Houses for Sale:',
+              text: 'Discover residential properties offered by owners and advertisers.',
+            },
+            {
+              lead: 'Property for Rent:',
+              text: 'Find houses, apartments, rooms, and commercial spaces advertised for rent.',
+            },
+            {
+              lead: 'Commercial Property:',
+              text: 'Explore shops, offices, and other commercial property listings where available.',
+            },
+            {
+              lead: 'Property Advertising:',
+              text: 'Give owners and authorized advertisers a place to promote their available properties.',
+            },
           ]}
         />
+        <Text style={styles.note}>
+          Available categories and features may vary as the platform develops.
+        </Text>
+      </Section>
+
+      <Section title="Why Choose JaygaLagbe.com?">
+        <View style={styles.reasons}>
+          {reasons.map((reason, index) => (
+            <View key={reason.title} style={styles.reason}>
+              <View style={styles.pill}>
+                <Text style={styles.pillText}>{index + 1}</Text>
+              </View>
+              <View style={styles.reasonBody}>
+                <Text style={styles.reasonTitle}>{reason.title}</Text>
+                <Text style={styles.reasonText}>{reason.body}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </Section>
+
+      <Section title="Our Commitment">
         <Paragraph>
-          Every listing is posted by the person behind it - an owner, a family
-          member handling the sale, or a manager acting for them. There is no
-          shadow inventory and no listings copied in from elsewhere.
+          We believe that clear information and responsible communication are
+          important when dealing with property.
+        </Paragraph>
+        <Paragraph>
+          We encourage users to provide accurate advertisements, communicate
+          honestly, and verify property ownership and legal documents before
+          making payments or entering into agreements.
+        </Paragraph>
+        <Callout>
+          <Text style={styles.calloutText}>
+            JaygaLagbe.com aims to support property discovery and advertising.
+            Unless a specific verification service is expressly offered, we do
+            not guarantee the accuracy, ownership, availability, or legal
+            status of individual listings.
+          </Text>
+        </Callout>
+      </Section>
+
+      <Section title="Our Vision">
+        <Paragraph>
+          Our vision is to become a recognized online destination for land,
+          housing, rental, and other property listings across Bangladesh.
+        </Paragraph>
+        <Paragraph>
+          We want to make it easier for people to find suitable property
+          opportunities, advertise available properties, and connect with
+          others in the property market.
         </Paragraph>
       </Section>
 
-      <Section title="A person reads every ad">
+      <Section title="Get Started Today">
         <Paragraph>
-          Nothing goes live automatically. Every ad submitted to Jayga Lagbe
-          waits in a queue until a moderator has read the title, the
-          description, the price and the photos, and is satisfied that it
-          describes a real property in the right section of the app.
+          Looking for land? Planning to sell a property? Searching for a house
+          or apartment to rent? Visit JaygaLagbe.com and explore the property
+          opportunities available on our platform.
         </Paragraph>
-        <Paragraph>
-          If something is wrong, the ad is rejected with a reason - not a silent
-          disappearance. The advertiser sees exactly what needs fixing, corrects
-          it and sends the ad back for another look. Most rejections are honest
-          mistakes, and most of them are fixed in a few minutes.
-        </Paragraph>
-        <Paragraph>
-          A published ad is not beyond reach either. If a listing turns out to
-          be misleading after it has gone live, it can be taken down.
-        </Paragraph>
-      </Section>
-
-      <Section title="Free to browse, free to post">
-        <Paragraph>
-          You do not need an account to browse Jayga Lagbe. Search, filters,
-          photos, prices and locations are all open to anyone who opens the app.
-        </Paragraph>
-        <Paragraph>
-          Posting an ad is free as well. The only thing we charge for is a
-          boost, which lifts a listing higher for a few days. A boost changes
-          nothing about how the ad is reviewed - a boosted ad goes through the
-          same moderation as every other one, and paying does not make a
-          rejected ad acceptable.
-        </Paragraph>
-      </Section>
-
-      <Section title="Why contacting an advertiser needs an account">
-        <Paragraph>
-          Contact details sit behind a free account. That single step is what
-          keeps phone numbers from being scraped off the site in bulk and sold
-          on, and it is why advertisers here do not drown in automated calls the
-          week after they post.
-        </Paragraph>
-        <Paragraph>
-          Creating an account takes a name and either an email address or a
-          phone number. Nothing more.
-        </Paragraph>
-      </Section>
-
-      <Section title="Conversations stay in the app">
-        <Paragraph>
-          When you contact an advertiser, the conversation happens in Jayga
-          Lagbe rather than moving straight to a phone call. That keeps the
-          whole thread - what was promised, what price was quoted, what was said
-          about the papers - in one place that both sides can open again later.
-        </Paragraph>
-        <Paragraph>
-          It also means you can rate an advertiser afterwards. Only people who
-          have actually spoken to an advertiser can review them, so the ratings
-          you read come from real conversations.
-        </Paragraph>
-      </Section>
-
-      <Section title="What we do not do">
-        <Paragraph>
-          We are not an agent, a broker or a party to your deal. We do not own
-          property, we do not take a commission on a sale or a rental, and no
-          money for a property ever passes through Jayga Lagbe. Visit the
-          property, meet the owner and check the ownership papers before you
-          part with anything.
-        </Paragraph>
+        <Text style={styles.tagline}>
+          JaygaLagbe.com — Find Property. Connect with People. Explore
+          Opportunities.
+        </Text>
       </Section>
     </InfoPage>
   );
 }
+
+const styles = StyleSheet.create({
+  note: {
+    fontFamily: fontFamily.text,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.neutral[500],
+  },
+  reasons: {
+    gap: 14,
+  },
+  reason: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  pill: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.brand[600],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillText: {
+    fontFamily: fontFamily.displaySemibold,
+    fontSize: 14,
+    color: '#ffffff',
+  },
+  reasonBody: {
+    flex: 1,
+    gap: 4,
+  },
+  reasonTitle: {
+    fontFamily: fontFamily.textSemibold,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.neutral[900],
+  },
+  reasonText: {
+    fontFamily: fontFamily.text,
+    fontSize: 15,
+    lineHeight: 25,
+    color: colors.neutral[700],
+  },
+  calloutText: {
+    fontFamily: fontFamily.text,
+    fontSize: 15,
+    lineHeight: 25,
+    color: colors.warning[800],
+  },
+  tagline: {
+    fontFamily: fontFamily.displaySemibold,
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.brand[700],
+  },
+});

@@ -13,7 +13,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -101,7 +101,8 @@ function AppContent() {
   return (
     <NavigationContainer theme={combinedTheme}>
       <RootTabs />
-      <StatusBar style="dark" />
+      {/* The status bar area is black on Android, so it needs light icons. */}
+      <StatusBar style={Platform.OS === 'android' ? 'light' : 'dark'} />
     </NavigationContainer>
   );
 }

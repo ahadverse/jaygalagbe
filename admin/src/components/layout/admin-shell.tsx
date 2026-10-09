@@ -3,17 +3,15 @@ import { Outlet } from 'react-router';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth/use-auth';
-import { useAdCountsQuery } from '@/lib/api/queries';
+import { useAdCountsQuery, useContactsQuery } from '@/lib/api/queries';
 import { LogOutIcon, ShieldIcon, XIcon } from '@/components/ui/icons';
 import { SidebarNav } from './sidebar-nav';
 import { Topbar } from './topbar';
 
 function Brand() {
   return (
-    <div className="flex flex-col items-start gap-2 px-3 py-4">
-      <span className="rounded-xl bg-white p-2">
-        <img src="/logo.png" alt="Jayga Lagbe" className="h-20 w-auto" />
-      </span>
+    <div className="flex flex-col items-center gap-1 px-3 py-4 text-center">
+      <img src="/logo.png" alt="Jayga Lagbe" className="h-12 w-auto invert hue-rotate-180" />
       <p className="truncate text-xs text-rail-muted">Admin console</p>
     </div>
   );
@@ -56,12 +54,14 @@ function AccountFooter() {
 export function AdminShell() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { data: counts } = useAdCountsQuery();
+  const { data: contacts } = useContactsQuery({ limit: 1 });
   const queryClient = useQueryClient();
   const fetching = useIsFetching({ queryKey: ['admin'] });
 
   const badges = {
     pendingAds: counts?.byStatus.PENDING,
     pendingReports: counts?.pendingReports,
+    newContacts: contacts?.countByStatus.NEW,
   };
 
   return (

@@ -79,13 +79,13 @@ export function Hero({
         </View>
 
         <View style={styles.headlineBlock}>
-          <Text style={styles.headline}>Find the right jayga.</Text>
+          <Text style={styles.headline}>Find Your Place.</Text>
           <Text style={[styles.headline, styles.headlineAccent]}>
-            Or the right basha.
+            Buy Land. Rent a Home.
           </Text>
           <Text style={styles.subcopy}>
-            Plots to buy and homes to rent across Bangladesh — every listing
-            checked by a human before it reaches you.
+            Discover land, houses and rental properties across Bangladesh.
+            Every listing is manually reviewed before publication.
           </Text>
         </View>
 

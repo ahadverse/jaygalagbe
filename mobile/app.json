@@ -10,11 +10,6 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.jaygalagbe.app"
     },
-    "androidStatusBar": {
-      "barStyle": "dark-content",
-      "translucent": true,
-      "backgroundColor": "#00000000"
-    },
     "android": {
       "package": "com.jaygalagbe.app",
       "adaptiveIcon": {

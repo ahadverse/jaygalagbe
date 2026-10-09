@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { Hero } from "@/components/home/hero";
 import { HomeSectorProvider } from "@/components/home/home-sector-context";
+import { HomeBodySkeleton } from "@/components/home/home-body-skeleton";
 import { StatsBand } from "@/components/home/stats-band";
 // import { FeaturedListings } from "@/components/home/featured-listings";
 import { SectorSidebar } from "@/components/home/sector-sidebar";
@@ -9,13 +11,14 @@ import { BudgetGuide } from "@/components/home/budget-guide";
 import { TrustBand } from "@/components/home/trust-band";
 import { HowItWorks } from "@/components/home/how-it-works";
 import { AdvertiserCta } from "@/components/home/advertiser-cta";
+import { BoostBanner } from "@/components/home/boost-banner";
 import { HomeFaq } from "@/components/home/home-faq";
 import { fetchLiveAds } from "@/lib/ads/fetch-live-ads";
 import { budgetBands, districtFacets } from "@/lib/ads/home-facets";
 
 const HOME_PAGE_SIZE = 30;
 
-export default async function Home() {
+async function HomeBody() {
   const [land, house] = await Promise.all([
     fetchLiveAds("LAND"),
     fetchLiveAds("HOUSE_RENT"),
@@ -35,25 +38,22 @@ export default async function Home() {
   const districts = districtFacets(ads);
 
   return (
-    <main className="flex flex-1 flex-col">
-      <HomeSectorProvider>
-        <Hero />
-        <StatsBand ads={ads} />
+    <>
+      <StatsBand ads={ads} />
 
-        {/* <FeaturedListings selection={featured} /> */}
+      {/* <FeaturedListings selection={featured} /> */}
 
-        <section className="shell py-14 sm:py-20">
-          <div className="flex flex-col gap-10 lg:flex-row lg:gap-12">
-            <SectorSidebar
-              counts={{
-                "/jayga-jomi": land.ads.length,
-                "/basha-bhara": house.ads.length,
-              }}
-            />
-            <LatestListings listings={listings} />
-          </div>
-        </section>
-      </HomeSectorProvider>
+      <section className="shell py-14 sm:py-20">
+        <div className="flex flex-col gap-10 lg:flex-row lg:gap-12">
+          <SectorSidebar
+            counts={{
+              "/jayga-jomi": land.ads.length,
+              "/basha-bhara": house.ads.length,
+            }}
+          />
+          <LatestListings listings={listings} />
+        </div>
+      </section>
 
       <DistrictGrid districts={districts} />
 
@@ -66,9 +66,25 @@ export default async function Home() {
 
       <HowItWorks />
 
+      <BoostBanner />
       <AdvertiserCta />
 
       <HomeFaq />
+    </>
+  );
+}
+
+// Nothing here awaits, so the hero streams out immediately and the
+// ad-driven sections fill in behind it.
+export default function Home() {
+  return (
+    <main className="flex flex-1 flex-col">
+      <HomeSectorProvider>
+        <Hero />
+        <Suspense fallback={<HomeBodySkeleton />}>
+          <HomeBody />
+        </Suspense>
+      </HomeSectorProvider>
     </main>
   );
 }

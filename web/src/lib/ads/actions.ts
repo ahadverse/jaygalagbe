@@ -30,7 +30,8 @@ function buildAttributes(
 ): Record<string, unknown> {
   if (sector === "LAND") {
     const attributes: Record<string, unknown> = {
-      sizeKatha: Number(formData.get("sizeKatha")),
+      size: Number(formData.get("size")),
+      sizeUnit: formData.get("sizeUnit") === "decimal" ? "decimal" : "katha",
     };
     const propertyType = String(formData.get("propertyType") ?? "");
     if (propertyType) attributes.propertyType = propertyType;
@@ -76,7 +77,27 @@ export async function createAdAction(
   const sector = String(formData.get("sector")) as Sector;
   const payload = { sector, ...buildAdPayload(formData, sector) };
 
+  const phone = String(formData.get("phone") ?? "").trim();
+  if (!phone) {
+    return { error: "Enter a phone number buyers can reach you on." };
+  }
+
   try {
+    // The number lives on the account, so saving it here also fills the
+    // profile for next time.
+    const profile = await fetch(apiUrl`/users/me`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ phone }),
+    });
+    if (!profile.ok) {
+      const body = await profile.json().catch(() => null);
+      return { error: extractErrorMessage(body, "Couldn't save your phone number.") };
+    }
+
     const response = await fetch(`${API_URL}/ads`, {
       method: "POST",
       headers: {

@@ -74,3 +74,8 @@ export function markAdSold(id: string): Promise<Ad> {
 export function resubmitAd(id: string): Promise<Ad> {
   return apiPatch<Ad>(`/ads/${id}/resubmit`);
 }
+
+/** Full advertiser number - signed-in users only; the ad itself carries just a masked preview. */
+export function revealAdPhone(id: string): Promise<{ phone: string }> {
+  return apiGet<{ phone: string }>(`/ads/${id}/phone`);
+}

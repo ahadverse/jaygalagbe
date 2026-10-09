@@ -336,3 +336,22 @@ model AdminAuditLog {
   @@index([action, createdAt])
   @@map("admin_audit_logs")
 }
+
+enum ContactMessageStatus {
+  OPENED
+  NEW
+  RESOLVED
+}
+
+model ContactMessage {
+  id        String               @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String?
+  phone     String?
+  topic     String
+  message   String
+  status    ContactMessageStatus @default(NEW)
+  createdAt DateTime             @default(now())
+
+  @@map("contact_messages")
+}

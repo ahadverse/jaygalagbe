@@ -7,6 +7,7 @@ import { ActivityIndicator, Text } from 'react-native-paper';
 import { AdCard } from '../../components/ads/ad-card';
 import { Eyebrow } from '../../components/brand/eyebrow';
 import { AdvertiserCta } from '../../components/home/advertiser-cta';
+import { BoostBanner } from '../../components/home/boost-banner';
 import { BudgetGuide } from '../../components/home/budget-guide';
 import { DistrictGrid } from '../../components/home/district-grid';
 import { Hero } from '../../components/home/hero';
@@ -113,6 +114,10 @@ export function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>) {
     rootNavigation.navigate('MyAdsTab', { screen: 'AdForm', params: undefined });
   }
 
+  function boostListing() {
+    rootNavigation.navigate('MyAdsTab', { screen: 'MyAds' });
+  }
+
   function openAccount() {
     // Register only exists in the Profile stack's logged-out branch, so a
     // signed-in user gets sent to their profile instead of a dead route.
@@ -197,6 +202,7 @@ export function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>) {
           />
           <TrustBand liveCount={home.ads.length} />
           <HowItWorks />
+          <BoostBanner onBoost={boostListing} />
           <AdvertiserCta onPostAd={postAd} onCreateAccount={openAccount} />
           <HomeFaq />
           <SiteFooter
@@ -205,6 +211,8 @@ export function HomeScreen({ navigation }: HomeStackScreenProps<'Home'>) {
               navigation.navigate('SectorListing', { sector: slug })
             }
             onPostAd={postAd}
+            onBecomeAdvertiser={openAccount}
+            onBoost={boostListing}
           />
         </View>
       }

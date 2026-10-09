@@ -10,6 +10,7 @@ import { HomeScreen } from '../screens/home/home-screen';
 import { SectorListingScreen } from '../screens/home/sector-listing-screen';
 import { AboutScreen } from '../screens/info/about-screen';
 import { ContactScreen } from '../screens/info/contact-screen';
+import { FounderScreen } from '../screens/info/founder-screen';
 import { PrivacyScreen } from '../screens/info/privacy-screen';
 import { TermsScreen } from '../screens/info/terms-screen';
 import { defaultStackScreenOptions } from './screen-options';
@@ -58,9 +59,14 @@ export function HomeStack() {
         options={{ title: 'About' }}
       />
       <Stack.Screen
+        name="Founder"
+        component={FounderScreen}
+        options={{ title: 'Meet the Founder' }}
+      />
+      <Stack.Screen
         name="Contact"
         component={ContactScreen}
-        options={{ title: 'Contact us' }}
+        options={{ title: 'Contact Us' }}
       />
       <Stack.Screen
         name="Privacy"
@@ -70,7 +76,7 @@ export function HomeStack() {
       <Stack.Screen
         name="Terms"
         component={TermsScreen}
-        options={{ title: 'Terms of Service' }}
+        options={{ title: 'Terms and Conditions' }}
       />
     </Stack.Navigator>
   );

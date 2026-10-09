@@ -12,8 +12,10 @@ import { ActivityIndicator, Text } from 'react-native-paper';
 
 import { AdGallery } from '../../components/ads/ad-gallery';
 import { ContactGate } from '../../components/ads/contact-gate';
+import { PhoneReveal } from '../../components/ads/phone-reveal';
 import { NearbyListings } from '../../components/ads/nearby-listings';
 import { ReportAdButton } from '../../components/ads/report-ad-button';
+import { TrustBox } from '../../components/ads/trust-box';
 import { SaveAdButton } from '../../components/ads/save-ad-button';
 import { BrandCard } from '../../components/brand/brand-card';
 import { Eyebrow } from '../../components/brand/eyebrow';
@@ -190,6 +192,12 @@ export function AdDetailScreen() {
           ownerId={ad.ownerId}
           onRequireAuth={requireAuth}
         />
+        <PhoneReveal
+          adId={ad.id}
+          ownerId={ad.ownerId}
+          maskedPhone={ad.ownerPhoneMasked}
+          onRequireAuth={requireAuth}
+        />
         <SaveAdButton adId={ad.id} />
 
         {facts.length > 0 ? (
@@ -250,6 +258,8 @@ export function AdDetailScreen() {
             </View>
           ))}
         </BrandCard>
+
+        <TrustBox isLive={ad.status === 'LIVE'} />
 
         <ReportAdButton
           adId={ad.id}

@@ -120,21 +120,27 @@ export function ProfileScreen({
             divided={false}
           />
           <NavRow
-            title="Contact us"
+            title="Meet the Founder"
+            icon="account-outline"
+            onPress={() => navigation.navigate('Founder')}
+            divided
+          />
+          <NavRow
+            title="Contact Us"
             icon="email-outline"
             onPress={() => navigation.navigate('Contact')}
+            divided
+          />
+          <NavRow
+            title="Terms and Conditions"
+            icon="file-document-outline"
+            onPress={() => navigation.navigate('Terms')}
             divided
           />
           <NavRow
             title="Privacy Policy"
             icon="shield-check-outline"
             onPress={() => navigation.navigate('Privacy')}
-            divided
-          />
-          <NavRow
-            title="Terms of Service"
-            icon="file-document-outline"
-            onPress={() => navigation.navigate('Terms')}
             divided
           />
         </BrandCard>

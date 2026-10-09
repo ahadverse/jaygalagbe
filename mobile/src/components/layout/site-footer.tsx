@@ -1,23 +1,16 @@
 import type { JSX } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { sectors, type SectorSlug } from '../../features/ads/sectors';
+import type { SectorSlug } from '../../features/ads/sectors';
 import { colors, fontFamily, radius } from '../../theme/tokens';
 import { Eyebrow } from '../brand/eyebrow';
 
 const logo = require('../../../assets/logo.png');
 
-type InfoScreen = 'About' | 'Contact' | 'Privacy' | 'Terms';
+type InfoScreen = 'Home' | 'About' | 'Founder' | 'Contact' | 'Privacy' | 'Terms';
 
 type FooterLink = { label: string; onPress: () => void };
 type FooterGroup = { title: string; links: FooterLink[] };
-
-// sectors.ts carries the Bangla names only; the footer is where a first-time
-// visitor meets them, so each gets its English gloss the way web's does.
-const SECTOR_GLOSS: Record<SectorSlug, string> = {
-  'jayga-jomi': 'Land for sale',
-  'basha-bhara': 'House rent',
-};
 
 function FooterWordmark() {
   return (
@@ -58,35 +51,48 @@ export function SiteFooter({
   onNavigate,
   onBrowseSector,
   onPostAd,
+  onBecomeAdvertiser,
+  onBoost,
 }: {
   onNavigate: (screen: InfoScreen) => void;
   onBrowseSector: (slug: SectorSlug) => void;
   onPostAd: () => void;
+  onBecomeAdvertiser: () => void;
+  onBoost: () => void;
 }): JSX.Element {
   const groups: FooterGroup[] = [
     {
-      title: 'Browse',
-      links: sectors.map((option) => ({
-        label: `${option.label} (${SECTOR_GLOSS[option.slug]})`,
-        onPress: () => onBrowseSector(option.slug),
-      })),
+      title: 'For Buyers',
+      links: [
+        { label: 'Browse Land', onPress: () => onBrowseSector('jayga-jomi') },
+        { label: 'Browse Rentals', onPress: () => onBrowseSector('basha-bhara') },
+        { label: 'Search by District', onPress: () => onNavigate('Home') },
+      ],
     },
     {
-      title: 'For advertisers',
-      links: [{ label: 'Post an ad', onPress: onPostAd }],
+      title: 'For Owners',
+      links: [
+        { label: 'Post Your Property', onPress: onPostAd },
+        { label: 'Become an Advertiser', onPress: onBecomeAdvertiser },
+        { label: 'Boost Your Listing', onPress: onBoost },
+      ],
     },
     {
       title: 'Company',
       links: [
-        { label: 'About Jayga Lagbe', onPress: () => onNavigate('About') },
-        { label: 'Contact us', onPress: () => onNavigate('Contact') },
+        { label: 'About Us', onPress: () => onNavigate('About') },
+        { label: 'Meet the Founder', onPress: () => onNavigate('Founder') },
+        { label: 'Contact Us', onPress: () => onNavigate('Contact') },
+        { label: 'Terms & Conditions', onPress: () => onNavigate('Terms') },
+        { label: 'Privacy Policy', onPress: () => onNavigate('Privacy') },
       ],
     },
     {
-      title: 'Legal',
+      title: 'Support',
       links: [
-        { label: 'Privacy Policy', onPress: () => onNavigate('Privacy') },
-        { label: 'Terms of Service', onPress: () => onNavigate('Terms') },
+        { label: 'Contact Support', onPress: () => onNavigate('Contact') },
+        { label: 'Safety Tips', onPress: () => onNavigate('Contact') },
+        { label: 'Frequently Asked Questions', onPress: () => onNavigate('Home') },
       ],
     },
   ];
@@ -97,8 +103,7 @@ export function SiteFooter({
         <View style={styles.brandBlock}>
           <FooterWordmark />
           <Text style={styles.tagline}>
-            Verified land and rental listings, with every ad manually reviewed
-            before it goes live.
+            Bangladesh's property listing platform. Every listing is manually reviewed before publication.
           </Text>
         </View>
 

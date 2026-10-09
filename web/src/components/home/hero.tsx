@@ -65,12 +65,14 @@ export function Hero() {
 
           <div className="mx-auto flex max-w-[44rem] flex-col gap-4">
             <h1 className="text-balance font-heading text-display text-white">
-              Find the right jayga.
-              <span className="block text-brand-200">Or the right basha.</span>
+              Find Your Place.
+              <span className="block text-brand-200">
+                Buy Land. Rent a Home.
+              </span>
             </h1>
             <p className="text-pretty text-base text-neutral-200 sm:text-lg">
-              Plots to buy and homes to rent across Bangladesh — every listing
-              checked by a human before it reaches you.
+              Discover land, houses and rental properties across Bangladesh.
+              Every listing is manually reviewed before publication.
             </p>
           </div>
 

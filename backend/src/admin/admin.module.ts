@@ -20,6 +20,8 @@ import { AdminBoostsService } from './admin-boosts.service.js';
 import { AdminReviewsController } from './admin-reviews.controller.js';
 import { AdminReviewsService } from './admin-reviews.service.js';
 import { AdminBulkService } from './admin-bulk.service.js';
+import { AdminContactsController } from './admin-contacts.controller.js';
+import { AdminContactsService } from './admin-contacts.service.js';
 
 @Module({
   // The bulk runner drives the same `AdsService` transitions the single-ad
@@ -35,6 +37,7 @@ import { AdminBulkService } from './admin-bulk.service.js';
     AdminBoostsController,
     AdminReviewsController,
     AdminAuditController,
+    AdminContactsController,
   ],
   providers: [
     AdminUsersService,
@@ -47,6 +50,7 @@ import { AdminBulkService } from './admin-bulk.service.js';
     AdminBoostsService,
     AdminReviewsService,
     AdminBulkService,
+    AdminContactsService,
   ],
 })
 export class AdminModule {}

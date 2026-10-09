@@ -3,7 +3,10 @@ export type Sector = "LAND" | "HOUSE_RENT";
 export type AdStatus = "PENDING" | "LIVE" | "REJECTED" | "SOLD" | "REMOVED";
 
 export type LandAttributes = {
-  sizeKatha: number;
+  size?: number;
+  sizeUnit?: "katha" | "decimal";
+  /** Legacy: ads saved before units existed; always katha. */
+  sizeKatha?: number;
   propertyType?: string;
 };
 
@@ -21,6 +24,8 @@ export type AdBoost = {
 export type Ad = {
   id: string;
   ownerId: string;
+  /** First 3 digits of the advertiser phone, rest masked; detail endpoint only. */
+  ownerPhoneMasked?: string | null;
   sector: Sector;
   title: string;
   description: string;

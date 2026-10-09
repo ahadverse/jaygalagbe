@@ -62,6 +62,23 @@ function changesModeratedContent(current: Ad, dto: UpdateAdDto): boolean {
   });
 }
 
+/** Digits shown to everyone; the rest of the number stays server-side. */
+const PHONE_PREVIEW_DIGITS = 3;
+
+/** "+8801712345678" -> "01712345678", so the preview is always the local prefix. */
+function toLocalPhone(phone: string): string {
+  return phone.replace(/^\+?880/, '0');
+}
+
+function maskPhone(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const local = toLocalPhone(phone);
+  return (
+    local.slice(0, PHONE_PREVIEW_DIGITS) +
+    '•'.repeat(Math.max(local.length - PHONE_PREVIEW_DIGITS, 0))
+  );
+}
+
 const DEFAULT_LIVE_ADS_TAKE = 200;
 const MAX_LIVE_ADS_TAKE = 200;
 const MAX_LIVE_ADS_SKIP = 10_000;
@@ -98,7 +115,18 @@ export class AdsService {
     private readonly audit: AuditService,
   ) {}
 
-  create(ownerId: string, dto: CreateAdDto) {
+  async create(ownerId: string, dto: CreateAdDto) {
+    // Buyers reach advertisers by phone, so an ad cannot go up without one.
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { phone: true },
+    });
+    if (!owner?.phone) {
+      throw new BadRequestException(
+        'A phone number is required to post an ad',
+      );
+    }
+
     const attributes = validateSectorAttributes(dto.sector, dto.attributes);
     assertValidLocation(
       dto.locationDivision,
@@ -150,11 +178,30 @@ export class AdsService {
   }
 
   async findOneVisible(id: string, requester?: AuthenticatedUser) {
-    const ad = await this.prisma.ad.findUnique({ where: { id } });
+    const ad = await this.prisma.ad.findUnique({
+      where: { id },
+      include: { owner: { select: { phone: true } } },
+    });
     if (!ad || !this.canView(ad.status, ad.ownerId, requester)) {
       throw new NotFoundException('Ad not found');
     }
-    return ad;
+    const { owner, ...rest } = ad;
+    return { ...rest, ownerPhoneMasked: maskPhone(owner.phone) };
+  }
+
+  /** Full advertiser number; the controller only lets signed-in users here. */
+  async revealPhone(id: string, requester: AuthenticatedUser) {
+    const ad = await this.prisma.ad.findUnique({
+      where: { id },
+      include: { owner: { select: { phone: true } } },
+    });
+    if (!ad || !this.canView(ad.status, ad.ownerId, requester)) {
+      throw new NotFoundException('Ad not found');
+    }
+    if (!ad.owner.phone) {
+      throw new NotFoundException('The advertiser has no phone number');
+    }
+    return { phone: toLocalPhone(ad.owner.phone) };
   }
 
   async update(id: string, ownerId: string, dto: UpdateAdDto) {

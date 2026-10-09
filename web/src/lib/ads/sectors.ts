@@ -17,7 +17,7 @@ export const sectorConfigs: Record<string, SectorConfig> = {
     name: "Jayga Jomi",
     tagline: "Land for sale",
     description:
-      "Residential, commercial, and agricultural plots, verified before they go live.",
+      "Residential, commercial, and agricultural plots, reviewed before they go live.",
     searchPlaceholder: "Search by area, e.g. Bashundhara, Dhaka",
     propertyTypes: ["Residential", "Commercial", "Agricultural"],
   },
@@ -27,7 +27,7 @@ export const sectorConfigs: Record<string, SectorConfig> = {
     name: "Basha Bhara",
     tagline: "Houses for rent",
     description:
-      "Flats, houses, rooms, and sublets, verified before they go live.",
+      "Flats, houses, rooms, and sublets, reviewed before they go live.",
     searchPlaceholder: "Search by area, e.g. Dhanmondi, Dhaka",
     propertyTypes: ["Flat", "House", "Room", "Sublet"],
   },

@@ -15,6 +15,13 @@ import { PhotoPicker } from '../../components/ads/photo-picker';
 import { BrandCard } from '../../components/brand/brand-card';
 import { Eyebrow } from '../../components/brand/eyebrow';
 import { SelectField } from '../../components/forms/select-field';
+import {
+  getLandSize,
+  SIZE_UNITS,
+  sizeUnitFromLabel,
+  sizeUnitLabel,
+  type SizeUnit,
+} from '../../features/ads/land-size';
 import { PlaceholderScreen } from '../../components/placeholder-screen';
 import { useAuth } from '../../features/auth/auth-context';
 import { ApiError } from '../../api/errors';
@@ -125,8 +132,12 @@ function AdFormBody({
       ? (existingAd.attributes as HouseRentAttributes | null)
       : null;
 
-  const [sizeKatha, setSizeKatha] = useState(
-    landAttrs?.sizeKatha != null ? String(landAttrs.sizeKatha) : '',
+  const existingSize = getLandSize(landAttrs);
+  const [size, setSize] = useState(
+    existingSize ? String(existingSize.value) : '',
+  );
+  const [sizeUnit, setSizeUnit] = useState<SizeUnit>(
+    existingSize?.unit ?? 'katha',
   );
   const [bedrooms, setBedrooms] = useState(
     houseAttrs?.bedrooms != null ? String(houseAttrs.bedrooms) : '',
@@ -180,13 +191,14 @@ function AdFormBody({
 
     let attributes: Record<string, unknown>;
     if (sector === 'LAND') {
-      const size = Number(sizeKatha);
-      if (!Number.isFinite(size) || size < 0) {
-        setError('Enter a valid size in katha.');
+      const sizeValue = Number(size);
+      if (size.trim() === '' || !Number.isFinite(sizeValue) || sizeValue < 0) {
+        setError('Enter a valid size.');
         return;
       }
       attributes = {
-        sizeKatha: size,
+        size: sizeValue,
+        sizeUnit,
         ...(propertyType ? { propertyType } : {}),
       };
     } else {
@@ -321,10 +333,16 @@ function AdFormBody({
           <>
             <TextInput
               mode="outlined"
-              label="Size (katha)"
-              value={sizeKatha}
-              onChangeText={setSizeKatha}
+              label="Size"
+              value={size}
+              onChangeText={setSize}
               keyboardType="numeric"
+            />
+            <SelectField
+              label="Unit"
+              value={sizeUnitLabel(sizeUnit)}
+              options={SIZE_UNITS.map((unit) => unit.label)}
+              onChange={(label) => setSizeUnit(sizeUnitFromLabel(label))}
             />
             <SelectField
               label="Property type (optional)"

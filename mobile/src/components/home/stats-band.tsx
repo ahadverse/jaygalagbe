@@ -7,10 +7,24 @@ import { colors, fontFamily, radius, shadow } from '../../theme/tokens';
 // one row; at phone width that leaves four cramped columns, so this keeps the
 // sm breakpoint's 2x2 instead. The hairline "grid" is a bordered container with
 // 1px gaps showing through, since RN has no grid gap-px equivalent.
+/** Below this many districts the numbers undersell a nationwide site. */
+const MIN_DISTRICTS_TO_SHOW_STATS = 20;
+
 export function StatsBand({ ads }: { ads: Ad[] }) {
   const districts = new Set(ads.map((ad) => ad.locationDistrict)).size;
   const landCount = ads.filter((ad) => ad.sector === 'LAND').length;
   const houseCount = ads.filter((ad) => ad.sector === 'HOUSE_RENT').length;
+
+  if (districts < MIN_DISTRICTS_TO_SHOW_STATS) {
+    return (
+      <View style={[styles.grid, styles.growing]}>
+        <Text style={styles.growingTitle}>Growing across Bangladesh</Text>
+        <Text style={styles.growingBody}>
+          Land and rental listings from multiple districts across Bangladesh.
+        </Text>
+      </View>
+    );
+  }
 
   const stats = [
     { label: 'Live listings', value: String(ads.length) },
@@ -50,6 +64,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border, // shows through the 1px gaps as hairlines
     gap: 1,
     ...shadow('lg'),
+  },
+  growing: {
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.surfaceCard,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+  },
+  growingTitle: {
+    fontFamily: fontFamily.display,
+    fontSize: 22,
+    lineHeight: 28,
+    letterSpacing: -0.5,
+    textAlign: 'center',
+    color: colors.neutral[900],
+  },
+  growingBody: {
+    fontFamily: fontFamily.text,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+    color: colors.neutral[600],
   },
   row: {
     flexDirection: 'row',
