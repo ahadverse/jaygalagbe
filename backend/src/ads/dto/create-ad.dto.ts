@@ -13,6 +13,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { Sector } from '../../generated/prisma/client.js';
 
@@ -33,22 +34,43 @@ export class CreateAdDto {
   @MaxLength(5000)
   description!: string;
 
+  // Land always names a figure; a house-rent listing may go up without one
+  // (common when the owner wants to negotiate), so it only validates when
+  // actually present.
+  @ValidateIf(
+    (dto: CreateAdDto) =>
+      dto.sector === Sector.LAND || (dto.price !== undefined && dto.price !== null),
+  )
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(MAX_PRICE_BDT)
-  price!: number;
-
-  // Division / district / thana are checked as a set in the service against the
-  // real administrative tree, so a hand-rolled request cannot invent a place.
-  @IsString()
-  @MaxLength(80)
-  locationDivision!: string;
+  price?: number | null;
 
   @IsString()
   @MaxLength(80)
-  locationDistrict!: string;
+  locationCountry!: string;
 
-  /** The thana/upazila within the district. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  locationCountryCode?: string;
+
+  // Bangladesh: division/district/thana are checked as a set in the service
+  // against the real administrative tree, so a hand-rolled request cannot
+  // invent a place — that check is what actually requires these two for a
+  // Bangladesh ad. Elsewhere there's no such tree to check against, so they
+  // stay optional here and are simply unused outside Bangladesh.
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  locationDivision?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  locationDistrict?: string;
+
+  /** Bangladesh: the thana/upazila. Elsewhere: the city. Always required. */
   @IsString()
   @MaxLength(80)
   locationArea!: string;

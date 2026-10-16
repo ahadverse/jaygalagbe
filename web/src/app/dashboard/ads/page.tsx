@@ -8,7 +8,8 @@ import { requireUser } from "@/lib/auth/require-user";
 import { getToken } from "@/lib/auth/session";
 import { fetchMyAds } from "@/lib/ads/fetch-my-ads";
 import { AD_STATUS_BADGE } from "@/lib/ads/status";
-import type { AdStatus } from "@/lib/ads/types";
+import { formatAdLocation, type AdStatus } from "@/lib/ads/types";
+import { isPerDecimalPrice } from "@/lib/ads/land-size";
 import { formatAmount, formatRelativeTime } from "@/lib/format";
 import { cn, firstSearchParam } from "@/lib/utils";
 import {
@@ -157,7 +158,7 @@ export default async function MyListingsPage({
                           {ad.title}
                         </Link>
                         <p className="text-sm text-muted-foreground">
-                          {ad.locationArea}, {ad.locationDistrict}
+                          {formatAdLocation(ad)}
                           <span
                             aria-hidden="true"
                             className="mx-1.5 text-neutral-300"
@@ -165,7 +166,9 @@ export default async function MyListingsPage({
                             ·
                           </span>
                           <span className="numeric font-semibold text-primary">
-                            ৳ {formatAmount(ad.price)}
+                            {ad.price == null
+                              ? "Negotiable"
+                              : `৳ ${formatAmount(ad.price)}${isPerDecimalPrice(ad) ? "/decimal" : ""}`}
                           </span>
                         </p>
                       </div>

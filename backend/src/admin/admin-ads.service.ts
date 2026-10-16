@@ -18,6 +18,7 @@ import {
   BoostStatus,
   PaymentStatus,
   ReportStatus,
+  Sector,
   type Prisma,
 } from '../generated/prisma/client.js';
 
@@ -139,7 +140,7 @@ const EXPORT_COLUMNS: CsvColumn<AdRow>[] = [
   { header: 'Title', value: (ad) => ad.title },
   { header: 'Sector', value: (ad) => ad.sector },
   { header: 'Status', value: (ad) => ad.status },
-  { header: 'Price (BDT)', value: (ad) => ad.price.toString() },
+  { header: 'Price (BDT)', value: (ad) => (ad.price == null ? '' : ad.price.toString()) },
   { header: 'District', value: (ad) => ad.locationDistrict },
   { header: 'Area', value: (ad) => ad.locationArea },
   { header: 'Advertiser', value: (ad) => ad.owner.name },
@@ -163,12 +164,18 @@ const TRACKED_FIELDS = [
   'title',
   'description',
   'price',
+  'locationCountry',
   'locationDivision',
   'locationDistrict',
   'locationArea',
   'address',
   'photos',
 ] as const;
+
+/** Case/whitespace-insensitive — mirrors `AdsService`'s own check. */
+function isBangladesh(country: string | undefined): boolean {
+  return (country ?? '').trim().toLowerCase() === 'bangladesh';
+}
 
 @Injectable()
 export class AdminAdsService {
@@ -195,13 +202,27 @@ export class AdminAdsService {
       validateSectorAttributes(ad.sector, dto.attributes);
     }
 
-    // A partial edit may send only one of the three location parts, so the
-    // stored values fill the gaps before the combination is checked.
-    if (dto.locationDivision || dto.locationDistrict || dto.locationArea) {
+    if (dto.price === null && ad.sector === Sector.LAND) {
+      throw new BadRequestException('Land listings must have an asking price');
+    }
+
+    // A partial edit may send only some of the location fields, so the
+    // stored values fill the gaps before the combination is checked. The
+    // administrative-tree check only applies to Bangladesh — elsewhere the
+    // admin's state/city correction is trusted as-is. Ads from before
+    // worldwide locations existed have no stored country; they're all
+    // Bangladesh, so that's the fallback.
+    const country = dto.locationCountry ?? ad.locationCountry ?? 'Bangladesh';
+    if (
+      dto.locationCountry ||
+      dto.locationDivision ||
+      dto.locationDistrict ||
+      dto.locationArea
+    ) {
       const division = dto.locationDivision ?? ad.locationDivision ?? undefined;
-      const district = dto.locationDistrict ?? ad.locationDistrict;
+      const district = dto.locationDistrict ?? ad.locationDistrict ?? undefined;
       const area = dto.locationArea ?? ad.locationArea;
-      if (!isValidBdLocation(division, district, area)) {
+      if (isBangladesh(country) && !isValidBdLocation(division, district, area)) {
         throw new BadRequestException(
           'Pick a real division, district and thana combination',
         );
@@ -212,6 +233,8 @@ export class AdminAdsService {
       title: dto.title,
       description: dto.description,
       price: dto.price,
+      locationCountry: dto.locationCountry,
+      locationCountryCode: dto.locationCountryCode,
       locationDivision: dto.locationDivision,
       locationDistrict: dto.locationDistrict,
       locationArea: dto.locationArea,
@@ -320,7 +343,7 @@ export class AdminAdsService {
       metadata: {
         ownerId: ad.ownerId,
         status: ad.status,
-        price: ad.price.toString(),
+        price: ad.price == null ? null : ad.price.toString(),
         reportsRemoved: ad._count.reports,
         conversationsRemoved: ad._count.conversations,
         batchId,
@@ -377,7 +400,9 @@ export class AdminAdsService {
       select: { locationDistrict: true },
       orderBy: { locationDistrict: 'asc' },
     });
-    return rows.map((row) => row.locationDistrict);
+    return rows.flatMap(({ locationDistrict }) =>
+      locationDistrict === null ? [] : [locationDistrict],
+    );
   }
 
   async findOne(id: string) {

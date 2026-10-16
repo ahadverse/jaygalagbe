@@ -43,7 +43,7 @@ export type AdInput = {
   sector: Sector;
   title: string;
   description: string;
-  price: number;
+  price: number | null;
   locationDivision: string;
   locationDistrict: string;
   locationArea: string;

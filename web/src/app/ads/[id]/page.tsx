@@ -14,9 +14,10 @@ import { ViewRecorder } from "@/components/ads/view-recorder";
 import { fetchAd } from "@/lib/ads/fetch-ad";
 import { fetchLiveAds } from "@/lib/ads/fetch-live-ads";
 import { describeAdAttributes } from "@/lib/ads/describe-attributes";
+import { isPerDecimalPrice, normalizedPrice } from "@/lib/ads/land-size";
 import { formatAmount, formatRelativeTime } from "@/lib/format";
 import { getCurrentUser } from "@/lib/auth/session";
-import { isAdBoosted, type Ad } from "@/lib/ads/types";
+import { formatAdLocation, isAdBoosted, type Ad } from "@/lib/ads/types";
 
 const statusBadge = {
   LIVE: { label: "Live", variant: "success" as const },
@@ -36,13 +37,15 @@ function formatDate(iso: string): string {
   });
 }
 
-/* Same district first, then anything else live in the sector, so the row
- * only disappears when the sector genuinely has nothing else to show. */
+/* Same district (Bangladesh) or state (elsewhere) first, then anything else
+ * live in the sector, so the row only disappears when the sector genuinely
+ * has nothing else to show. */
 function relatedAds(pool: Ad[], current: Ad): { ads: Ad[]; sameArea: boolean } {
   const others = pool.filter((ad) => ad.id !== current.id);
-  const sameDistrict = others.filter(
-    (ad) => ad.locationDistrict === current.locationDistrict,
-  );
+  const region = current.locationDistrict || current.locationDivision;
+  const sameDistrict = region
+    ? others.filter((ad) => (ad.locationDistrict || ad.locationDivision) === region)
+    : [];
   if (sameDistrict.length > 0) {
     return { ads: sameDistrict.slice(0, RELATED_LIMIT), sameArea: true };
   }
@@ -84,11 +87,17 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
 
   const facts = describeAdAttributes(ad);
   const badge = statusBadge[ad.status];
+  // "Sold" reads oddly for a rental that's just been let out.
+  const badgeLabel =
+    ad.status === "SOLD" ? (ad.sector === "LAND" ? "Sold" : "Rented out") : badge.label;
   const sectorHref = ad.sector === "LAND" ? "/jayga-jomi" : "/basha-bhara";
   const sectorName = ad.sector === "LAND" ? "Jayga Jomi" : "Basha Bhara";
   const sectorLabel = ad.sector === "LAND" ? "Land for sale" : "House rent";
   const posted = formatRelativeTime(ad.createdAt);
   const edited = new Date(ad.updatedAt).getTime() - new Date(ad.createdAt).getTime() > 60_000;
+  // Bangladesh: district. Elsewhere: state, if the country has one — a
+  // handful of countries have neither, leaving just the city.
+  const region = ad.locationDistrict || ad.locationDivision;
 
   const { ads: pool } = await fetchLiveAds(ad.sector);
   const related = relatedAds(pool, ad);
@@ -112,15 +121,19 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
           <span aria-hidden="true" className="mx-1.5 text-neutral-300">
             /
           </span>
-          <Link
-            href={`${sectorHref}?location=${encodeURIComponent(ad.locationDistrict)}`}
-            className="transition-colors hover:text-foreground"
-          >
-            {ad.locationDistrict}
-          </Link>
-          <span aria-hidden="true" className="mx-1.5 text-neutral-300">
-            /
-          </span>
+          {region && (
+            <>
+              <Link
+                href={`${sectorHref}?location=${encodeURIComponent(region)}`}
+                className="transition-colors hover:text-foreground"
+              >
+                {region}
+              </Link>
+              <span aria-hidden="true" className="mx-1.5 text-neutral-300">
+                /
+              </span>
+            </>
+          )}
           <span className="text-foreground">{ad.locationArea}</span>
         </nav>
 
@@ -130,7 +143,7 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
           <div className="flex min-w-0 flex-col gap-6">
             <header className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant={badge.variant}>{badge.label}</Badge>
+                <Badge variant={badge.variant}>{badgeLabel}</Badge>
                 {isAdBoosted(ad) && <Badge variant="boost">Boosted</Badge>}
                 <Badge variant="outline">{sectorLabel}</Badge>
                 {posted && (
@@ -155,7 +168,7 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
                   <circle cx="12" cy="11" r="2.25" />
                 </svg>
                 <span>
-                  {ad.locationArea}, {ad.locationDistrict}
+                  {formatAdLocation(ad)}
                   {ad.address ? ` — ${ad.address}` : ""}
                 </span>
               </p>
@@ -226,11 +239,27 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
                 {ad.sector === "LAND" ? "Asking price" : "Monthly rent"}
               </span>
               <p className="numeric font-heading text-3xl font-bold tracking-tight text-primary">
-                <span className="mr-1 text-xl font-semibold text-brand-600">
-                  ৳
-                </span>
-                {formatAmount(ad.price)}
+                {ad.price == null ? (
+                  "Negotiable"
+                ) : (
+                  <>
+                    <span className="mr-1 text-xl font-semibold text-brand-600">
+                      ৳
+                    </span>
+                    {formatAmount(ad.price)}
+                    {isPerDecimalPrice(ad) && (
+                      <span className="ml-1 text-base font-semibold text-muted-foreground">
+                        /decimal
+                      </span>
+                    )}
+                  </>
+                )}
               </p>
+              {isPerDecimalPrice(ad) && normalizedPrice(ad) != null && (
+                <p className="numeric text-xs text-subtle-foreground">
+                  ≈ ৳{formatAmount(normalizedPrice(ad)!)} total for the whole plot
+                </p>
+              )}
             </div>
 
             <ContactGate

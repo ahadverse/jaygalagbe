@@ -2,12 +2,13 @@ const priceFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-export function formatPrice(price: string | number): string {
+export function formatPrice(price: string | number | null | undefined): string {
+  if (price == null) return "Negotiable";
   return `৳ ${priceFormatter.format(Number(price))}`;
 }
 
 /** Digits only, so the ৳ can be typeset separately from the figure. */
-export function formatAmount(price: string | number): string {
+export function formatAmount(price: string | number | null): string {
   return priceFormatter.format(Number(price));
 }
 

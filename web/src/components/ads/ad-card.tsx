@@ -3,8 +3,14 @@ import { Badge } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { formatAmount, formatRelativeTime } from "@/lib/format";
 import { adHighlights, type AdHighlight } from "@/lib/ads/describe-attributes";
+import { isPerDecimalPrice, normalizedPrice, ratePerDecimal } from "@/lib/ads/land-size";
 import { PhotoPlaceholder } from "./photo-placeholder";
-import { isAdBoosted, type Ad } from "@/lib/ads/types";
+import { formatAdLocation, isAdBoosted, type Ad } from "@/lib/ads/types";
+
+const SOLD_LABEL: Record<Ad["sector"], string> = {
+  LAND: "Sold",
+  HOUSE_RENT: "Rented out",
+};
 
 const highlightIcon: Record<AdHighlight["icon"], string> = {
   size: "M4 4h6M4 4v6M20 20h-6M20 20v-6M4 4l6 6M20 20l-6-6",
@@ -36,8 +42,13 @@ function Highlight({ highlight }: { highlight: AdHighlight }) {
 export function AdCard({ ad, boosted }: { ad: Ad; boosted?: boolean }) {
   const highlights = adHighlights(ad).slice(0, 3);
   const isBoosted = boosted ?? isAdBoosted(ad);
+  const isSold = ad.status === "SOLD";
   const sectorLabel = ad.sector === "LAND" ? "Land for sale" : "For rent";
   const posted = formatRelativeTime(ad.createdAt);
+  // Whichever of total / per-decimal the owner didn't enter, computed from
+  // the plot's own size — so a buyer can compare listings priced either way.
+  const rate = ratePerDecimal(ad);
+  const showRate = ad.sector === "LAND" && ad.price != null && rate != null;
 
   return (
     /* The link itself never moves: it is what tracks `:hover`, so lifting it
@@ -62,8 +73,18 @@ export function AdCard({ ad, boosted }: { ad: Ad; boosted?: boolean }) {
             sector={ad.sector}
             photo={ad.photos[0]}
             alt={ad.title}
-            className="aspect-[4/3]"
+            className={cn("aspect-[4/3]", isSold && "grayscale")}
             zoom
+            overlay={
+              isSold ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-[-15%] top-[42%] -rotate-[28deg] bg-danger-600 py-1 text-center text-[11px] font-bold tracking-[0.2em] text-white uppercase shadow-sm"
+                >
+                  {SOLD_LABEL[ad.sector]}
+                </span>
+              ) : undefined
+            }
           />
           <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2">
             <span className="rounded-full bg-white/92 px-2.5 py-1 text-2xs font-semibold text-neutral-800 shadow-xs backdrop-blur-sm">
@@ -100,9 +121,7 @@ export function AdCard({ ad, boosted }: { ad: Ad; boosted?: boolean }) {
                 <path d="M12 21s-6.5-5.4-6.5-10a6.5 6.5 0 1 1 13 0c0 4.6-6.5 10-6.5 10Z" />
                 <circle cx="12" cy="11" r="2.25" />
               </svg>
-              <span className="truncate">
-                {ad.locationArea}, {ad.locationDistrict}
-              </span>
+              <span className="truncate">{formatAdLocation(ad)}</span>
             </p>
           </div>
 
@@ -115,12 +134,32 @@ export function AdCard({ ad, boosted }: { ad: Ad; boosted?: boolean }) {
           )}
 
           <div className="mt-auto flex items-end justify-between gap-3 border-t border-border pt-3">
-            <p className="numeric font-heading text-xl font-bold tracking-tight text-primary">
-              <span className="mr-0.5 text-sm font-semibold text-brand-600">
-                ৳
-              </span>
-              {formatAmount(ad.price)}
-            </p>
+            <div className="flex min-w-0 flex-col">
+              <p className="numeric font-heading text-xl font-bold tracking-tight text-primary">
+                {ad.price == null ? (
+                  "Negotiable"
+                ) : (
+                  <>
+                    <span className="mr-0.5 text-sm font-semibold text-brand-600">
+                      ৳
+                    </span>
+                    {formatAmount(ad.price)}
+                    {isPerDecimalPrice(ad) && (
+                      <span className="ml-0.5 text-xs font-semibold text-muted-foreground">
+                        /decimal
+                      </span>
+                    )}
+                  </>
+                )}
+              </p>
+              {showRate && (
+                <span className="numeric text-2xs text-subtle-foreground">
+                  {isPerDecimalPrice(ad)
+                    ? `≈ ৳${formatAmount(normalizedPrice(ad)!)} total`
+                    : `≈ ৳${formatAmount(rate!)}/decimal`}
+                </span>
+              )}
+            </div>
             {posted && (
               <span className="shrink-0 text-2xs text-subtle-foreground">
                 {posted}

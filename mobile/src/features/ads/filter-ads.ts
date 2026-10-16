@@ -71,18 +71,28 @@ export function filterAndSortAds(
     if (filters.location && !matchesLocation(ad, filters.location))
       return false;
 
-    const price = Number(ad.price);
-    if (filters.minPrice != null && price < filters.minPrice) return false;
-    if (filters.maxPrice != null && price > filters.maxPrice) return false;
+    if (ad.price != null) {
+      const price = Number(ad.price);
+      if (filters.minPrice != null && price < filters.minPrice) return false;
+      if (filters.maxPrice != null && price > filters.maxPrice) return false;
+    }
 
     return matchesAttributes(ad, sector, filters);
   });
 
   const sorted = [...filtered];
   if (filters.sort === 'price_asc') {
-    sorted.sort((a, b) => Number(a.price) - Number(b.price));
+    sorted.sort((a, b) => {
+      if (a.price == null) return b.price == null ? 0 : 1;
+      if (b.price == null) return -1;
+      return Number(a.price) - Number(b.price);
+    });
   } else if (filters.sort === 'price_desc') {
-    sorted.sort((a, b) => Number(b.price) - Number(a.price));
+    sorted.sort((a, b) => {
+      if (a.price == null) return b.price == null ? 0 : 1;
+      if (b.price == null) return -1;
+      return Number(b.price) - Number(a.price);
+    });
   } else {
     sorted.sort(
       (a, b) =>

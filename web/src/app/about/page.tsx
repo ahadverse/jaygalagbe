@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "About Us | Jayga Lagbe",
   description:
-    "JaygaLagbe.com is an online platform that makes finding, buying, selling and renting property easier across Bangladesh.",
+    "JaygaLagbe.com is an online platform that makes finding, buying, selling and renting property easier across International.",
 };
 
 const offerings = [
@@ -39,7 +39,7 @@ const offerings = [
 const reasons = [
   {
     title: "Nationwide Property Opportunities",
-    body: "Explore property advertisements from different parts of Bangladesh and discover options that match your location and requirements.",
+    body: "Explore property advertisements from different parts of International and discover options that match your location and requirements.",
   },
   {
     title: "Convenient Property Search",
@@ -88,12 +88,12 @@ export default function AboutPage() {
             About JaygaLagbe.com
           </h1>
           <p className="mx-auto mt-3 max-w-2xl font-heading text-lg font-semibold text-brand-700 sm:text-xl">
-            Your Trusted Destination for Property Listings in Bangladesh
+            Your Trusted Destination for Property Listings in International
           </p>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
             Welcome to JaygaLagbe.com, an online platform designed to make
             finding, buying, selling, and renting property easier across
-            Bangladesh.
+            International.
           </p>
         </div>
       </section>
@@ -121,7 +121,7 @@ export default function AboutPage() {
             <p>
               We aim to make property advertising more convenient and help
               people discover opportunities across different districts of
-              Bangladesh.
+              International.
             </p>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function AboutPage() {
           <div className="flex flex-col gap-4 text-base leading-relaxed text-muted-foreground">
             <p>
               Our vision is to become a recognized online destination for land,
-              housing, rental, and other property listings across Bangladesh.
+              housing, rental, and other property listings across International.
             </p>
             <p>
               We want to make it easier for people to find suitable property

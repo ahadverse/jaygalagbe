@@ -34,11 +34,26 @@ function toInputJson(
   return attributes as Prisma.InputJsonValue | undefined;
 }
 
+/** Case/whitespace-insensitive — client-sent country names and our own
+ * seeded "Bangladesh" should match regardless of how either was typed. */
+function isBangladesh(country: string | undefined): boolean {
+  return (country ?? '').trim().toLowerCase() === 'bangladesh';
+}
+
+/**
+ * Division/district/thana are only checked against the real administrative
+ * tree for Bangladesh — that's the only country this ships a tree for.
+ * Elsewhere the client's country/state/city picks are trusted as-is; the
+ * only hard requirement everywhere is that `locationArea` (the city) is a
+ * non-empty string, which the DTO already guarantees.
+ */
 function assertValidLocation(
+  country: string | undefined,
   division: string | undefined,
-  district: string,
+  district: string | undefined,
   thana: string,
 ) {
+  if (!isBangladesh(country)) return;
   if (!isValidBdLocation(division, district, thana)) {
     throw new BadRequestException(
       'Pick a real division, district and thana combination',
@@ -54,7 +69,7 @@ function changesModeratedContent(current: Ad, dto: UpdateAdDto): boolean {
   return MODERATED_FIELDS.some((field) => {
     const next = dto[field];
     if (next === undefined) return false;
-    if (field === 'price') return String(next) !== current.price.toString();
+    if (field === 'price') return String(next) !== String(current.price);
     if (field === 'photos') {
       return (next as string[]).join('\u0000') !== current.photos.join('\u0000');
     }
@@ -83,12 +98,24 @@ const DEFAULT_LIVE_ADS_TAKE = 200;
 const MAX_LIVE_ADS_TAKE = 200;
 const MAX_LIVE_ADS_SKIP = 10_000;
 
+// A sold/rented listing stays in public results for a short window, stamped
+// as unavailable, instead of vanishing the instant it's marked — buyers see
+// it went to someone else rather than the listing just disappearing.
+const SOLD_VISIBILITY_DAYS = 7;
+
+function isRecentlySold(ad: { status: AdStatus; updatedAt: Date }): boolean {
+  if (ad.status !== AdStatus.SOLD) return false;
+  const cutoff = Date.now() - SOLD_VISIBILITY_DAYS * 24 * 60 * 60 * 1000;
+  return ad.updatedAt.getTime() >= cutoff;
+}
+
 /** Fields whose change makes a live ad a different listing to a reader. */
 const MODERATED_FIELDS = [
   'title',
   'description',
   'price',
   'photos',
+  'locationCountry',
   'locationDivision',
   'locationArea',
   'locationDistrict',
@@ -129,6 +156,7 @@ export class AdsService {
 
     const attributes = validateSectorAttributes(dto.sector, dto.attributes);
     assertValidLocation(
+      dto.locationCountry,
       dto.locationDivision,
       dto.locationDistrict,
       dto.locationArea,
@@ -141,6 +169,8 @@ export class AdsService {
         title: dto.title,
         description: dto.description,
         price: dto.price,
+        locationCountry: dto.locationCountry,
+        locationCountryCode: dto.locationCountryCode,
         locationDivision: dto.locationDivision,
         locationArea: dto.locationArea,
         locationDistrict: dto.locationDistrict,
@@ -161,9 +191,16 @@ export class AdsService {
       MAX_LIVE_ADS_TAKE,
     );
     const skip = clampInteger(pagination?.skip, 0, 0, MAX_LIVE_ADS_SKIP);
+    const soldCutoff = new Date(Date.now() - SOLD_VISIBILITY_DAYS * 24 * 60 * 60 * 1000);
 
     return this.prisma.ad.findMany({
-      where: { status: AdStatus.LIVE, sector },
+      where: {
+        sector,
+        OR: [
+          { status: AdStatus.LIVE },
+          { status: AdStatus.SOLD, updatedAt: { gte: soldCutoff } },
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       take,
       skip,
@@ -182,7 +219,7 @@ export class AdsService {
       where: { id },
       include: { owner: { select: { phone: true } } },
     });
-    if (!ad || !this.canView(ad.status, ad.ownerId, requester)) {
+    if (!ad || !this.canView(ad, requester)) {
       throw new NotFoundException('Ad not found');
     }
     const { owner, ...rest } = ad;
@@ -195,7 +232,7 @@ export class AdsService {
       where: { id },
       include: { owner: { select: { phone: true } } },
     });
-    if (!ad || !this.canView(ad.status, ad.ownerId, requester)) {
+    if (!ad || !this.canView(ad, requester)) {
       throw new NotFoundException('Ad not found');
     }
     if (!ad.owner.phone) {
@@ -213,16 +250,31 @@ export class AdsService {
       throw new ForbiddenException('You do not own this ad');
     }
 
+    // Only a house-rent listing may go without a price; land keeps the sector
+    // it was posted under, so that rule is checked against the stored sector
+    // rather than anything the request sent.
+    if (dto.price === null && ad.sector === Sector.LAND) {
+      throw new BadRequestException('Land listings must have an asking price');
+    }
+
     const attributes = dto.attributes
       ? validateSectorAttributes(ad.sector, dto.attributes)
       : undefined;
 
-    // An edit may send all three or none of them; a partial change still has to
-    // land on a real place, so the stored values fill the gaps.
-    if (dto.locationDivision || dto.locationDistrict || dto.locationArea) {
+    // An edit may send any subset of these; a partial change still has to
+    // land on a real place, so the stored values fill the gaps. Ads written
+    // before worldwide locations existed have no stored country — they're
+    // all Bangladesh, so that's the fallback.
+    if (
+      dto.locationCountry ||
+      dto.locationDivision ||
+      dto.locationDistrict ||
+      dto.locationArea
+    ) {
       assertValidLocation(
+        dto.locationCountry ?? ad.locationCountry ?? 'Bangladesh',
         dto.locationDivision ?? ad.locationDivision ?? undefined,
-        dto.locationDistrict ?? ad.locationDistrict,
+        dto.locationDistrict ?? ad.locationDistrict ?? undefined,
         dto.locationArea ?? ad.locationArea,
       );
     }
@@ -238,6 +290,8 @@ export class AdsService {
         title: dto.title,
         description: dto.description,
         price: dto.price,
+        locationCountry: dto.locationCountry,
+        locationCountryCode: dto.locationCountryCode,
         locationDivision: dto.locationDivision,
         locationArea: dto.locationArea,
         locationDistrict: dto.locationDistrict,
@@ -386,13 +440,12 @@ export class AdsService {
   }
 
   private canView(
-    status: AdStatus,
-    ownerId: string,
+    ad: { status: AdStatus; updatedAt: Date; ownerId: string },
     requester?: AuthenticatedUser,
   ): boolean {
-    if (status === AdStatus.LIVE) {
+    if (ad.status === AdStatus.LIVE || isRecentlySold(ad)) {
       return true;
     }
-    return requester?.id === ownerId || requester?.isAdmin === true;
+    return requester?.id === ad.ownerId || requester?.isAdmin === true;
   }
 }

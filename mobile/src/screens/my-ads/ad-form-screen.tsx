@@ -115,7 +115,7 @@ function AdFormBody({
   const [title, setTitle] = useState(existingAd?.title ?? '');
   const [description, setDescription] = useState(existingAd?.description ?? '');
   const [price, setPrice] = useState(
-    existingAd ? String(existingAd.price) : '',
+    existingAd?.price != null ? String(existingAd.price) : '',
   );
   const [division, setDivision] = useState(existingAd?.locationDivision ?? '');
   const [district, setDistrict] = useState(existingAd?.locationDistrict ?? '');
@@ -179,10 +179,26 @@ function AdFormBody({
       setError('Description must be at least 20 characters.');
       return;
     }
-    const priceNumber = Number(price);
-    if (!Number.isFinite(priceNumber) || priceNumber < 0) {
-      setError('Enter a valid price.');
-      return;
+    let priceValue: number | null;
+    if (sector === 'LAND') {
+      const priceNumber = Number(price);
+      if (price.trim() === '' || !Number.isFinite(priceNumber) || priceNumber < 0) {
+        setError('Enter a valid price.');
+        return;
+      }
+      priceValue = priceNumber;
+    } else {
+      const trimmedPrice = price.trim();
+      if (trimmedPrice === '') {
+        priceValue = null;
+      } else {
+        const priceNumber = Number(trimmedPrice);
+        if (!Number.isFinite(priceNumber) || priceNumber < 0) {
+          setError('Enter a valid rent, or leave it blank for negotiable.');
+          return;
+        }
+        priceValue = priceNumber;
+      }
     }
     if (!isValidBdLocation(division, district, thana)) {
       setError('Pick a real division, district and thana combination.');
@@ -219,7 +235,7 @@ function AdFormBody({
       sector,
       title: trimmedTitle,
       description: trimmedDescription,
-      price: priceNumber,
+      price: priceValue,
       locationDivision: division,
       locationDistrict: district,
       locationArea: thana,
@@ -291,6 +307,11 @@ function AdFormBody({
           keyboardType="numeric"
           left={<TextInput.Affix text={'৳'} />}
         />
+        {sector === 'HOUSE_RENT' ? (
+          <HelperText type="info" visible>
+            Leave blank if the rent is negotiable.
+          </HelperText>
+        ) : null}
       </Section>
 
       <Section label="Location">

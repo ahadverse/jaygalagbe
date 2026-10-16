@@ -16,11 +16,13 @@ const dateTime = new Intl.DateTimeFormat('en-GB', {
   minute: '2-digit',
 });
 
-export function formatTaka(amount: string | number): string {
+export function formatTaka(amount: string | number | null | undefined): string {
+  if (amount == null) return 'Negotiable';
   return `৳${currency.format(Number(amount))}`;
 }
 
-export function formatCompactTaka(amount: string | number): string {
+export function formatCompactTaka(amount: string | number | null | undefined): string {
+  if (amount == null) return 'Negotiable';
   return `৳${compact.format(Number(amount))}`;
 }
 

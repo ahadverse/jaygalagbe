@@ -29,7 +29,7 @@ export type Ad = {
   sector: Sector;
   title: string;
   description: string;
-  price: string | number;
+  price: string | number | null;
   locationDivision?: string | null;
   locationArea: string;
   locationDistrict: string;

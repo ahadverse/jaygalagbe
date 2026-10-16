@@ -10,6 +10,11 @@ const SECTOR_LABEL: Record<Ad['sector'], string> = {
   HOUSE_RENT: 'For rent',
 };
 
+const SOLD_LABEL: Record<Ad['sector'], string> = {
+  LAND: 'Sold',
+  HOUSE_RENT: 'Rented out',
+};
+
 // Ports web/src/components/ads/ad-card.tsx: a white sheet on the paper canvas
 // (rounded-xl, soft warm shadow, hairline ring), a 4:3 photo with a frosted
 // sector pill over it, display-font title, and a price footer above a
@@ -18,6 +23,7 @@ const SECTOR_LABEL: Record<Ad['sector'], string> = {
 // endpoint the app calls returns it.
 export function AdCard({ ad, onPress }: { ad: Ad; onPress?: () => void }) {
   const posted = formatRelativeTime(ad.createdAt);
+  const isSold = ad.status === 'SOLD';
   const price = formatPrice(ad.price);
   // formatPrice prefixes the taka sign; web renders that glyph a step smaller
   // and a shade lighter than the number itself.
@@ -39,9 +45,17 @@ export function AdCard({ ad, onPress }: { ad: Ad; onPress?: () => void }) {
             style={styles.photo}
             resizeMode="cover"
           />
+          {/* RN's Image has no CSS-style grayscale filter, so a dimming tint
+           * stands in for web's `grayscale` class. */}
+          {isSold ? <View style={styles.soldDim} /> : null}
           <View style={styles.sectorPill}>
             <Text style={styles.sectorPillText}>{SECTOR_LABEL[ad.sector]}</Text>
           </View>
+          {isSold ? (
+            <View style={styles.soldRibbonWrap} pointerEvents="none">
+              <Text style={styles.soldRibbonText}>{SOLD_LABEL[ad.sector]}</Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
 
@@ -130,6 +144,31 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.textSemibold,
     fontSize: 11,
     color: colors.neutral[800],
+  },
+  soldDim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(64,64,64,0.45)',
+  },
+  soldRibbonWrap: {
+    position: 'absolute',
+    left: '-15%',
+    right: '-15%',
+    top: '42%',
+    paddingVertical: 4,
+    backgroundColor: colors.danger[600],
+    transform: [{ rotate: '-28deg' }],
+  },
+  soldRibbonText: {
+    textAlign: 'center',
+    fontFamily: fontFamily.textSemibold,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: '#fff',
   },
   body: {
     padding: 16,

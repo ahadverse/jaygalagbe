@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { Button, Input, Select } from "@/components/ui";
+import { LocationFilter } from "@/components/ads/location-filter";
 import type { SectorConfig } from "@/lib/ads/sectors";
 import { SIZE_UNITS } from "@/lib/ads/land-size";
 
 export type SectorFilterValues = {
   q?: string;
   location?: string;
+  locationCountry?: string;
+  locationCountryCode?: string;
+  locationDivision?: string;
+  locationDistrict?: string;
+  locationArea?: string;
   minPrice?: string;
   maxPrice?: string;
   propertyType?: string;
@@ -58,6 +64,16 @@ export function SectorFilters({
           label="Location"
           defaultValue={values.location}
           placeholder={config.searchPlaceholder}
+        />
+      </div>
+
+      <div className="mt-4 border-t border-border pt-4">
+        <LocationFilter
+          country={values.locationCountry}
+          countryCode={values.locationCountryCode}
+          division={values.locationDivision}
+          district={values.locationDistrict}
+          thana={values.locationArea}
         />
       </div>
 

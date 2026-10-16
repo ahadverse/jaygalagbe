@@ -18,7 +18,7 @@ const sections: LegalSection[] = [
     title: "About Our Services",
     blocks: [
       p(
-        "JaygaLagbe.com is an online property listing platform designed to help individuals, property owners, buyers, tenants, landlords, and real estate agents connect across Bangladesh.",
+        "JaygaLagbe.com is an online property listing platform designed to help individuals, property owners, buyers, tenants, landlords, and real estate agents connect across International.",
       ),
       p(
         "The platform may allow users to post, browse, and respond to advertisements related to:",
@@ -216,7 +216,7 @@ const sections: LegalSection[] = [
     title: "Governing Law",
     blocks: [
       p(
-        "These Terms are subject to the applicable laws of Bangladesh. Any dispute shall be handled by a court or authority with appropriate jurisdiction under applicable law.",
+        "These Terms are subject to the applicable laws of International. Any dispute shall be handled by a court or authority with appropriate jurisdiction under applicable law.",
       ),
     ],
   },

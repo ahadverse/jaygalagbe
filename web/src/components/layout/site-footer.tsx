@@ -54,7 +54,7 @@ export function SiteFooter() {
             />
           </span>
           <p className="max-w-xs text-sm leading-relaxed text-neutral-400">
-            Bangladesh&apos;s property listing platform. Every listing is
+            International&apos;s property listing platform. Every listing is
             manually reviewed before publication.
           </p>
           <SocialLinks tone="dark" />
@@ -84,7 +84,7 @@ export function SiteFooter() {
           <p className="text-xs text-neutral-500">
             © {new Date().getFullYear()} Jayga Lagbe. All rights reserved.
           </p>
-          <p className="text-xs text-neutral-500">Made for Bangladesh</p>
+          <p className="text-xs text-neutral-500">Made for International</p>
         </div>
       </div>
     </footer>

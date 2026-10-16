@@ -11,4 +11,10 @@ export class LandAttributesDto {
   @IsOptional()
   @IsString()
   propertyType?: string;
+
+  /** Absent means `total` — ads posted before this existed were always a
+   * total asking price. */
+  @IsOptional()
+  @IsIn(['total', 'per_decimal'])
+  priceType?: 'total' | 'per_decimal';
 }

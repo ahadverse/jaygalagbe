@@ -19,7 +19,14 @@ export const sectorConfigs: Record<string, SectorConfig> = {
     description:
       "Residential, commercial, and agricultural plots, reviewed before they go live.",
     searchPlaceholder: "Search by area, e.g. Bashundhara, Dhaka",
-    propertyTypes: ["Residential", "Commercial", "Agricultural"],
+    propertyTypes: [
+      "Land & Plots",
+      "Agricultural Land",
+      "Residential Houses",
+      "Apartments & Flats",
+      "Commercial Properties",
+      "Industrial Land",
+    ],
   },
   "basha-bhara": {
     slug: "basha-bhara",
@@ -29,7 +36,13 @@ export const sectorConfigs: Record<string, SectorConfig> = {
     description:
       "Flats, houses, rooms, and sublets, reviewed before they go live.",
     searchPlaceholder: "Search by area, e.g. Dhanmondi, Dhaka",
-    propertyTypes: ["Flat", "House", "Room", "Sublet"],
+    propertyTypes: [
+      "Houses for Rent",
+      "Apartments & Flats for Rent",
+      "Rooms for Rent",
+      "Commercial Space for Rent",
+      "Agricultural Land for Lease",
+    ],
   },
 };
 

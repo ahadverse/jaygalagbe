@@ -432,7 +432,7 @@ async function AdvertiserOverview({
                           {ad.title}
                         </span>
                         <span className="numeric truncate text-xs text-muted-foreground">
-                          ৳ {formatAmount(ad.price)} ·{" "}
+                          {ad.price == null ? "Negotiable" : `৳ ${formatAmount(ad.price)}`} ·{" "}
                           {formatRelativeTime(ad.createdAt)}
                         </span>
                       </span>

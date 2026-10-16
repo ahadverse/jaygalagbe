@@ -51,7 +51,7 @@ export function ProfileForm({ user }: { user: AuthUser }) {
           label="Phone"
           defaultValue={user.phone ?? ""}
           autoComplete="tel"
-          hint="Bangladeshi number, e.g. 01712345678."
+          hint="International phone number, including country code."
         />
       </div>
 

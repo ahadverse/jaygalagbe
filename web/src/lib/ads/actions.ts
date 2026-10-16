@@ -32,6 +32,7 @@ function buildAttributes(
     const attributes: Record<string, unknown> = {
       size: Number(formData.get("size")),
       sizeUnit: formData.get("sizeUnit") === "decimal" ? "decimal" : "katha",
+      priceType: formData.get("priceType") === "per_decimal" ? "per_decimal" : "total",
     };
     const propertyType = String(formData.get("propertyType") ?? "");
     if (propertyType) attributes.propertyType = propertyType;
@@ -50,10 +51,13 @@ function buildAttributes(
 }
 
 function buildAdPayload(formData: FormData, sector: Sector) {
+  const priceRaw = String(formData.get("price") ?? "").trim();
   return {
     title: String(formData.get("title") ?? ""),
     description: String(formData.get("description") ?? ""),
-    price: Number(formData.get("price")),
+    price: priceRaw === "" ? null : Number(priceRaw),
+    locationCountry: String(formData.get("locationCountry") ?? ""),
+    locationCountryCode: String(formData.get("locationCountryCode") ?? "") || undefined,
     locationDivision: String(formData.get("locationDivision") ?? ""),
     locationDistrict: String(formData.get("locationDistrict") ?? ""),
     locationArea: String(formData.get("locationArea") ?? ""),

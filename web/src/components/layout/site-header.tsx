@@ -6,11 +6,10 @@ import { logoutAction } from "@/lib/auth/actions";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { MessageButton } from "@/components/layout/message-button";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { MegaNav } from "@/components/layout/mega-nav";
 import type { AuthUser } from "@/lib/auth/types";
 
 const navLinks = [
-  { href: "/jayga-jomi", label: "Jayga Jomi" },
-  { href: "/basha-bhara", label: "Basha Bhara" },
   { href: "/founder", label: "Meet the Founder" },
   { href: "/contact", label: "Contact Us" },
 ];
@@ -37,6 +36,7 @@ export function SiteHeader({ user }: { user: AuthUser | null }) {
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
+          <MegaNav />
           {navLinks.map((link) => (
             <Link
               key={link.href}

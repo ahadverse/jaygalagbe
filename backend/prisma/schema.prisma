@@ -62,10 +62,22 @@ model Ad {
   sector           Sector
   title            String
   description      String
-  price            Float  
+  price              Float?
+  // Worldwide: name + ISO2, e.g. "Bangladesh" / "BD". Absent on ads written
+  // before worldwide locations existed — treated as Bangladesh everywhere
+  // that reads it, since that was the only market then.
+  locationCountry     String?
+  locationCountryCode String?
+  // Bangladesh: division. Elsewhere: state/province, when the country has
+  // one — 21 countries in the geo dataset don't, and leave this blank.
   locationDivision String?
+  // Bangladesh: thana/upazila. Elsewhere: city. Always required — it's the
+  // one level every location has, with or without a state above it.
   locationArea     String
-  locationDistrict String
+  // Bangladesh only: the district between division and thana. No other
+  // country in the dataset models a second level below state, so this stays
+  // blank outside Bangladesh.
+  locationDistrict String?
   address          String?
   latitude         Float?
   longitude        Float?

@@ -192,12 +192,15 @@ export function useMarkPaymentPaid() {
 export interface AdEditFields {
   title?: string;
   description?: string;
-  price?: number;
+  price?: number | null;
   locationDivision?: string;
   locationDistrict?: string;
   locationArea?: string;
   address?: string;
   photos?: string[];
+  /** Replaces the whole sector-attributes object — the dialog always sends
+   * it merged with the ad's existing attributes, never a partial one. */
+  attributes?: Record<string, unknown>;
 }
 
 export function useUpdateAd() {

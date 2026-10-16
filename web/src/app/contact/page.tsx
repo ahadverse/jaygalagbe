@@ -85,7 +85,7 @@ const promises = [
   { value: "1 working day", label: "Typical reply time" },
   { value: "100%", label: "Ads manually reviewed" },
   { value: "Free", label: "To browse and enquire" },
-  { value: "Bangladesh", label: "Listings nationwide" },
+  { value: "International", label: "Listings nationwide" },
 ];
 
 const audiences = [

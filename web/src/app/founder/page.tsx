@@ -82,7 +82,7 @@ export default function FounderPage() {
             <p>
               JaygaLagbe.com was created with a simple vision: to make property
               discovery and advertising easier, more accessible, and more
-              convenient for people across Bangladesh.
+              convenient for people across International.
             </p>
             <p className="text-muted-foreground">
               Our goal is to connect property owners, buyers, sellers,

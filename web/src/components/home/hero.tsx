@@ -60,7 +60,7 @@ export function Hero() {
         <div className="flex w-full flex-col items-center gap-7 text-center sm:gap-8">
           <span className="eyebrow inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-2 text-white ring-1 ring-white/20 backdrop-blur-sm">
             <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-400" />
-            Land &amp; rentals across Bangladesh
+            Land &amp; rentals across International
           </span>
 
           <div className="mx-auto flex max-w-[44rem] flex-col gap-4">
@@ -71,7 +71,7 @@ export function Hero() {
               </span>
             </h1>
             <p className="text-pretty text-base text-neutral-200 sm:text-lg">
-              Discover land, houses and rental properties across Bangladesh.
+              Discover land, houses and rental properties across International.
               Every listing is manually reviewed before publication.
             </p>
           </div>

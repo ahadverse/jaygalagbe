@@ -1,3 +1,4 @@
+import { normalizedPrice } from "./land-size";
 import { isAdBoosted, type Ad, type Sector } from "./types";
 
 /* Every homepage browse section is derived from the ads already fetched, so
@@ -18,10 +19,13 @@ export function districtFacets(ads: Ad[], limit = 6): DistrictFacet[] {
   >();
 
   for (const ad of ads) {
-    let group = groups.get(ad.locationDistrict);
+    // Bangladesh: district. Elsewhere: state, when there is one.
+    const region = ad.locationDistrict || ad.locationDivision;
+    if (!region) continue;
+    let group = groups.get(region);
     if (!group) {
       group = { total: 0, land: 0, house: 0, areas: new Set() };
-      groups.set(ad.locationDistrict, group);
+      groups.set(region, group);
     }
     group.total += 1;
     if (ad.sector === "LAND") group.land += 1;
@@ -74,7 +78,8 @@ export function budgetBands(ads: Ad[], sector: Sector): BudgetBand[] {
       ...spec,
       count: ads.filter((ad) => {
         if (ad.sector !== sector) return false;
-        const price = Number(ad.price);
+        const price = normalizedPrice(ad);
+        if (price == null) return false;
         if (spec.minPrice != null && price < spec.minPrice) return false;
         if (spec.maxPrice != null && price >= spec.maxPrice) return false;
         return true;
@@ -120,11 +125,12 @@ export function selectFeatured(
   const picked: Ad[] = [];
   for (let slot = 0; slot < limit; slot += 1) {
     const wanted: Sector = slot % 2 === 0 ? "LAND" : "HOUSE_RENT";
-    const unseen = (ad: Ad) => !districts.has(ad.locationDistrict);
+    const regionOf = (ad: Ad) => ad.locationDistrict || ad.locationDivision || ad.locationArea;
+    const unseen = (ad: Ad) => !districts.has(regionOf(ad));
     const choice =
       pool.find((ad) => unseen(ad) && ad.sector === wanted) ?? pool.find(unseen);
     if (!choice) break;
-    districts.add(choice.locationDistrict);
+    districts.add(regionOf(choice));
     picked.push(choice);
   }
 

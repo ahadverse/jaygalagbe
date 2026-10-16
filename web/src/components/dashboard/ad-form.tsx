@@ -177,17 +177,41 @@ export function AdForm({ ad, phone }: { ad?: Ad; phone?: string }) {
           hint="At least 20 characters."
           required
         />
-        <Input
-          name="price"
-          type="number"
-          inputMode="numeric"
-          min={0}
-          label={sector === "LAND" ? "Asking price" : "Monthly rent"}
-          adornment="৳"
-          defaultValue={ad ? String(ad.price) : undefined}
-          className="numeric"
-          required
-        />
+        {sector === "LAND" ? (
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <Input
+              name="price"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              label="Asking price"
+              adornment="৳"
+              defaultValue={ad?.price != null ? String(ad.price) : undefined}
+              className="numeric"
+              required
+            />
+            <Select
+              name="priceType"
+              label="Rate"
+              defaultValue={landAttrs?.priceType === "per_decimal" ? "per_decimal" : "total"}
+            >
+              <option value="total">Total price</option>
+              <option value="per_decimal">Per decimal</option>
+            </Select>
+          </div>
+        ) : (
+          <Input
+            name="price"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            label="Monthly rent"
+            adornment="৳"
+            defaultValue={ad?.price != null ? String(ad.price) : undefined}
+            className="numeric"
+            hint="Leave blank if the rent is negotiable."
+          />
+        )}
       </FormSection>
 
       {!isEdit && (
@@ -203,7 +227,7 @@ export function AdForm({ ad, phone }: { ad?: Ad; phone?: string }) {
             defaultValue={phone}
             pattern="^(?:+?880|0)1[3-9]d{8}$"
             placeholder="01XXXXXXXXX"
-            hint="A Bangladeshi mobile number."
+            hint="An international mobile number, including country code."
             required
           />
         </FormSection>
@@ -211,9 +235,11 @@ export function AdForm({ ad, phone }: { ad?: Ad; phone?: string }) {
 
       <FormSection
         title="Location"
-        description="Pick the division, then the district, then the thana — buyers browse in that order."
+        description="Pick a country, then narrow down to where the property actually is — buyers browse in that order."
       >
         <LocationPicker
+          country={ad?.locationCountry}
+          countryCode={ad?.locationCountryCode}
           division={ad?.locationDivision}
           district={ad?.locationDistrict}
           thana={ad?.locationArea}

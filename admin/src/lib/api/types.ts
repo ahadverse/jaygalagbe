@@ -52,7 +52,7 @@ export interface AdListItem {
   sector: Sector;
   title: string;
   description: string;
-  price: string;
+  price: string | null;
   locationArea: string;
   locationDistrict: string;
   address: string | null;
@@ -160,7 +160,7 @@ export interface ReportListItem {
     title: string;
     sector: Sector;
     status: AdStatus;
-    price: string;
+    price: string | null;
     locationArea: string;
     locationDistrict: string;
     photos: string[];
@@ -185,7 +185,7 @@ export interface UserDetail extends UserListItem {
     title: string;
     status: AdStatus;
     sector: Sector;
-    price: string;
+    price: string | null;
     photos: string[];
     createdAt: string;
     _count: { reports: number };

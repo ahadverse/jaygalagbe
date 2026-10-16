@@ -96,6 +96,7 @@ export function budgetBands(ads: Ad[], sector: Sector): BudgetBand[] {
       ...spec,
       count: ads.filter((ad) => {
         if (ad.sector !== sector) return false;
+        if (ad.price == null) return false;
         const price = Number(ad.price);
         if (spec.minPrice != null && price < spec.minPrice) return false;
         if (spec.maxPrice != null && price >= spec.maxPrice) return false;

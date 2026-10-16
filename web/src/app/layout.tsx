@@ -23,8 +23,32 @@ const text = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "JaygaLagbe.com | Land, Houses & Property for Sale & Rent in Bangladesh",
-  description: "Find land and rental listings near you.",
+  title: "Real Estate Marketplace Worldwide | Buy, Sell & Rent Property",
+  description:
+    "Discover land, houses, apartments, commercial properties and rental listings worldwide on JaygaLagbe.com. Buy, sell, rent or advertise your property in one global marketplace.",
+  keywords: [
+    "real estate marketplace",
+    "global property marketplace",
+    "property for sale",
+    "property for rent",
+    "land for sale",
+    "houses for sale",
+    "homes for sale",
+    "apartments for sale",
+    "apartments for rent",
+    "houses for rent",
+    "buy property online",
+    "sell property online",
+    "rent property online",
+    "property listings",
+    "real estate listings",
+    "commercial property for sale",
+    "commercial property for rent",
+    "agricultural land for sale",
+    "farmland for sale",
+    "land for lease",
+    "property marketplace worldwide",
+  ],
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

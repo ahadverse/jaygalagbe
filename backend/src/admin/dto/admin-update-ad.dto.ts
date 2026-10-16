@@ -39,12 +39,26 @@ export class AdminUpdateAdDto {
   @MaxLength(5000)
   description?: string;
 
-  @ApiPropertyOptional({ minimum: 0 })
+  // `null` clears a house-rent ad's price back to negotiable; IsOptional lets
+  // it through untouched since it only validates a real number.
+  @ApiPropertyOptional({ minimum: 0, nullable: true })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  price?: number;
+  price?: number | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  locationCountry?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  locationCountryCode?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

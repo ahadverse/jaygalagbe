@@ -3,7 +3,10 @@ const priceFormatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 0,
 });
 
-export function formatPrice(price: string | number): string {
+export function formatPrice(
+  price: string | number | null | undefined,
+): string {
+  if (price == null) return 'Negotiable';
   return `৳ ${priceFormatter.format(Number(price))}`;
 }
 

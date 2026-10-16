@@ -44,6 +44,11 @@ function buildPageHref(slug: string, values: SectorFilterValues, page: number): 
   const params = new URLSearchParams();
   if (values.q) params.set("q", values.q);
   if (values.location) params.set("location", values.location);
+  if (values.locationCountry) params.set("locationCountry", values.locationCountry);
+  if (values.locationCountryCode) params.set("locationCountryCode", values.locationCountryCode);
+  if (values.locationDivision) params.set("locationDivision", values.locationDivision);
+  if (values.locationDistrict) params.set("locationDistrict", values.locationDistrict);
+  if (values.locationArea) params.set("locationArea", values.locationArea);
   if (values.minPrice) params.set("minPrice", values.minPrice);
   if (values.maxPrice) params.set("maxPrice", values.maxPrice);
   if (values.propertyType) params.set("propertyType", values.propertyType);
@@ -73,6 +78,11 @@ export default async function SectorPage({
   const values: SectorFilterValues = {
     q: firstValue(resolved?.q),
     location: firstValue(resolved?.location),
+    locationCountry: firstValue(resolved?.locationCountry),
+    locationCountryCode: firstValue(resolved?.locationCountryCode),
+    locationDivision: firstValue(resolved?.locationDivision),
+    locationDistrict: firstValue(resolved?.locationDistrict),
+    locationArea: firstValue(resolved?.locationArea),
     minPrice: firstValue(resolved?.minPrice),
     maxPrice: firstValue(resolved?.maxPrice),
     propertyType: firstValue(resolved?.propertyType),
@@ -92,6 +102,10 @@ export default async function SectorPage({
     : filterAndSortAds(ads, config.sector, {
         q: values.q,
         location: values.location,
+        country: values.locationCountry,
+        division: values.locationDivision,
+        district: values.locationDistrict,
+        thana: values.locationArea,
         minPrice: parseNumber(values.minPrice),
         maxPrice: parseNumber(values.maxPrice),
         propertyType: values.propertyType || undefined,

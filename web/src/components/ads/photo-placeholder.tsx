@@ -31,6 +31,7 @@ export function PhotoPlaceholder({
   alt,
   className,
   zoom,
+  overlay,
 }: {
   sector: Sector;
   photo?: string | null;
@@ -38,6 +39,8 @@ export function PhotoPlaceholder({
   className?: string;
   /** Slow scale-up on hover of an ancestor marked `group`. */
   zoom?: boolean;
+  /** Rendered inside the photo's own clipped frame, e.g. a status ribbon. */
+  overlay?: ReactNode;
 }) {
   if (photo) {
     return (
@@ -58,6 +61,7 @@ export function PhotoPlaceholder({
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/25 to-transparent"
         />
+        {overlay}
       </div>
     );
   }
@@ -85,6 +89,7 @@ export function PhotoPlaceholder({
       >
         {sectorIcon[sector]}
       </svg>
+      {overlay}
     </div>
   );
 }
