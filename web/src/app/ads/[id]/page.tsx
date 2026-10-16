@@ -101,6 +101,7 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
 
   const { ads: pool } = await fetchLiveAds(ad.sector);
   const related = relatedAds(pool, ad);
+  const relatedRegion = related.sameArea ? region : null;
 
   return (
     <main className="flex flex-1 flex-col">
@@ -331,16 +332,16 @@ export default async function AdDetailPage({ params }: PageProps<"/ads/[id]">) {
       <NearbyListings
         ads={related.ads}
         heading={
-          related.sameArea
-            ? `More ${sectorLabel.toLowerCase()} in ${ad.locationDistrict}`
+          relatedRegion
+            ? `More ${sectorLabel.toLowerCase()} in ${relatedRegion}`
             : `More ${sectorLabel.toLowerCase()}`
         }
         seeAllLabel={
-          related.sameArea ? `All of ${ad.locationDistrict}` : `All ${sectorName}`
+          relatedRegion ? `All of ${relatedRegion}` : `All ${sectorName}`
         }
         seeAllHref={
-          related.sameArea
-            ? `${sectorHref}?location=${encodeURIComponent(ad.locationDistrict)}`
+          relatedRegion
+            ? `${sectorHref}?location=${encodeURIComponent(relatedRegion)}`
             : sectorHref
         }
       />
